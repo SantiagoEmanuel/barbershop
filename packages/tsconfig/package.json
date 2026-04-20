@@ -1,0 +1,10 @@
+{
+  "name": "@config/tsconfig",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    "./base": "./base.json",
+    "./app": "./app.json",
+    "./server": "./server.json"
+  }
+}

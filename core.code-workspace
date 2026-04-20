@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "path": ".",
+    },
+  ],
+  "settings": {
+    "cSpell.words": ["Microservicios", "Tauri", "testeado", "Turborepo"],
+    "files.associations": {
+      "base.css": "tailwindcss",
+    },
+  },
+}

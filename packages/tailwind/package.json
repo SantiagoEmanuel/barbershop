@@ -1,0 +1,12 @@
+{
+  "name": "@config/tailwindcss",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./base.css",
+    "./legacy": "./main.ts"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.2.2"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "mono-repo",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "prepare": "husky",
+    "format:check": "prettier --check \"**/*.{js,ts,jsx,tsx,css,md,json}\"",
+    "update-version": "changeset",
+    "check-version": "changeset version"
+  },
+  "keywords": [],
+  "author": "Santiago Mustafá",
+  "repository": {
+    "url": "https://github.com/santiagoemanuel/monorepo"
+  },
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.0",
+  "devDependencies": {
+    "@changesets/cli": "^2.30.0",
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "turbo": "^2.9.6",
+    "typescript-eslint": "^8.58.2"
+  },
+  "lint-staged": {
+    "**/*.{js,ts,jsx,tsx}": [
+      "prettier --write",
+      "eslint --fix --cache"
+    ],
+    "**/*.{json,css,md}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
