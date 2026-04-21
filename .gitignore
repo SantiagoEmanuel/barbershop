@@ -32,3 +32,11 @@ dist-ssr
 *.sw?
 .eslintcache
 .prettiercache
+**/**/.gitignore
+
+# RestClient
+*.http
+
+# Design
+design.*
+*.design.*

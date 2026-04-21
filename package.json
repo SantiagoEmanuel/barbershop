@@ -11,7 +11,8 @@
     "prepare": "husky",
     "format:check": "prettier --check \"**/*.{js,ts,jsx,tsx,css,md,json}\"",
     "update-version": "changeset",
-    "check-version": "changeset version"
+    "check-version": "changeset version",
+    "db:studio": "pnpm drizzle-kit studio --filter server"
   },
   "keywords": [],
   "author": "Santiago Mustafá",
