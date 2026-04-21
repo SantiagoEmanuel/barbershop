@@ -3,12 +3,7 @@ import OrderController from "./controller/order";
 
 const orderRouter = Router();
 
-orderRouter.get("/", (req, res) => {
-  res.status(200).json({
-    message: "In progress",
-  });
-});
-
+orderRouter.get("/", OrderController.getOrders);
 orderRouter.post("/", OrderController.createOrder);
 orderRouter.put("/:id/update", OrderController.updateOrder);
 
