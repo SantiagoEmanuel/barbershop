@@ -2,7 +2,11 @@ import cors from "cors";
 import { config } from "dotenv";
 import express, { json } from "express";
 import helmet from "helmet";
+import barberRouter from "./routes/barbers/routes";
 import orderRouter from "./routes/orders/route";
+import productRouter from "./routes/products/route";
+import scheduleRouter from "./routes/schedules/route";
+import serviceRouter from "./routes/services/route";
 import shiftRouter from "./routes/shifts/route";
 
 config();
@@ -18,11 +22,12 @@ app.use(json());
 // Routes
 app.use("/api/shift", shiftRouter);
 app.use("/api/order", orderRouter);
+app.use("/api/barber", barberRouter);
+app.use("/api/service", serviceRouter);
+app.use("/api/product", productRouter);
+app.use("/api/schedule", scheduleRouter);
 
 // Health
-app.get("/ok", (req, res) => {
-  return res.status(200).json({ message: "OK", status: 200 });
-});
 app.get("/status", (req, res) => {
   return res.status(200).json({
     message: "OK",
