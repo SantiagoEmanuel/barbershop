@@ -38,7 +38,6 @@ export default class OrderController {
       });
     }
   }
-
   static async updateOrder(req: Request, res: Response) {
     const id = req.params.id as string;
     const data: Order = req.body;
@@ -68,6 +67,21 @@ export default class OrderController {
       return res.status(400).json({
         message: err.message || "No se pudo actualizar la orden",
         data: null,
+      });
+    }
+  }
+  static async getOrders(req: Request, res: Response) {
+    const date = (req.query.date || new Date()) as Date;
+    try {
+      const data = OrderModel.get({ date });
+
+      return res.status(200).json({
+        message: "OK",
+        data,
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        message: err.message || "No se pudo obtener las ordenes",
       });
     }
   }
