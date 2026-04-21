@@ -67,6 +67,8 @@ export const shifts = table("shift", {
   barberId: text("barber_id")
     .notNull()
     .references(() => barber.id),
+  price: text("price").notNull(), // -> Generará un fallo posiblemente si hay datos anteriores.
+  date: integer("date", { mode: "timestamp_ms" }).notNull(),
   createdAt: CREATED_AT,
   isCancelled: integer("is_cancelled", { mode: "boolean" }).default(false),
 });
