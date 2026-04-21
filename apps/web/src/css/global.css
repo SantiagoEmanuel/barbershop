@@ -1,2 +1,5 @@
+/* Import Tailwind CSS */
 @import "tailwindcss";
+
+/* Tailwind CSS configuration from packages/tailwindcss */
 @import "@config/tailwindcss";
