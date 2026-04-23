@@ -33,6 +33,7 @@ app.get("/status", (_req, res) => {
   res.status(200).json({ message: "OK" });
 });
 
+// ── 404 ───────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({
     message: "Not found",
@@ -40,7 +41,7 @@ app.use((_req, res) => {
   });
 });
 
-// ── Error handler global (siempre al final) ───────────────────
+// ── Error handler global ----------------------────────────────
 app.use(errorHandler);
 
 app.listen(PORT, () => {
