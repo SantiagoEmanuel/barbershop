@@ -19,7 +19,7 @@ interface UpdateOrderData {
 
 export default class OrderModel {
   static async create(data: CreateOrderData) {
-    // Verificar que el appointment exista
+    // Verificar que el appointment exista antes de insertar
     const apt = await db.query.appointments.findFirst({
       where: eq(appointments.id, data.appointmentId),
     });
@@ -31,6 +31,7 @@ export default class OrderModel {
       if (!created) throw new Error("No se pudo generar la orden");
       return created;
     } catch (err: any) {
+      // El constraint UNIQUE appointments_id actúa como segunda barrera
       if (err.message?.includes("UNIQUE")) {
         throw Object.assign(
           new Error("Este turno ya tiene una orden de pago asociada"),
@@ -41,24 +42,36 @@ export default class OrderModel {
     }
   }
 
+  /**
+   * Devuelve todas las órdenes con sus relaciones.
+   * El filtro por fecha se aplica en memoria sobre appointment.date
+   * porque Drizzle no permite WHERE dentro de .with() de relaciones one-to-one.
+   */
   static async getByDate(date: Date) {
-    // Filtra órdenes cuyo appointment sea de esa fecha
     const dateStr = date.toISOString().split("T")[0] as string;
-    return db.query.orders.findMany({
+
+    const allOrders = await db.query.orders.findMany({
       with: {
         appointment: {
-          where: eq(appointments.date, dateStr),
           with: { barber: true, service: true, client: true },
         },
         paymentMethod: true,
       },
     });
+
+    // Filtrar por la fecha del appointment en memoria
+    return allOrders.filter((o) => o.appointment?.date === dateStr);
   }
 
   static async getById(id: string) {
     const order = await db.query.orders.findFirst({
       where: eq(orders.id, id),
-      with: { appointment: true, paymentMethod: true },
+      with: {
+        appointment: {
+          with: { barber: true, service: true },
+        },
+        paymentMethod: true,
+      },
     });
     return order ?? null;
   }
@@ -72,7 +85,7 @@ export default class OrderModel {
 
     const patch = { ...data } as Record<string, unknown>;
 
-    // Si se marca como pagado y no viene paidAt, lo seteamos ahora
+    // Auto-completar paidAt cuando el status pasa a "paid"
     if (data.status === "paid" && !data.paidAt) {
       patch.paidAt = new Date();
     }

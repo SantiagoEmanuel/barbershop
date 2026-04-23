@@ -14,6 +14,7 @@ import { and, eq, inArray } from "drizzle-orm";
 export default class AvailabilityModel {
   static async getSlots(barberId: string, date: string): Promise<Slot[]> {
     // date es "YYYY-MM-DD" — dayOfWeek: 0 domingo … 6 sábado
+    // Usamos T12:00:00 para evitar desfasajes de timezone
     const dayOfWeek = new Date(`${date}T12:00:00`).getDay();
 
     // 1. Horario base semanal del barbero para ese día
@@ -25,7 +26,7 @@ export default class AvailabilityModel {
       ),
     });
 
-    // Si el barbero no trabaja ese día → sin slots
+    // El barbero no trabaja ese día de la semana
     if (!schedule) return [];
 
     let { startTime, endTime } = schedule;
@@ -49,7 +50,7 @@ export default class AvailabilityModel {
     const slots = generateSlots({ startTime, endTime, slotDurationMinutes });
     if (slots.length === 0) return [];
 
-    // 4. Turnos ya ocupados (pending o confirmed)
+    // 4. Turnos ya ocupados (pending o confirmed) — status cancelled/no_show quedan libres
     const occupied = await db.query.appointments.findMany({
       where: and(
         eq(appointments.barberId, barberId),
@@ -59,7 +60,7 @@ export default class AvailabilityModel {
       columns: { startTime: true, endTime: true },
     });
 
-    // 5. Filtrar colisiones y retornar slots libres
+    // 5. Filtrar colisiones y retornar slots disponibles
     return filterOccupiedSlots(slots, occupied);
   }
 }
