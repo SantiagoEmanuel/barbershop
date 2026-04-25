@@ -1,7 +1,7 @@
 /**
  * Convierte "HH:MM" a minutos totales desde medianoche.
  */
-function timeToMinutes(time: string): number {
+export function timeToMinutes(time: string): number {
   const [hours, minutes] = time.split(":").map(Number);
   return (hours ?? 0) * 60 + (minutes ?? 0);
 }
@@ -9,7 +9,7 @@ function timeToMinutes(time: string): number {
 /**
  * Convierte minutos totales a string "HH:MM".
  */
-function minutesToTime(minutes: number): string {
+export function minutesToTime(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
