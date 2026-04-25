@@ -26,14 +26,12 @@ export function verifyToken(
   res: Response,
   next: NextFunction,
 ): void {
-  const authHeader = req.headers.authorization;
+  const token = req.cookies.auth_token;
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!token) {
     res.status(401).json({ message: "Token requerido", data: null });
     return;
   }
-
-  const token = authHeader.slice(7);
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET as string) as JwtPayload;
