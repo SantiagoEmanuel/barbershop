@@ -17,7 +17,7 @@ interface UpdatePaymentMethodData {
 
 export default class PaymentMethodModel {
   static async getAll({ includeInactive = false } = {}) {
-    return db.query.paymentMethods.findMany({
+    return await db.query.paymentMethods.findMany({
       where: includeInactive ? undefined : eq(paymentMethods.isActive, true),
       orderBy: (pm, { asc }) => [asc(pm.name)],
     });
