@@ -12,7 +12,8 @@
     "format:check": "prettier --check \"**/*.{js,ts,jsx,tsx,css,md,json}\"",
     "update-version": "changeset",
     "check-version": "changeset version",
-    "db:studio": "pnpm drizzle-kit studio --filter server"
+    "db:studio": "pnpm drizzle-kit studio --filter server",
+    "test": "pnpm -r test"
   },
   "keywords": [],
   "author": "Santiago Mustafá",
