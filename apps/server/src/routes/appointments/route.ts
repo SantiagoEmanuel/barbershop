@@ -6,7 +6,7 @@ const appointmentRouter = Router();
 
 appointmentRouter.post("/", AppointmentController.create);
 appointmentRouter.get("/", AppointmentController.get);
-appointmentRouter.put("/:id/status", verifyToken, AppointmentController.update);
 appointmentRouter.get("/my", verifyToken, AppointmentController.my);
+appointmentRouter.put("/:id/status", verifyToken, AppointmentController.update);
 
 export default appointmentRouter;
