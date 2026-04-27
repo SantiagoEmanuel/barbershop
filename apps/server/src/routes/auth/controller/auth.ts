@@ -35,7 +35,7 @@ export default class AuthController {
         httpOnly: true,
         maxAge: 60 * 60 * 48 * 1000,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV !== "production" ? "none" : "none",
+        sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
       });
 
       return res.status(200).json({
@@ -104,15 +104,26 @@ export default class AuthController {
         throw new AppError("Token inválido", 404);
       }
 
-      const newToken = sign(payload, JWT_SECRET, {
-        expiresIn: 60 * 60 * 48 * 1000,
-      });
+      const user = await AuthModel.getById(payload.id);
+
+      const newToken = sign(
+        {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          name: user.name,
+        },
+        JWT_SECRET,
+        {
+          expiresIn: 60 * 60 * 48 * 1000,
+        },
+      );
 
       res.cookie("auth_token", newToken, {
         httpOnly: true,
         maxAge: 60 * 60 * 48 * 1000,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV !== "production" ? "none" : "none",
+        sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
       });
 
       return res.status(200).json({
