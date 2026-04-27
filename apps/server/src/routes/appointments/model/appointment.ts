@@ -47,7 +47,7 @@ export default class AppointmentModel {
       });
       return data;
     } catch (err: any) {
-      new AppError(
+      throw new AppError(
         err.message || "Ha ocurrido un error al obtener los turnos solicitados",
         500,
       );

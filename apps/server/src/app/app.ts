@@ -1,5 +1,6 @@
 import { errorHandler } from "@/middleware/error.middleware";
 import appointmentRouter from "@/routes/appointments/route";
+import authRouter from "@/routes/auth/route";
 import availabilityRouter from "@/routes/availability/route";
 import barberRouter from "@/routes/barber/route";
 import orderRouter from "@/routes/orders/route";
@@ -18,6 +19,7 @@ app.use(helmet());
 app.use(json());
 
 // ── Rutas ─────────────────────────────────────────────────────
+app.use("/api/auth", authRouter);
 app.use("/api/availability", availabilityRouter);
 app.use("/api/barber", barberRouter);
 app.use("/api/service", serviceRouter);
