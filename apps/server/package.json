@@ -34,6 +34,7 @@
     "@config/prettier": "workspace:*",
     "@config/tsconfig": "workspace:*",
     "@libsql/client": "^0.17.2",
+    "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "drizzle-orm": "^0.45.2",
