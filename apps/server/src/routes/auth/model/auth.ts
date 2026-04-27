@@ -65,6 +65,15 @@ export default class AuthModel {
 
     return updateUser;
   }
+  static async getById(id: string) {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, id),
+    });
+    if (!user) {
+      throw new AppError("Usuario inexistente", 404);
+    }
+    return user;
+  }
   static async hashPassword(password: string) {
     return hashSync(password, HASH_SALT);
   }
