@@ -1,5 +1,6 @@
 import { db } from "@/db/db";
 import { paymentMethods } from "@/db/turso/schema";
+import AppError from "@/utils/AppError";
 import { eq } from "drizzle-orm";
 
 type PaymentMethodType = "cash" | "card" | "online";
@@ -32,13 +33,13 @@ export default class PaymentMethodModel {
 
   static async create(data: CreatePaymentMethodData) {
     const [created] = await db.insert(paymentMethods).values(data).returning();
-    if (!created) throw new Error("No se pudo crear el método de pago");
+    if (!created) throw new AppError("No se pudo crear el método de pago", 500);
     return created;
   }
 
   static async update(id: string, data: UpdatePaymentMethodData) {
     if (Object.keys(data).length === 0) {
-      throw new Error("No se enviaron campos para actualizar");
+      throw new AppError("No se enviaron campos para actualizar", 400);
     }
     const [updated] = await db
       .update(paymentMethods)

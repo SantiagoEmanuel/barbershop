@@ -1,5 +1,6 @@
 import { db } from "@/db/db";
 import { services } from "@/db/turso/schema";
+import AppError from "@/utils/AppError";
 import { eq } from "drizzle-orm";
 
 interface CreateServiceData {
@@ -35,13 +36,13 @@ export default class ServiceModel {
 
   static async create(data: CreateServiceData) {
     const [created] = await db.insert(services).values(data).returning();
-    if (!created) throw new Error("No se pudo crear el servicio");
+    if (!created) throw new AppError("No se pudo crear el servicio", 400);
     return created;
   }
 
   static async update(id: string, data: UpdateServiceData) {
     if (Object.keys(data).length === 0) {
-      throw new Error("No se enviaron campos para actualizar");
+      throw new AppError("No se enviaron campos para actualizar", 400);
     }
     const [updated] = await db
       .update(services)

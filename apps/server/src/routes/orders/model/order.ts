@@ -1,5 +1,6 @@
 import { db } from "@/db/db";
 import { appointments, orders } from "@/db/turso/schema";
+import AppError from "@/utils/AppError";
 import { eq } from "drizzle-orm";
 
 interface CreateOrderData {
@@ -33,9 +34,9 @@ export default class OrderModel {
     } catch (err: any) {
       // El constraint UNIQUE appointments_id actúa como segunda barrera
       if (err.message?.includes("UNIQUE")) {
-        throw Object.assign(
-          new Error("Este turno ya tiene una orden de pago asociada"),
-          { status: 409 },
+        throw new AppError(
+          "Este turno ya tiene una orden de pago asociada",
+          409,
         );
       }
       throw err;
@@ -80,8 +81,7 @@ export default class OrderModel {
     const existing = await db.query.orders.findFirst({
       where: eq(orders.id, id),
     });
-    if (!existing)
-      throw Object.assign(new Error("Orden no encontrada"), { status: 404 });
+    if (!existing) throw new AppError("Orden no encontrada", 404);
 
     const patch = { ...data } as Record<string, unknown>;
 

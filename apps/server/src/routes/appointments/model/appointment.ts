@@ -1,5 +1,6 @@
 import { db } from "@/db/db";
 import { appointments } from "@/db/turso/schema";
+import AppError from "@/utils/AppError";
 import { and, count, eq, gt, inArray, lt } from "drizzle-orm";
 
 export interface Appointment {
@@ -26,7 +27,7 @@ export default class AppointmentModel {
     });
 
     if (!data) {
-      throw Object.assign(new Error("Turno inexistente"), { status: 404 });
+      throw new AppError("Turno inexistente", 404);
     }
 
     return data;
@@ -46,12 +47,9 @@ export default class AppointmentModel {
       });
       return data;
     } catch (err: any) {
-      throw Object.assign(
-        new Error(
-          err.message ||
-            "Ha ocurrido un error al obtener los turnos solicitados",
-        ),
-        { status: 400 },
+      new AppError(
+        err.message || "Ha ocurrido un error al obtener los turnos solicitados",
+        500,
       );
     }
   }
@@ -62,9 +60,7 @@ export default class AppointmentModel {
       .returning();
 
     if (!newAppointment) {
-      throw Object.assign(new Error("No se pudo guardar el turno"), {
-        status: 404,
-      });
+      throw new AppError("No se pudo guardar el turno", 404);
     }
 
     return newAppointment;
@@ -89,9 +85,7 @@ export default class AppointmentModel {
       .returning();
 
     if (!dataUpdated) {
-      throw Object.assign(new Error("El turno no existe en al base de datos"), {
-        status: 400,
-      });
+      throw new AppError("El turno no existe en al base de datos", 400);
     }
 
     return dataUpdated;

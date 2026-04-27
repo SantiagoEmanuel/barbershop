@@ -1,5 +1,6 @@
 import { db } from "@/db/db";
 import { products } from "@/db/turso/schema";
+import AppError from "@/utils/AppError";
 import { eq, sql } from "drizzle-orm";
 
 interface CreateProductData {
@@ -33,20 +34,19 @@ export default class ProductModel {
   }
 
   static async create(data: CreateProductData) {
-    if (data.stock < 0) throw new Error("El stock no puede ser negativo");
+    if (data.stock < 0)
+      throw new AppError("El stock no puede ser negativo", 400);
     const [created] = await db.insert(products).values(data).returning();
-    if (!created) throw new Error("No se pudo crear el producto");
+    if (!created) throw new AppError("No se pudo crear el producto", 500);
     return created;
   }
 
   static async update(id: string, data: UpdateProductData) {
     if (Object.keys(data).length === 0) {
-      throw new Error("No se enviaron campos para actualizar");
+      throw new AppError("No se enviaron campos para actualizar", 404);
     }
     if (data.stock !== undefined && data.stock < 0) {
-      throw Object.assign(new Error("El stock no puede ser negativo"), {
-        status: 400,
-      });
+      throw new AppError("El stock no puede ser negativo", 400);
     }
 
     const [updated] = await db
@@ -63,12 +63,11 @@ export default class ProductModel {
     const product = await db.query.products.findFirst({
       where: eq(products.id, id),
     });
-    if (!product)
-      throw Object.assign(new Error("Producto no encontrado"), { status: 404 });
+    if (!product) throw new AppError("Producto no encontrado", 404);
     if (product.stock < quantity) {
-      throw Object.assign(
-        new Error(`Stock insuficiente. Disponible: ${product.stock}`),
-        { status: 400 },
+      throw new AppError(
+        `Stock insuficiente. Disponible: ${product.stock}`,
+        400,
       );
     }
 
