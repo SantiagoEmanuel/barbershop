@@ -2,4 +2,64 @@
   --color-primary: rgb(54, 154, 241);
   --color-secondary: rgba(84, 87, 87, 0.9);
   --color-action: rgba(229, 81, 79, 0.92);
+
+  --color-dark-teal-50: #e7fbfd;
+  --color-dark-teal-100: #d0f7fb;
+  --color-dark-teal-200: #a1eff7;
+  --color-dark-teal-300: #71e7f4;
+  --color-dark-teal-400: #42def0;
+  --color-dark-teal-500: #13d6ec;
+  --color-dark-teal-600: #0fabbd;
+  --color-dark-teal-700: #0b818e;
+  --color-dark-teal-800: #08565e;
+  --color-dark-teal-900: #042b2f;
+  --color-dark-teal-950: #031e21;
+
+  --color-sky-surge-50: #e7f8fd;
+  --color-sky-surge-100: #d0f2fb;
+  --color-sky-surge-200: #a0e5f8;
+  --color-sky-surge-300: #71d8f4;
+  --color-sky-surge-400: #41cbf1;
+  --color-sky-surge-500: #12beed;
+  --color-sky-surge-600: #0e98be;
+  --color-sky-surge-700: #0b728e;
+  --color-sky-surge-800: #074c5f;
+  --color-sky-surge-900: #04262f;
+  --color-sky-surge-950: #021b21;
+
+  --color-white-smoke-50: #f5f1f0;
+  --color-white-smoke-100: #ebe3e0;
+  --color-white-smoke-200: #d6c7c2;
+  --color-white-smoke-300: #c2aba3;
+  --color-white-smoke-400: #ad8f85;
+  --color-white-smoke-500: #997366;
+  --color-white-smoke-600: #7a5c52;
+  --color-white-smoke-700: #5c453d;
+  --color-white-smoke-800: #3d2e29;
+  --color-white-smoke-900: #1f1714;
+  --color-white-smoke-950: #15100e;
+
+  --color-midnight-violet-50: #f4eff5;
+  --color-midnight-violet-100: #eae0eb;
+  --color-midnight-violet-200: #d5c1d7;
+  --color-midnight-violet-300: #bfa2c3;
+  --color-midnight-violet-400: #aa83af;
+  --color-midnight-violet-500: #95639c;
+  --color-midnight-violet-600: #77507c;
+  --color-midnight-violet-700: #593c5d;
+  --color-midnight-violet-800: #3c283e;
+  --color-midnight-violet-900: #1e141f;
+  --color-midnight-violet-950: #150e16;
+
+  --color-coral-glow-50: #feeee6;
+  --color-coral-glow-100: #feddcd;
+  --color-coral-glow-200: #fcba9c;
+  --color-coral-glow-300: #fb986a;
+  --color-coral-glow-400: #fa7538;
+  --color-coral-glow-500: #f95306;
+  --color-coral-glow-600: #c74205;
+  --color-coral-glow-700: #953204;
+  --color-coral-glow-800: #632103;
+  --color-coral-glow-900: #321101;
+  --color-coral-glow-950: #230c01;
 }
