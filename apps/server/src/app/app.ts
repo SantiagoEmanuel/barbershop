@@ -14,7 +14,12 @@ import helmet from "helmet";
 const app = express();
 
 // ── Middlewares globales ──────────────────────────────────────
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost", "http://localhost:5173"],
+    credentials: true,
+  }),
+);
 app.use(helmet());
 app.use(json());
 

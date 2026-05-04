@@ -106,6 +106,8 @@ export const services = table(
     durationMinutes: integer("duration_minutes").notNull(),
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     createdAt: createdAt(),
+    key: integer("key"),
+    icon: text("icon"),
   },
   (t) => [index("idx_services_is_active").on(t.isActive)],
 );

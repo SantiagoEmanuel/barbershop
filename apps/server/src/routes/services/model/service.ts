@@ -22,7 +22,7 @@ export default class ServiceModel {
   static async getAll({ includeInactive = false } = {}) {
     const all = await db.query.services.findMany({
       where: includeInactive ? undefined : eq(services.isActive, true),
-      orderBy: (s, { asc }) => [asc(s.name)],
+      orderBy: (s, { asc }) => [asc(s.key)],
     });
     return all;
   }
