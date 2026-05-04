@@ -1,9 +1,11 @@
 import { type RouteObject } from "react-router";
-import Index from "../pages/Index";
+import RootLayout from "../components/rootLayout";
+import Index from "../pages/home";
 
 export const routes: RouteObject[] = [
   {
     path: "/",
+    Component: RootLayout,
     children: [
       {
         index: true,

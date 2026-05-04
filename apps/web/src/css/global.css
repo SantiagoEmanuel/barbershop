@@ -3,3 +3,8 @@
 
 /* Tailwind CSS configuration from packages/tailwindcss */
 @import "@config/tailwindcss";
+
+:root {
+  color: var(--color-text-primary);
+  background: var(--color-background);
+}
