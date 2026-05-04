@@ -1,7 +1,15 @@
 {
+  "extends": "@config/tsconfig/app",
   "compilerOptions": {
-    "jsx": "react"
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "declaration": true,
+    "declarationMap": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
   },
-  "include": ["src"],
-  "extends": "@config/tsconfig/app"
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
