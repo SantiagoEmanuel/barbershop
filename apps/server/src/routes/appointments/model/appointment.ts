@@ -92,7 +92,7 @@ export default class AppointmentModel {
   }
   static async my(clientId: string) {
     const data = await db.query.appointments.findMany({
-      where: and(eq(appointments.clientId, clientId)),
+      where: eq(appointments.clientId, clientId),
       orderBy: (appointments, { desc }) => [
         desc(appointments.date),
         desc(appointments.startTime),

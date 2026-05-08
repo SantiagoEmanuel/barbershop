@@ -1,7 +1,9 @@
+import { JWT_SECRET } from "@/constants/credentials.env";
 import AvailabilityModel from "@/routes/availability/model/availability";
 import ServiceModel from "@/routes/services/model/service";
 import { minutesToTime, timeToMinutes } from "@/utils/availability";
 import { Request, Response } from "express";
+import { JwtPayload, verify } from "jsonwebtoken";
 import AppointmentModel, { Appointment } from "../model/appointment";
 
 export default class AppointmentController {
@@ -15,7 +17,9 @@ export default class AppointmentController {
       clientPhone,
       notes,
     }: Appointment = req.body;
-    const clientId = req.user?.userId;
+    const token = req.cookies.auth_token;
+    const payload = verify(token, JWT_SECRET) as JwtPayload;
+    const clientId = payload.id;
 
     if (
       !barberId ||
@@ -166,10 +170,7 @@ export default class AppointmentController {
           data: appointmentUpdate,
         });
       } else {
-        if (
-          status === "cancelled" &&
-          appointmentData.clientId === user.userId
-        ) {
+        if (status === "cancelled" && appointmentData.clientId === user.id) {
           const appointmentUpdate = await AppointmentModel.update(
             status,
             id as string,
@@ -194,7 +195,7 @@ export default class AppointmentController {
     }
   }
   static async my(req: Request, res: Response) {
-    const id = req.user!.userId;
+    const id = req.user!.id;
 
     try {
       // ¿Un usuario puede tener varios turnos el mismo día? -> R: No veo porqué impedirlo
@@ -209,6 +210,37 @@ export default class AppointmentController {
       return res.status(200).json({
         message: "Historial de turnos",
         data: appointmentData,
+      });
+    } catch (err: any) {
+      const status = typeof err.status === "number" ? err.status : 500;
+      res
+        .status(status)
+        .json({ message: err.message ?? "Error interno", data: null });
+    }
+  }
+  static async getById(req: Request, res: Response) {
+    const id = req.params.id as string;
+
+    if (!id) {
+      return res.status(404).json({
+        message: "Turno inexistente",
+        data: null,
+      });
+    }
+
+    try {
+      const data = await AppointmentModel.getById(id);
+
+      if (!data) {
+        return res.status(404).json({
+          message: "Turno inexistente",
+          data: null,
+        });
+      }
+
+      return res.status(200).json({
+        message: "Turno encontrado",
+        data,
       });
     } catch (err: any) {
       const status = typeof err.status === "number" ? err.status : 500;

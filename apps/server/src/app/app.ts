@@ -7,6 +7,7 @@ import orderRouter from "@/routes/orders/route";
 import paymentMethodRouter from "@/routes/payment-methods/route";
 import productRouter from "@/routes/products/route";
 import serviceRouter from "@/routes/services/route";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { json } from "express";
 import helmet from "helmet";
@@ -21,6 +22,7 @@ app.use(
   }),
 );
 app.use(helmet());
+app.use(cookieParser());
 app.use(json());
 
 // ── Rutas ─────────────────────────────────────────────────────

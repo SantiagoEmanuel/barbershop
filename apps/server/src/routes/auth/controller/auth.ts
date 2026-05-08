@@ -128,7 +128,10 @@ export default class AuthController {
 
       return res.status(200).json({
         message: "Ok",
-        data: payload,
+        data: {
+          ...user,
+          password: "Is not for u",
+        },
       });
     } catch (err: any) {
       const status = err.status ?? 500;

@@ -50,7 +50,12 @@ export default class AuthModel {
       throw new AppError("No se pudo crear el usuario", 500);
     }
 
-    return newUser;
+    const dataSecured = {
+      ...newUser,
+      password: null,
+    };
+
+    return dataSecured;
   }
   static async update(data: AuthProps["update"]) {
     const [updateUser] = await db
