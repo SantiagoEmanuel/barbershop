@@ -40,3 +40,6 @@ dist-ssr
 # Design
 design.*
 *.design.*
+
+# Turbo
+*/cache
