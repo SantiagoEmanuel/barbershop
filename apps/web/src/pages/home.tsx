@@ -25,16 +25,15 @@ export default function Home() {
       {/* Hero */}
       <section className="relative flex min-h-[85dvh] flex-col justify-between overflow-hidden px-5 pt-10 pb-8 sm:px-10 sm:pt-16">
         {/* Tijera decorativa de fondo */}
-        <div
-          aria-hidden
-          className="text-marca/3 font-display pointer-events-none absolute top-1/2 right-0 z-0 -translate-y-1/2 leading-none select-none"
-          style={{ fontSize: "clamp(18rem, 50vw, 38rem)" }}
-        >
-          ✂
-        </div>
+
+        <img
+          src="scissors_icon.png"
+          alt="scissors icon bg"
+          className="text-marca/3 font-display [clamp(18rem, 50vw, 38rem)] pointer-events-none absolute top-1/2 right-0 z-0 -translate-y-1/2 rotate-90 leading-none opacity-30 select-none"
+        />
 
         {/* Línea decorativa superior */}
-        <div className="via-marca/40 absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent to-transparent" />
+        <div className="via-marca/40 absolute top-0 right-0 left-0 h-px bg-linear-to-r from-transparent to-transparent" />
 
         <div className="relative z-10 flex max-w-xl flex-col gap-6">
           <div className="flex items-center gap-3">
