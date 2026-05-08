@@ -7,10 +7,7 @@ export default function AdminLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div
-      className="flex min-h-dvh"
-      style={{ background: "var(--color-background)" }}
-    >
+    <div className="bg-background flex min-h-dvh">
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileHeader onOpenDrawer={() => setDrawerOpen(true)} />
         <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6 lg:p-8">
