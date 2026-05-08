@@ -1,28 +1,5 @@
 import { create } from "zustand";
-
-export interface Barber {
-  id: string;
-  name: string;
-  slug: string;
-  bio?: string;
-  experienceYears?: number;
-}
-
-export interface Service {
-  id: string;
-  name: string;
-  description?: string | null;
-  price: number;
-  durationMinutes: number;
-  key?: number;
-}
-
-export interface Slot {
-  startTime: string; // "HH:MM"
-  endTime: string; // "HH:MM"
-}
-
-export type BookingStep = 1 | 2 | 3 | 4 | 5;
+import type { BookingStep } from "../types";
 
 interface BookingState {
   isOpen: boolean;
