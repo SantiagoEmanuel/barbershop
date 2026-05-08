@@ -1,17 +1,7 @@
 import toast from "react-hot-toast";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  username: string;
-  role: "admin" | "client";
-  phone: string;
-  isActive: boolean;
-  createdAt: Date;
-};
+import type { User } from "../types";
 
 type AuthStore = {
   user: User | null;
