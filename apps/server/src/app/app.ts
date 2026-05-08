@@ -17,7 +17,11 @@ const app = express();
 // ── Middlewares globales ──────────────────────────────────────
 app.use(
   cors({
-    origin: ["http://localhost", "http://localhost:5173"],
+    origin: [
+      "http://localhost",
+      "http://localhost:5173",
+      "https://barbershop-8xkp.onrender.com/",
+    ],
     credentials: true,
   }),
 );
