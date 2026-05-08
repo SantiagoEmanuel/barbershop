@@ -55,7 +55,7 @@ export default function Home() {
           </h1>
 
           <p className="text-text-muted font-body max-w-sm text-base leading-relaxed">
-            Más de diez años dando forma al estilo de los hombres de Córdoba.
+            Más de diez años dando forma al estilo de los hombres de Quimilí.
             Sin vueltas, sin esperas, sin sorpresas.
           </p>
 
