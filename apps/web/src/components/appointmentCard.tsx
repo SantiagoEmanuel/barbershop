@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { put } from "../lib/api";
-import type { Appointment } from "../pages/profile";
+import type { Appointment } from "../types";
 import { StatusBadge } from "./statusBadge";
 import { formatARS, formatDate } from "./ui/formatters";
 
@@ -25,76 +25,33 @@ export function AppointmentCard({
   }
 
   return (
-    <div
-      className="card flex flex-col gap-3"
-      style={{ border: "1px solid var(--color-border-strong)" }}
-    >
+    <div className="card border-border-strong flex flex-col gap-3 border">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p
-            className="font-bold"
-            style={{
-              color: "var(--color-marca)",
-              fontFamily: "var(--font-display)",
-              fontSize: "1rem",
-            }}
-          >
+          <p className="text-marca font-display text-base font-bold">
             {a.service?.name}
           </p>
-          <p
-            className="mt-0.5 text-sm"
-            style={{
-              color: "var(--color-text-secondary)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <p className="text-text-secondary font-body mt-0.5 text-sm">
             {formatDate(a.date)} · {a.startTime}–{a.endTime}
           </p>
-          <p
-            className="mt-0.5 text-xs"
-            style={{
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <p className="text-text-muted font-body mt-0.5 text-xs">
             Con {a.barber?.name}
           </p>
         </div>
         <div className="shrink-0 text-right">
           <StatusBadge status={a.status} />
-          <p
-            className="mt-1 text-sm font-bold"
-            style={{
-              color: "var(--color-marca)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <p className="text-marca font-body mt-1 text-sm font-bold">
             {formatARS(a.priceSnapshot)}
           </p>
         </div>
       </div>
       {a.notes && (
-        <p
-          className="text-xs italic"
-          style={{
-            color: "var(--color-text-muted)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
-          "{a.notes}"
-        </p>
+        <p className="text-text-muted font-body text-xs italic">"{a.notes}"</p>
       )}
       <button
         onClick={handleCancel}
         disabled={cancelling}
-        className="self-start rounded-lg px-4 py-2 text-xs font-semibold transition-colors duration-150"
-        style={{
-          background: "rgba(224,128,128,0.08)",
-          color: "var(--color-error)",
-          border: "1px solid rgba(224,128,128,0.15)",
-          fontFamily: "var(--font-body)",
-          opacity: cancelling ? 0.5 : 1,
-        }}
+        className="bg-error/8 text-error border-error/15 font-body self-start rounded-lg border px-4 py-2 text-xs font-semibold transition-colors duration-150 disabled:opacity-50"
       >
         {cancelling ? "Cancelando..." : "Cancelar turno"}
       </button>

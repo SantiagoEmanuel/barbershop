@@ -5,34 +5,14 @@ import { formatARS, todayISO } from "../components/ui/formatters";
 import { SectionHeader } from "../components/ui/sectionHeader";
 import { Spinner } from "../components/ui/spinner";
 import { api, post } from "../lib/api";
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  description?: string | null;
-}
-interface Barber {
-  id: string;
-  name: string;
-  slug: string;
-}
-interface CartItem {
-  product: Product;
-  quantity: number;
-}
-interface SaleRecord {
-  id: string;
-  soldAt: string;
-  quantity: number;
-  priceSnapshot: number;
-  product: {
-    name: string;
-  };
-  barber: {
-    name: string;
-  };
-}
+import type {
+  ApiResponse,
+  Barber,
+  CartItem,
+  Product,
+  SaleRecord,
+} from "../types";
+
 export default function Ventas() {
   const [products, setProducts] = useState<Product[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -44,17 +24,12 @@ export default function Ventas() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   useEffect(() => {
     Promise.all([
-      api<{
-        data: Product[];
-      }>("product"),
-      api<{
-        data: Barber[];
-      }>("barber"),
-      api<{
-        data: SaleRecord[];
-      }>(`product-sales?date=${todayISO()}`),
+      api<ApiResponse<Product[]>>("product"),
+      api<ApiResponse<Barber[]>>("barber"),
+      api<ApiResponse<SaleRecord[]>>(`product-sales?date=${todayISO()}`),
     ])
       .then(([prodRes, barberRes, salesRes]) => {
         setProducts(prodRes?.data ?? []);
@@ -64,28 +39,21 @@ export default function Ventas() {
       })
       .finally(() => setLoading(false));
   }, []);
+
   function addToCart(product: Product) {
     setCart((prev) => {
       const exists = prev.find((i) => i.product.id === product.id);
       if (exists) {
         return prev.map((i) =>
           i.product.id === product.id
-            ? {
-                ...i,
-                quantity: Math.min(i.quantity + 1, product.stock),
-              }
+            ? { ...i, quantity: Math.min(i.quantity + 1, product.stock) }
             : i,
         );
       }
-      return [
-        ...prev,
-        {
-          product,
-          quantity: 1,
-        },
-      ];
+      return [...prev, { product, quantity: 1 }];
     });
   }
+
   function updateQty(productId: string, qty: number) {
     if (qty <= 0) {
       setCart((prev) => prev.filter((i) => i.product.id !== productId));
@@ -93,20 +61,17 @@ export default function Ventas() {
     }
     setCart((prev) =>
       prev.map((i) =>
-        i.product.id === productId
-          ? {
-              ...i,
-              quantity: qty,
-            }
-          : i,
+        i.product.id === productId ? { ...i, quantity: qty } : i,
       ),
     );
   }
+
   const total = cart.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
   const dailyTotal = sales.reduce(
     (acc, s) => acc + s.priceSnapshot * s.quantity,
     0,
   );
+
   async function handleSell() {
     if (cart.length === 0 || !selectedBarber) return;
     setSubmitting(true);
@@ -126,16 +91,13 @@ export default function Ventas() {
       setProducts((prev) =>
         prev.map((p) => {
           const inCart = cart.find((i) => i.product.id === p.id);
-          return inCart
-            ? {
-                ...p,
-                stock: p.stock - inCart.quantity,
-              }
-            : p;
+          return inCart ? { ...p, stock: p.stock - inCart.quantity } : p;
         }),
       );
       setSuccess(
-        `Venta registrada: ${formatARS(total)} · ${cart.length} producto${cart.length > 1 ? "s" : ""}`,
+        `Venta registrada: ${formatARS(total)} · ${cart.length} producto${
+          cart.length > 1 ? "s" : ""
+        }`,
       );
       setCart([]);
     } catch (err: unknown) {
@@ -146,9 +108,11 @@ export default function Ventas() {
       setSubmitting(false);
     }
   }
+
   const filteredProducts = products.filter(
     (p) => p.name.toLowerCase().includes(search.toLowerCase()) && p.stock > 0,
   );
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -156,6 +120,7 @@ export default function Ventas() {
       </div>
     );
   }
+
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
@@ -164,7 +129,6 @@ export default function Ventas() {
         description="Registrá ventas de productos en mostrador."
       />
 
-      {}
       <div className="grid grid-cols-2 gap-3">
         <StatCard label="Ventas hoy" value={sales.length} icon="🛒" />
         <StatCard
@@ -176,39 +140,20 @@ export default function Ventas() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {}
+        {/* Productos */}
         <div className="flex flex-col gap-4">
-          <p
-            className="text-xs font-bold tracking-widest uppercase"
-            style={{
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
             Seleccioná productos
           </p>
 
-          {}
           <div>
-            <label
-              className="mb-1.5 block text-xs font-semibold tracking-wide uppercase"
-              style={{
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <label className="text-text-muted font-body mb-1.5 block text-xs font-semibold tracking-wide uppercase">
               Barbero que vende *
             </label>
             <select
               value={selectedBarber}
               onChange={(e) => setSelectedBarber(e.target.value)}
-              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-              style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-border)",
-                color: "var(--color-text-primary)",
-                fontFamily: "var(--font-body)",
-              }}
+              className="bg-surface border-border text-text-primary font-body w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
             >
               {barbers.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -218,28 +163,14 @@ export default function Ventas() {
             </select>
           </div>
 
-          {}
           <input
             type="text"
             placeholder="Buscar producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-            style={{
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              color: "var(--color-text-primary)",
-              fontFamily: "var(--font-body)",
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = "var(--color-border-strong)";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "var(--color-border)";
-            }}
+            className="bg-surface border-border focus:border-border-strong text-text-primary font-body w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
           />
 
-          {}
           {filteredProducts.length === 0 ? (
             <EmptyState
               icon="📦"
@@ -254,54 +185,27 @@ export default function Ventas() {
                   <button
                     key={p.id}
                     onClick={() => addToCart(p)}
-                    className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-all duration-150"
-                    style={{
-                      background: inCart
-                        ? "rgba(248,223,176,0.08)"
-                        : "var(--color-surface)",
-                      border: `1px solid ${inCart ? "var(--color-border-strong)" : "var(--color-border)"}`,
-                    }}
+                    className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150 ${
+                      inCart
+                        ? "bg-marca/8 border-border-strong"
+                        : "bg-surface border-border"
+                    }`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p
-                        className="truncate text-sm font-semibold"
-                        style={{
-                          color: "var(--color-text-primary)",
-                          fontFamily: "var(--font-body)",
-                        }}
-                      >
+                      <p className="text-text-primary font-body truncate text-sm font-semibold">
                         {p.name}
                       </p>
-                      <p
-                        className="mt-0.5 text-xs"
-                        style={{
-                          color: "var(--color-text-muted)",
-                          fontFamily: "var(--font-body)",
-                        }}
-                      >
+                      <p className="text-text-muted font-body mt-0.5 text-xs">
                         Stock: {p.stock}
                         {inCart ? ` · En carrito: ${inCart.quantity}` : ""}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p
-                        className="text-sm font-bold"
-                        style={{
-                          color: "var(--color-marca)",
-                          fontFamily: "var(--font-body)",
-                        }}
-                      >
+                      <p className="text-marca font-body text-sm font-bold">
                         {formatARS(p.price)}
                       </p>
                       {inCart && (
-                        <span
-                          className="text-xs"
-                          style={{
-                            color: "var(--color-success)",
-                          }}
-                        >
-                          ✓ Agregado
-                        </span>
+                        <span className="text-success text-xs">✓ Agregado</span>
                       )}
                     </div>
                   </button>
@@ -311,33 +215,15 @@ export default function Ventas() {
           )}
         </div>
 
-        {}
+        {/* Carrito */}
         <div className="flex flex-col gap-4">
-          <p
-            className="text-xs font-bold tracking-widest uppercase"
-            style={{
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
             Carrito
           </p>
 
           {cart.length === 0 ? (
-            <div
-              className="flex flex-1 items-center justify-center rounded-xl py-12"
-              style={{
-                background: "var(--color-surface)",
-                border: "1px dashed var(--color-border)",
-              }}
-            >
-              <p
-                className="text-sm"
-                style={{
-                  color: "var(--color-text-muted)",
-                  fontFamily: "var(--font-body)",
-                }}
-              >
+            <div className="bg-surface border-border flex flex-1 items-center justify-center rounded-xl border border-dashed py-12">
+              <p className="text-text-muted font-body text-sm">
                 Seleccioná productos de la izquierda
               </p>
             </div>
@@ -346,55 +232,27 @@ export default function Ventas() {
               {cart.map((item) => (
                 <div
                   key={item.product.id}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3"
-                  style={{
-                    background: "var(--color-surface)",
-                    border: "1px solid var(--color-border)",
-                  }}
+                  className="bg-surface border-border flex items-center gap-3 rounded-xl border px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p
-                      className="truncate text-sm font-semibold"
-                      style={{
-                        color: "var(--color-text-primary)",
-                        fontFamily: "var(--font-body)",
-                      }}
-                    >
+                    <p className="text-text-primary font-body truncate text-sm font-semibold">
                       {item.product.name}
                     </p>
-                    <p
-                      className="text-xs"
-                      style={{
-                        color: "var(--color-text-muted)",
-                        fontFamily: "var(--font-body)",
-                      }}
-                    >
+                    <p className="text-text-muted font-body text-xs">
                       {formatARS(item.product.price)} c/u
                     </p>
                   </div>
 
-                  {}
                   <div className="flex shrink-0 items-center gap-2">
                     <button
                       onClick={() =>
                         updateQty(item.product.id, item.quantity - 1)
                       }
-                      className="flex size-7 items-center justify-center rounded-lg text-sm font-bold transition-colors duration-150"
-                      style={{
-                        background: "rgba(0,0,0,0.3)",
-                        color: "var(--color-text-secondary)",
-                        border: "1px solid var(--color-border)",
-                      }}
+                      className="text-text-secondary border-border flex size-7 items-center justify-center rounded-lg border bg-black/30 text-sm font-bold transition-colors duration-150"
                     >
                       −
                     </button>
-                    <span
-                      className="w-5 text-center text-sm font-bold"
-                      style={{
-                        color: "var(--color-text-primary)",
-                        fontFamily: "var(--font-body)",
-                      }}
-                    >
+                    <span className="text-text-primary font-body w-5 text-center text-sm font-bold">
                       {item.quantity}
                     </span>
                     <button
@@ -402,92 +260,41 @@ export default function Ventas() {
                         updateQty(item.product.id, item.quantity + 1)
                       }
                       disabled={item.quantity >= item.product.stock}
-                      className="flex size-7 items-center justify-center rounded-lg text-sm font-bold transition-colors duration-150"
-                      style={{
-                        background: "rgba(0,0,0,0.3)",
-                        color: "var(--color-text-secondary)",
-                        border: "1px solid var(--color-border)",
-                        opacity: item.quantity >= item.product.stock ? 0.4 : 1,
-                      }}
+                      className="text-text-secondary border-border flex size-7 items-center justify-center rounded-lg border bg-black/30 text-sm font-bold transition-colors duration-150 disabled:opacity-40"
                     >
                       +
                     </button>
                   </div>
 
-                  <span
-                    className="w-16 shrink-0 text-right text-sm font-bold"
-                    style={{
-                      color: "var(--color-marca)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
+                  <span className="text-marca font-body w-16 shrink-0 text-right text-sm font-bold">
                     {formatARS(item.product.price * item.quantity)}
                   </span>
 
                   <button
                     onClick={() => updateQty(item.product.id, 0)}
-                    className="text-sm transition-colors duration-150"
-                    style={{
-                      color: "var(--color-error)",
-                    }}
+                    className="text-error text-sm transition-colors duration-150"
                   >
                     ✕
                   </button>
                 </div>
               ))}
 
-              {}
-              <div
-                className="mt-1 flex items-center justify-between rounded-xl px-4 py-3"
-                style={{
-                  background: "rgba(248,223,176,0.06)",
-                  border: "1px solid var(--color-border-strong)",
-                }}
-              >
-                <span
-                  className="text-sm font-bold"
-                  style={{
-                    color: "var(--color-text-primary)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
+              <div className="bg-marca/6 border-border-strong mt-1 flex items-center justify-between rounded-xl border px-4 py-3">
+                <span className="text-text-primary font-body text-sm font-bold">
                   Total
                 </span>
-                <span
-                  className="text-lg font-bold"
-                  style={{
-                    color: "var(--color-marca)",
-                    fontFamily: "var(--font-display)",
-                  }}
-                >
+                <span className="text-marca font-display text-lg font-bold">
                   {formatARS(total)}
                 </span>
               </div>
 
-              {}
               {error && (
-                <div
-                  className="rounded-xl px-3 py-2.5 text-sm"
-                  style={{
-                    background: "rgba(220,100,100,0.1)",
-                    border: "1px solid var(--color-border-error)",
-                    color: "var(--color-error)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
+                <div className="bg-error/10 border-border-error text-error font-body rounded-xl border px-3 py-2.5 text-sm">
                   {error}
                 </div>
               )}
               {success && (
-                <div
-                  className="rounded-xl px-3 py-2.5 text-sm"
-                  style={{
-                    background: "rgba(134,197,134,0.1)",
-                    border: "1px solid rgba(134,197,134,0.3)",
-                    color: "var(--color-success)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
+                <div className="bg-success/10 border-success/30 text-success font-body rounded-xl border px-3 py-2.5 text-sm">
                   ✓ {success}
                 </div>
               )}
@@ -495,10 +302,7 @@ export default function Ventas() {
               <button
                 onClick={handleSell}
                 disabled={submitting || !selectedBarber}
-                className="btn-marca mt-1 flex w-full items-center justify-center gap-2 rounded-xl py-3.5"
-                style={{
-                  opacity: submitting ? 0.7 : 1,
-                }}
+                className="btn-marca mt-1 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 disabled:opacity-70"
               >
                 {submitting ? (
                   <Spinner size={16} />
@@ -511,55 +315,26 @@ export default function Ventas() {
         </div>
       </div>
 
-      {}
       {sales.length > 0 && (
         <div className="flex flex-col gap-3">
-          <p
-            className="text-xs font-bold tracking-widest uppercase"
-            style={{
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
             Ventas registradas hoy
           </p>
           <div className="flex flex-col gap-2">
             {sales.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center gap-3 rounded-xl px-4 py-3"
-                style={{
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-border)",
-                }}
+                className="bg-surface border-border flex items-center gap-3 rounded-xl border px-4 py-3"
               >
                 <div className="min-w-0 flex-1">
-                  <p
-                    className="text-sm font-semibold"
-                    style={{
-                      color: "var(--color-text-primary)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
+                  <p className="text-text-primary font-body text-sm font-semibold">
                     {s.product?.name}
                   </p>
-                  <p
-                    className="text-xs"
-                    style={{
-                      color: "var(--color-text-muted)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
+                  <p className="text-text-muted font-body text-xs">
                     ×{s.quantity} · {s.barber?.name}
                   </p>
                 </div>
-                <span
-                  className="text-sm font-bold"
-                  style={{
-                    color: "var(--color-marca)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
+                <span className="text-marca font-body text-sm font-bold">
                   {formatARS(s.priceSnapshot * s.quantity)}
                 </span>
               </div>

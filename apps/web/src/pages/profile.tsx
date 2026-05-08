@@ -11,98 +11,59 @@ import { Spinner } from "../components/ui/spinner";
 import { api } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { useBookingStore } from "../store/useBookingStore";
-export interface Appointment {
-  id: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
-  priceSnapshot: number;
-  notes?: string;
-  service: {
-    name: string;
-  };
-  barber: {
-    name: string;
-  };
-}
+import type { ApiResponse, Appointment } from "../types";
+
 export default function Perfil() {
   const { user, logout } = useAuthStore();
   const openBooking = useBookingStore((s) => s.openModal);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  if (!user) return <Navigate to="/" replace />;
+
+  // Hooks ANTES del early return — no violar las reglas de hooks.
   useEffect(() => {
-    api<{
-      data: Appointment[];
-    }>("appointments/my")
+    if (!user) return;
+    api<ApiResponse<Appointment[]>>("appointments/my")
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
+
+  if (!user) return <Navigate to="/" replace />;
+
   const upcoming = appointments.filter((a) =>
     ["pending", "confirmed"].includes(a.status),
   );
   const history = appointments.filter((a) =>
     ["completed", "cancelled", "no_show"].includes(a.status),
   );
+
   return (
     <>
       <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-8 sm:px-6">
-        {}
-        <div
-          className="card flex items-center gap-4"
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border-strong)",
-          }}
-        >
+        {/* Header de perfil */}
+        <div className="card bg-surface border-border-strong flex items-center gap-4 border">
           <UserAvatar name={user.name} size="lg" />
           <div className="min-w-0 flex-1">
-            <p
-              className="text-lg font-bold"
-              style={{
-                fontFamily: "var(--font-display)",
-                color: "var(--color-text-primary)",
-              }}
-            >
+            <p className="font-display text-text-primary text-lg font-bold">
               {user.name}
             </p>
-            <p
-              className="text-sm"
-              style={{
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <p className="text-text-muted font-body text-sm">
               @{user.username} · {user.email}
             </p>
             {user.phone && (
-              <p
-                className="mt-0.5 text-xs"
-                style={{
-                  color: "var(--color-text-muted)",
-                  fontFamily: "var(--font-body)",
-                }}
-              >
+              <p className="text-text-muted font-body mt-0.5 text-xs">
                 {user.phone}
               </p>
             )}
           </div>
           <button
             onClick={logout}
-            className="shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors duration-150"
-            style={{
-              background: "rgba(224,128,128,0.08)",
-              color: "var(--color-error)",
-              border: "1px solid rgba(224,128,128,0.15)",
-              fontFamily: "var(--font-body)",
-            }}
+            className="bg-error/8 text-error border-error/15 font-body shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors duration-150"
           >
             Salir
           </button>
         </div>
 
-        {}
+        {/* Próximos turnos */}
         <div>
           <SectionHeader
             eyebrow="Mis turnos"
@@ -143,12 +104,7 @@ export default function Perfil() {
                   onCancel={(id) =>
                     setAppointments((prev) =>
                       prev.map((x) =>
-                        x.id === id
-                          ? {
-                              ...x,
-                              status: "cancelled",
-                            }
-                          : x,
+                        x.id === id ? { ...x, status: "cancelled" } : x,
                       ),
                     )
                   }
@@ -158,7 +114,7 @@ export default function Perfil() {
           )}
         </div>
 
-        {}
+        {/* Historial */}
         {history.length > 0 && (
           <div>
             <SectionHeader
@@ -169,42 +125,21 @@ export default function Perfil() {
               {history.slice(0, 8).map((a) => (
                 <div
                   key={a.id}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3"
-                  style={{
-                    background: "var(--color-surface)",
-                    border: "1px solid var(--color-border)",
-                    opacity: a.status === "cancelled" ? 0.55 : 1,
-                  }}
+                  className={`bg-surface border-border flex items-center gap-3 rounded-xl border px-4 py-3 ${
+                    a.status === "cancelled" ? "opacity-55" : ""
+                  }`}
                 >
                   <div className="min-w-0 flex-1">
-                    <p
-                      className="text-sm font-semibold"
-                      style={{
-                        color: "var(--color-text-primary)",
-                        fontFamily: "var(--font-body)",
-                      }}
-                    >
+                    <p className="text-text-primary font-body text-sm font-semibold">
                       {a.service?.name}
                     </p>
-                    <p
-                      className="text-xs"
-                      style={{
-                        color: "var(--color-text-muted)",
-                        fontFamily: "var(--font-body)",
-                      }}
-                    >
+                    <p className="text-text-muted font-body text-xs">
                       {formatDate(a.date)} · {a.startTime} · {a.barber?.name}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <StatusBadge status={a.status} />
-                    <span
-                      className="text-sm font-bold"
-                      style={{
-                        color: "var(--color-marca)",
-                        fontFamily: "var(--font-body)",
-                      }}
-                    >
+                    <span className="text-marca font-body text-sm font-bold">
                       {formatARS(a.priceSnapshot)}
                     </span>
                   </div>

@@ -20,26 +20,16 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthModalContext.Provider value={{ openAuth, closeAuth }}>
-      <div
-        className="flex min-h-dvh flex-col"
-        style={{
-          background: "#272630",
-          color: "#EFEEDE",
-          fontFamily: "'Nunito', sans-serif",
-        }}
-      >
-        {/* Navbar */}
+      <div className="bg-background text-text-primary font-body flex min-h-dvh flex-col">
         <Navbar onOpenAuth={openAuth} />
 
-        {/* Page content — padding-top compensa la navbar fixed */}
+        {/* padding-top compensa la navbar fixed */}
         <main className="flex-1 pt-14 sm:pt-16">{children}</main>
 
-        {/* Footer */}
         <Footer />
       </div>
       <Toaster />
 
-      {/* Auth modal — fuera del flow para el overlay */}
       <AuthModal open={authOpen} onClose={closeAuth} defaultTab={authTab} />
     </AuthModalContext.Provider>
   );

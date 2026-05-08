@@ -1,24 +1,28 @@
 import { useEffect, useState } from "react";
 import { api, post } from "../lib/api";
-import {
-  useBookingStore,
-  type Barber,
-  type Service,
-  type Slot,
-} from "../store/useBookingStore";
+import { useBookingStore } from "../store/useBookingStore";
+import type { ApiResponse, Barber, Service, Slot } from "../types";
 import { ModalBase } from "./modalBase";
 import { Field } from "./ui/field";
 import { formatARS, todayISO } from "./ui/formatters";
 import { Spinner } from "./ui/spinner";
+
+// ── Helpers de tiempo ─────────────────────────────────────────
 function toMin(time: string): number {
   const [h, m] = time.split(":").map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 }
+
 function toTime(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
+
+/**
+ * Filtra slots crudos a slots válidos donde "cabe" un servicio de `duration` min.
+ * Asume que los slots crudos vienen en steps regulares (típico: 10 min).
+ */
 function filterValidSlots(slots: Slot[], duration: number): Slot[] {
   if (slots.length === 0) return [];
   const effectiveDuration = Math.max(duration, 30);
@@ -49,194 +53,132 @@ function filterValidSlots(slots: Slot[], duration: number): Slot[] {
   }
   return valid;
 }
+
+// ── Indicador de pasos ────────────────────────────────────────
 function StepDots({ current, total }: { current: number; total: number }) {
   return (
     <div className="flex items-center gap-1.5">
-      {Array.from({
-        length: total,
-      }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-full transition-all duration-300"
-          style={{
-            width: current > i ? 24 : 8,
-            height: 4,
-            background:
-              current > i
-                ? "var(--color-marca)"
-                : current === i
-                  ? "rgba(248,223,176,0.5)"
-                  : "rgba(248,223,176,0.15)",
-          }}
-        />
-      ))}
+      {Array.from({ length: total }).map((_, i) => {
+        const state =
+          current > i ? "done" : current === i ? "current" : "pending";
+        const stateClass =
+          state === "done"
+            ? "w-6 bg-marca"
+            : state === "current"
+              ? "w-2 bg-marca/50"
+              : "w-2 bg-marca/15";
+        return (
+          <div
+            key={i}
+            className={`h-1 rounded-full transition-all duration-300 ${stateClass}`}
+          />
+        );
+      })}
     </div>
   );
 }
+
+// ── Step 1: barbero ───────────────────────────────────────────
 function StepBarber({ onNext }: { onNext: () => void }) {
   const { barberId, setBarber } = useBookingStore();
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    api<{
-      data: Barber[];
-    }>("barber").then((r) => {
+    api<ApiResponse<Barber[]>>("barber").then((r) => {
       setBarbers(r?.data ?? []);
       setLoading(false);
     });
   }, []);
+
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p
-          className="mb-1 text-xs tracking-[0.15em] uppercase"
-          style={{
-            color: "var(--color-marca)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <p className="text-marca font-body mb-1 text-xs tracking-[0.15em] uppercase">
           Paso 1 de 4
         </p>
-        <h3
-          className="text-xl font-bold"
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-text-primary)",
-          }}
-        >
+        <h3 className="font-display text-text-primary text-xl font-bold">
           ¿Con quién te cortás?
         </h3>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-8">
-          <Spinner
-            size={24}
-            style={{
-              color: "var(--color-marca)",
-            }}
-          />
+          <Spinner size={24} />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-2.5">
-          {barbers.map((b) => (
-            <button
-              key={b.id}
-              onClick={() => {
-                setBarber(b.id, b.name);
-                onNext();
-              }}
-              className="flex items-center gap-3.5 rounded-xl p-3.5 text-left transition-all duration-150"
-              style={{
-                background:
-                  barberId === b.id
-                    ? "rgba(248,223,176,0.1)"
-                    : "rgba(0,0,0,0.2)",
-                border: `1px solid ${barberId === b.id ? "var(--color-border-strong)" : "var(--color-border)"}`,
-              }}
-            >
-              <div
-                className="flex size-11 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                style={{
-                  background: "rgba(248,223,176,0.12)",
-                  color: "var(--color-marca)",
-                  border: "1px solid rgba(248,223,176,0.2)",
+          {barbers.map((b) => {
+            const selected = barberId === b.id;
+            return (
+              <button
+                key={b.id}
+                onClick={() => {
+                  setBarber(b.id, b.name);
+                  onNext();
                 }}
+                className={`flex items-center gap-3.5 rounded-xl border p-3.5 text-left transition-all duration-150 ${
+                  selected
+                    ? "bg-marca/10 border-border-strong"
+                    : "border-border bg-black/20"
+                }`}
               >
-                {b.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p
-                  className="text-sm font-semibold"
-                  style={{
-                    color: "var(--color-text-primary)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
-                  {b.name}
-                </p>
-                {b.experienceYears != null && (
-                  <p
-                    className="mt-0.5 text-xs"
-                    style={{
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
-                    {b.experienceYears} años de experiencia
+                <div className="bg-marca/12 text-marca border-marca/20 flex size-11 shrink-0 items-center justify-center rounded-full border text-sm font-bold">
+                  {b.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-text-primary font-body text-sm font-semibold">
+                    {b.name}
                   </p>
-                )}
-                {b.bio && (
-                  <p
-                    className="mt-0.5 truncate text-xs"
-                    style={{
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
-                    {b.bio}
-                  </p>
-                )}
-              </div>
-              {barberId === b.id && (
-                <span
-                  style={{
-                    color: "var(--color-marca)",
-                  }}
-                >
-                  ✓
-                </span>
-              )}
-            </button>
-          ))}
+                  {b.experienceYears != null && (
+                    <p className="text-text-muted mt-0.5 text-xs">
+                      {b.experienceYears} años de experiencia
+                    </p>
+                  )}
+                  {b.bio && (
+                    <p className="text-text-muted mt-0.5 truncate text-xs">
+                      {b.bio}
+                    </p>
+                  )}
+                </div>
+                {selected && <span className="text-marca">✓</span>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
+
+// ── Step 2: servicio ──────────────────────────────────────────
 function StepService({ onNext }: { onNext: () => void }) {
   const { serviceId, setService } = useBookingStore();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    api<{
-      data: Service[];
-    }>("service").then((r) => {
+    api<ApiResponse<Service[]>>("service").then((r) => {
       setServices(r?.data ?? []);
       setLoading(false);
     });
   }, []);
+
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p
-          className="mb-1 text-xs tracking-[0.15em] uppercase"
-          style={{
-            color: "var(--color-marca)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <p className="text-marca font-body mb-1 text-xs tracking-[0.15em] uppercase">
           Paso 2 de 4
         </p>
-        <h3
-          className="text-xl font-bold"
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-text-primary)",
-          }}
-        >
+        <h3 className="font-display text-text-primary text-xl font-bold">
           ¿Qué vas a hacer hoy?
         </h3>
-        <p
-          className="mt-1 text-xs"
-          style={{
-            color: "var(--color-text-muted)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <p className="text-text-muted font-body mt-1 text-xs">
           El horario disponible se adapta a la duración del servicio.
         </p>
       </div>
@@ -247,131 +189,91 @@ function StepService({ onNext }: { onNext: () => void }) {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {services.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => {
-                setService(s.id, s.name, s.price, s.durationMinutes);
-                onNext();
-              }}
-              className="flex items-center justify-between gap-3 rounded-xl p-3.5 text-left transition-all duration-150"
-              style={{
-                background:
-                  serviceId === s.id
-                    ? "rgba(248,223,176,0.1)"
-                    : "rgba(0,0,0,0.2)",
-                border: `1px solid ${serviceId === s.id ? "var(--color-border-strong)" : "var(--color-border)"}`,
-              }}
-            >
-              <div className="min-w-0 flex-1">
-                <p
-                  className="text-sm font-semibold"
-                  style={{
-                    color: "var(--color-text-primary)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
-                  {s.name}
-                </p>
-                {s.description && (
-                  <p
-                    className="mt-0.5 truncate text-xs"
-                    style={{
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
-                    {s.description}
+          {services.map((s) => {
+            const selected = serviceId === s.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => {
+                  setService(s.id, s.name, s.price, s.durationMinutes);
+                  onNext();
+                }}
+                className={`flex items-center justify-between gap-3 rounded-xl border p-3.5 text-left transition-all duration-150 ${
+                  selected
+                    ? "bg-marca/10 border-border-strong"
+                    : "border-border bg-black/20"
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-text-primary font-body text-sm font-semibold">
+                    {s.name}
                   </p>
-                )}
-              </div>
-              <div className="shrink-0 text-right">
-                <p
-                  className="text-sm font-bold"
-                  style={{
-                    color: "var(--color-marca)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
-                  {formatARS(s.price)}
-                </p>
-                <p
-                  className="text-xs"
-                  style={{
-                    color: "var(--color-text-muted)",
-                  }}
-                >
-                  {s.durationMinutes} min
-                </p>
-              </div>
-            </button>
-          ))}
+                  {s.description && (
+                    <p className="text-text-muted mt-0.5 truncate text-xs">
+                      {s.description}
+                    </p>
+                  )}
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-marca font-body text-sm font-bold">
+                    {formatARS(s.price)}
+                  </p>
+                  <p className="text-text-muted text-xs">
+                    {s.durationMinutes} min
+                  </p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
+
+// ── Step 3: fecha + slot ──────────────────────────────────────
 function StepDateTime({ onNext }: { onNext: () => void }) {
   const { barberId, serviceDuration, date, startTime, setDate, setSlot } =
     useBookingStore();
   const [rawSlots, setRawSlots] = useState<Slot[]>([]);
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const getSlots = () => {
+
+  useEffect(() => {
+    if (!date || !barberId) return;
     setLoadingSlots(true);
     setSlot("");
-    api<{
-      data: {
-        slots: Slot[];
-      };
-    }>(`availability?barberId=${barberId}&date=${date}`)
+    api<ApiResponse<{ slots: Slot[] }>>(
+      `availability?barberId=${barberId}&date=${date}`,
+    )
       .then((r) => {
         const slots = r?.data?.slots ?? [];
         setRawSlots(slots);
         setValidSlots(filterValidSlots(slots, serviceDuration));
       })
       .finally(() => setLoadingSlots(false));
-  };
-  useEffect(() => {
-    if (!date || !barberId) return;
-    getSlots();
+     
   }, [date, barberId]);
+
   useEffect(() => {
     if (rawSlots.length > 0) {
       setValidSlots(filterValidSlots(rawSlots, serviceDuration));
     }
-  }, [serviceDuration]);
+  }, [serviceDuration, rawSlots]);
+
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p
-          className="mb-1 text-xs tracking-[0.15em] uppercase"
-          style={{
-            color: "var(--color-marca)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <p className="text-marca font-body mb-1 text-xs tracking-[0.15em] uppercase">
           Paso 3 de 4
         </p>
-        <h3
-          className="text-xl font-bold"
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-text-primary)",
-          }}
-        >
+        <h3 className="font-display text-text-primary text-xl font-bold">
           ¿Cuándo venís?
         </h3>
       </div>
 
-      {}
       <div>
-        <label
-          className="mb-2 block text-xs font-semibold tracking-wide uppercase"
-          style={{
-            color: "var(--color-text-muted)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <label className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
           Fecha
         </label>
         <input
@@ -379,33 +281,13 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
           min={todayISO()}
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full rounded-xl px-4 py-3 text-sm transition-all duration-200 outline-none"
-          style={{
-            background: "rgba(0,0,0,0.25)",
-            border: "1px solid var(--color-border)",
-            color: "var(--color-text-primary)",
-            fontFamily: "var(--font-body)",
-            colorScheme: "dark",
-          }}
-          onFocus={(e) => {
-            e.target.style.borderColor = "var(--color-border-strong)";
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = "var(--color-border)";
-          }}
+          className="border-border focus:border-border-strong text-text-primary font-body w-full rounded-xl border bg-black/25 px-4 py-3 text-sm [color-scheme:dark] transition-all duration-200 outline-none"
         />
       </div>
 
-      {}
       {date && (
         <div>
-          <label
-            className="mb-2 block text-xs font-semibold tracking-wide uppercase"
-            style={{
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <label className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
             Horario disponible
           </label>
 
@@ -414,52 +296,33 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
               <Spinner size={20} />
             </div>
           ) : validSlots.length === 0 ? (
-            <div
-              className="rounded-xl px-4 py-5 text-center text-sm"
-              style={{
-                background: "rgba(0,0,0,0.2)",
-                border: "1px solid var(--color-border)",
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <div className="border-border text-text-muted font-body rounded-xl border bg-black/20 px-4 py-5 text-center text-sm">
               No hay turnos disponibles para ese día. Probá con otra fecha.
             </div>
           ) : (
             <>
               <div className="grid grid-cols-3 gap-2">
-                {validSlots.map((s) => (
-                  <button
-                    key={s.startTime}
-                    onClick={() => {
-                      setSlot(s.startTime);
-                      onNext();
-                    }}
-                    className="rounded-xl py-2.5 text-sm font-semibold transition-all duration-150"
-                    style={{
-                      background:
-                        startTime === s.startTime
-                          ? "rgba(248,223,176,0.15)"
-                          : "rgba(0,0,0,0.2)",
-                      border: `1px solid ${startTime === s.startTime ? "var(--color-border-strong)" : "var(--color-border)"}`,
-                      color:
-                        startTime === s.startTime
-                          ? "var(--color-marca)"
-                          : "var(--color-text-secondary)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
-                    {s.startTime}
-                  </button>
-                ))}
+                {validSlots.map((s) => {
+                  const selected = startTime === s.startTime;
+                  return (
+                    <button
+                      key={s.startTime}
+                      onClick={() => {
+                        setSlot(s.startTime);
+                        onNext();
+                      }}
+                      className={`font-body rounded-xl border py-2.5 text-sm font-semibold transition-all duration-150 ${
+                        selected
+                          ? "bg-marca/15 border-border-strong text-marca"
+                          : "border-border text-text-secondary bg-black/20"
+                      }`}
+                    >
+                      {s.startTime}
+                    </button>
+                  );
+                })}
               </div>
-              <p
-                className="mt-2 text-center text-xs"
-                style={{
-                  color: "var(--color-text-muted)",
-                  fontFamily: "var(--font-body)",
-                }}
-              >
+              <p className="text-text-muted font-body mt-2 text-center text-xs">
                 Mostrando turnos donde cabe tu servicio de{" "}
                 {Math.max(serviceDuration, 30)} min.
               </p>
@@ -470,45 +333,31 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
     </div>
   );
 }
+
+// ── Step 4: datos cliente ─────────────────────────────────────
 function StepClient({ onNext }: { onNext: () => void }) {
   const { clientName, clientPhone, notes, setClient } = useBookingStore();
   const [name, setName] = useState(clientName);
   const [phone, setPhone] = useState(clientPhone);
   const [note, setNote] = useState(notes);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) return;
     setClient(name.trim(), phone.trim(), note.trim());
     onNext();
   }
+
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p
-          className="mb-1 text-xs tracking-[0.15em] uppercase"
-          style={{
-            color: "var(--color-marca)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <p className="text-marca font-body mb-1 text-xs tracking-[0.15em] uppercase">
           Paso 4 de 4
         </p>
-        <h3
-          className="text-xl font-bold"
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-text-primary)",
-          }}
-        >
+        <h3 className="font-display text-text-primary text-xl font-bold">
           Tus datos
         </h3>
-        <p
-          className="mt-1 text-xs"
-          style={{
-            color: "var(--color-text-muted)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <p className="text-text-muted font-body mt-1 text-xs">
           Solo para avisarte si hay algún cambio. Nada más.
         </p>
       </div>
@@ -530,13 +379,7 @@ function StepClient({ onNext }: { onNext: () => void }) {
           required
         />
         <div>
-          <label
-            className="mb-1.5 block text-xs font-semibold tracking-wide uppercase"
-            style={{
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <label className="text-text-muted font-body mb-1.5 block text-xs font-semibold tracking-wide uppercase">
             Algo que quieras aclarar
           </label>
           <textarea
@@ -544,19 +387,7 @@ function StepClient({ onNext }: { onNext: () => void }) {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}
-            className="w-full resize-none rounded-xl px-4 py-3 text-sm transition-all duration-200 outline-none"
-            style={{
-              background: "rgba(0,0,0,0.25)",
-              border: "1px solid var(--color-border)",
-              color: "var(--color-text-primary)",
-              fontFamily: "var(--font-body)",
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = "var(--color-border-strong)";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "var(--color-border)";
-            }}
+            className="border-border focus:border-border-strong text-text-primary font-body w-full resize-none rounded-xl border bg-black/25 px-4 py-3 text-sm transition-all duration-200 outline-none"
           />
         </div>
         <button
@@ -569,11 +400,14 @@ function StepClient({ onNext }: { onNext: () => void }) {
     </div>
   );
 }
+
+// ── Step 5: confirmar ─────────────────────────────────────────
 function StepConfirm({ onClose }: { onClose: () => void }) {
   const store = useBookingStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
   async function handleConfirm() {
     setLoading(true);
     setError("");
@@ -595,61 +429,22 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
       setLoading(false);
     }
   }
+
   if (success) {
     return (
       <div className="flex flex-col items-center gap-4 py-4 text-center">
-        <div
-          className="flex size-16 items-center justify-center rounded-full text-2xl"
-          style={{
-            background: "rgba(134,197,134,0.12)",
-            border: "1px solid rgba(134,197,134,0.3)",
-            color: "var(--color-success)",
-          }}
-        >
+        <div className="bg-success/12 border-success/30 text-success flex size-16 items-center justify-center rounded-full border text-2xl">
           ✓
         </div>
         <div>
-          <h3
-            className="mb-1 text-xl font-bold"
-            style={{
-              fontFamily: "var(--font-display)",
-              color: "var(--color-text-primary)",
-            }}
-          >
+          <h3 className="font-display text-text-primary mb-1 text-xl font-bold">
             ¡Listo, estás anotado!
           </h3>
-          <p
-            className="text-sm"
-            style={{
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <p className="text-text-muted font-body text-sm">
             Te esperamos el{" "}
-            <strong
-              style={{
-                color: "var(--color-text-primary)",
-              }}
-            >
-              {store.date}
-            </strong>{" "}
-            a las{" "}
-            <strong
-              style={{
-                color: "var(--color-text-primary)",
-              }}
-            >
-              {store.startTime}
-            </strong>{" "}
-            con{" "}
-            <strong
-              style={{
-                color: "var(--color-marca)",
-              }}
-            >
-              {store.barberName}
-            </strong>
-            .
+            <strong className="text-text-primary">{store.date}</strong> a las{" "}
+            <strong className="text-text-primary">{store.startTime}</strong> con{" "}
+            <strong className="text-marca">{store.barberName}</strong>.
           </p>
         </div>
         <button
@@ -664,87 +459,35 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
       </div>
     );
   }
+
   const rows = [
-    {
-      label: "Barbero",
-      value: store.barberName,
-    },
-    {
-      label: "Servicio",
-      value: store.serviceName,
-    },
-    {
-      label: "Precio",
-      value: formatARS(store.servicePrice),
-    },
-    {
-      label: "Fecha",
-      value: store.date,
-    },
-    {
-      label: "Hora",
-      value: store.startTime,
-    },
-    {
-      label: "Nombre",
-      value: store.clientName,
-    },
-    {
-      label: "Teléfono",
-      value: store.clientPhone,
-    },
-    ...(store.notes
-      ? [
-          {
-            label: "Notas",
-            value: store.notes,
-          },
-        ]
-      : []),
+    { label: "Barbero", value: store.barberName },
+    { label: "Servicio", value: store.serviceName },
+    { label: "Precio", value: formatARS(store.servicePrice) },
+    { label: "Fecha", value: store.date },
+    { label: "Hora", value: store.startTime },
+    { label: "Nombre", value: store.clientName },
+    { label: "Teléfono", value: store.clientPhone },
+    ...(store.notes ? [{ label: "Notas", value: store.notes }] : []),
   ];
+
   return (
     <div className="flex flex-col gap-4">
-      <h3
-        className="text-xl font-bold"
-        style={{
-          fontFamily: "var(--font-display)",
-          color: "var(--color-text-primary)",
-        }}
-      >
+      <h3 className="font-display text-text-primary text-xl font-bold">
         Confirmá tu turno
       </h3>
-      <div
-        className="overflow-hidden rounded-xl"
-        style={{
-          border: "1px solid var(--color-border)",
-        }}
-      >
+      <div className="border-border divide-border overflow-hidden rounded-xl border">
         {rows.map((r, i) => (
           <div
             key={r.label}
-            className="flex items-center justify-between px-4 py-2.5"
-            style={{
-              borderBottom:
-                i < rows.length - 1 ? "1px solid var(--color-border)" : "none",
-              background: i % 2 === 0 ? "rgba(0,0,0,0.15)" : "transparent",
-            }}
+            className={`flex items-center justify-between px-4 py-2.5 ${
+              i % 2 === 0 ? "bg-black/15" : "bg-transparent"
+            }`}
           >
-            <span
-              className="text-xs font-semibold"
-              style={{
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <span className="text-text-muted font-body text-xs font-semibold">
               {r.label}
             </span>
-            <span
-              className="text-sm font-medium"
-              style={{
-                color: "var(--color-text-primary)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <span className="text-text-primary font-body text-sm font-medium">
               {r.value}
             </span>
           </div>
@@ -752,15 +495,7 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
       </div>
 
       {error && (
-        <div
-          className="rounded-xl px-3 py-2.5 text-sm"
-          style={{
-            background: "rgba(220,100,100,0.1)",
-            border: "1px solid var(--color-border-error)",
-            color: "var(--color-error)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <div className="bg-error/10 border-border-error text-error font-body rounded-xl border px-3 py-2.5 text-sm">
           {error}
         </div>
       )}
@@ -768,40 +503,31 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
       <button
         onClick={handleConfirm}
         disabled={loading}
-        className="btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-3.5"
-        style={{
-          opacity: loading ? 0.7 : 1,
-        }}
+        className="btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-3.5 disabled:opacity-70"
       >
         {loading ? <Spinner size={16} /> : "Confirmar turno ✓"}
       </button>
     </div>
   );
 }
+
+// ── Modal raíz ────────────────────────────────────────────────
 export default function BookingModal() {
   const { isOpen, step, setStep, closeModal, reset } = useBookingStore();
+
   function handleClose() {
     reset();
     closeModal();
   }
+
   return (
     <ModalBase open={isOpen} onClose={handleClose} maxW="max-w-md">
-      {}
-      <div
-        className="flex items-center justify-between px-5 py-4"
-        style={{
-          borderBottom: "1px solid var(--color-border)",
-        }}
-      >
+      <div className="border-border flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
           {step > 1 && step < 5 && (
             <button
               onClick={() => setStep((step - 1) as typeof step)}
-              className="flex items-center gap-1 text-xs font-semibold transition-colors duration-150"
-              style={{
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
+              className="text-text-muted font-body flex items-center gap-1 text-xs font-semibold transition-colors duration-150"
             >
               ← Volver
             </button>
@@ -810,23 +536,13 @@ export default function BookingModal() {
         </div>
         <button
           onClick={handleClose}
-          className="flex size-7 items-center justify-center rounded-lg text-sm transition-colors duration-150"
-          style={{
-            color: "var(--color-text-muted)",
-            background: "rgba(248,223,176,0.06)",
-          }}
+          className="text-text-muted bg-marca/6 flex size-7 items-center justify-center rounded-lg text-sm transition-colors duration-150"
         >
           ✕
         </button>
       </div>
 
-      {}
-      <div
-        className="overflow-y-auto px-5 py-5"
-        style={{
-          maxHeight: "75dvh",
-        }}
-      >
+      <div className="max-h-[75dvh] overflow-y-auto px-5 py-5">
         {step === 1 && <StepBarber onNext={() => setStep(2)} />}
         {step === 2 && <StepService onNext={() => setStep(3)} />}
         {step === 3 && <StepDateTime onNext={() => setStep(4)} />}

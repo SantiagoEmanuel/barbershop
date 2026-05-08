@@ -1,7 +1,13 @@
 import { useEffect, useRef } from "react";
-import { useAuthStore, type User } from "../store/useAuthStore";
+import { useAuthStore } from "../store/useAuthStore";
+import type { User } from "../types";
 import { MenuLink } from "./menuLink";
 import { UserAvatar } from "./ui/avatar";
+
+/**
+ * Menú dropdown del usuario en el navbar mobile.
+ * Cierra al click afuera (mousedown listener).
+ */
 export function UserMenu({
   user,
   onClose,
@@ -11,6 +17,7 @@ export function UserMenu({
 }) {
   const logout = useAuthStore((s) => s.logout);
   const menuRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -20,47 +27,24 @@ export function UserMenu({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose]);
+
   return (
     <div
       ref={menuRef}
-      className="absolute top-full right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl"
-      style={{
-        background: "#3E3D4E",
-        border: "1px solid rgba(248,223,176,0.12)",
-        boxShadow: "0 16px 40px rgba(0,0,0,0.45)",
-      }}
+      className="bg-surface-2 border-marca/12 absolute top-full right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
     >
-      {}
-      <div
-        className="flex items-center gap-3 px-4 py-3.5"
-        style={{
-          borderBottom: "1px solid rgba(248,223,176,0.08)",
-        }}
-      >
+      <div className="border-marca/8 flex items-center gap-3 border-b px-4 py-3.5">
         <UserAvatar name={user.name} size="md" />
         <div className="min-w-0">
-          <p
-            className="truncate text-sm font-semibold"
-            style={{
-              color: "#EFEEDE",
-              fontFamily: "'Nunito', sans-serif",
-            }}
-          >
+          <p className="text-text-primary font-body truncate text-sm font-semibold">
             {user.name}
           </p>
-          <p
-            className="truncate text-xs"
-            style={{
-              color: "#8B8899",
-              fontFamily: "'Nunito', sans-serif",
-            }}
-          >
+          <p className="text-text-muted font-body truncate text-xs">
             {user.role === "admin" ? "✦ Administrador" : `@${user.username}`}
           </p>
         </div>
       </div>
 
-      {}
       <div className="py-1">
         {user.role === "admin" && (
           <MenuLink
@@ -77,40 +61,15 @@ export function UserMenu({
           label="Mis turnos"
           onClose={onClose}
         />
-        <div
-          style={{
-            borderTop: "1px solid rgba(248,223,176,0.08)",
-          }}
-          className="mt-1 pt-1"
-        >
+        <div className="border-marca/8 mt-1 border-t pt-1">
           <button
             onClick={() => {
               logout();
               onClose();
             }}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors duration-150"
-            style={{
-              color: "#e08080",
-              fontFamily: "'Nunito', sans-serif",
-              fontWeight: 500,
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background =
-                "rgba(220,100,100,0.08)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background =
-                "transparent";
-            }}
+            className="text-error hover:bg-error/8 font-body flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium transition-colors duration-150"
           >
-            <span
-              style={{
-                fontSize: 14,
-              }}
-            >
-              →
-            </span>{" "}
-            Cerrar sesión
+            <span className="text-sm">→</span> Cerrar sesión
           </button>
         </div>
       </div>

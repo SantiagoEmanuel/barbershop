@@ -13,24 +13,9 @@ export function MenuLink({
     <a
       href={href}
       onClick={onClose}
-      className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
-      style={{
-        color: "#CBC5C1",
-        fontFamily: "'Nunito', sans-serif",
-        fontWeight: 500,
-        textDecoration: "none",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.background =
-          "rgba(248,223,176,0.06)";
-        (e.currentTarget as HTMLAnchorElement).style.color = "#F8DFB0";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
-        (e.currentTarget as HTMLAnchorElement).style.color = "#CBC5C1";
-      }}
+      className="text-text-secondary hover:bg-marca/6 hover:text-marca font-body flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium no-underline transition-colors duration-150"
     >
-      <span style={{ fontSize: 13, opacity: 0.7 }}>{icon}</span> {label}
+      <span className="text-[13px] opacity-70">{icon}</span> {label}
     </a>
   );
 }

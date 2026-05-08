@@ -11,13 +11,7 @@ export function AuthSubmit({
     <button
       type="submit"
       disabled={loading}
-      className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98]"
-      style={{
-        fontFamily: "'Nunito', sans-serif",
-        background: loading ? "rgba(248,223,176,0.5)" : "#F8DFB0",
-        color: "#272630",
-        cursor: loading ? "not-allowed" : "pointer",
-      }}
+      className="bg-marca text-background font-body disabled:bg-marca/50 mt-1 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed"
     >
       {loading ? <Spinner size={16} /> : label}
     </button>

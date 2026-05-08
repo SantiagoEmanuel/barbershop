@@ -2,74 +2,15 @@ import { useEffect, useState } from "react";
 import { ModalBase } from "../components/modalBase";
 import { UserAvatar } from "../components/ui/avatar";
 import { EmptyState } from "../components/ui/emptyState";
+import { FieldInput } from "../components/ui/fieldInput";
 import { SectionHeader } from "../components/ui/sectionHeader";
 import { Spinner } from "../components/ui/spinner";
 import { api, post, put } from "../lib/api";
-interface Schedule {
-  id?: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  slotDurationMinutes: number;
-  isActive: boolean;
-}
-interface Barber {
-  id: string;
-  name: string;
-  slug: string;
-  bio?: string | null;
-  avatarUrl?: string | null;
-  experienceYears?: number | null;
-  isActive: boolean;
-  schedules?: Schedule[];
-}
+import type { ApiResponse, Barber, Schedule } from "../types";
+
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-function FieldInput({
-  label,
-  value,
-  onChange,
-  type = "text",
-  placeholder,
-}: {
-  label: string;
-  value: string | number;
-  onChange: (v: string) => void;
-  type?: string;
-  placeholder?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label
-        className="text-xs font-semibold tracking-wide uppercase"
-        style={{
-          color: "var(--color-text-muted)",
-          fontFamily: "var(--font-body)",
-        }}
-      >
-        {label}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full rounded-xl px-3.5 py-2.5 text-sm transition-all duration-200 outline-none"
-        style={{
-          background: "rgba(0,0,0,0.3)",
-          border: "1px solid var(--color-border)",
-          color: "var(--color-text-primary)",
-          fontFamily: "var(--font-body)",
-        }}
-        onFocus={(e) => {
-          e.target.style.borderColor = "var(--color-border-strong)";
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = "var(--color-border)";
-        }}
-      />
-    </div>
-  );
-}
+
+// ── Modal: editar/crear barbero ───────────────────────────────
 function BarberModal({
   open,
   onClose,
@@ -89,6 +30,7 @@ function BarberModal({
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   useEffect(() => {
     if (open) {
       setName(initial?.name ?? "");
@@ -98,6 +40,7 @@ function BarberModal({
       setError("");
     }
   }, [open, initial]);
+
   function handleNameChange(v: string) {
     setName(v);
     if (!initial) {
@@ -106,12 +49,13 @@ function BarberModal({
           .toLowerCase()
           .trim()
           .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[̀-ͯ]/g, "")
           .replace(/\s+/g, "-")
           .replace(/[^a-z0-9-]/g, ""),
       );
     }
   }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -124,20 +68,10 @@ function BarberModal({
         experienceYears: expYears ? Number(expYears) : undefined,
       };
       const res = initial
-        ? await put<{
-            data: Barber;
-          }>(`barber/${initial.id}`, body)
-        : await post<{
-            data: Barber;
-          }>("barber", body);
-      if (!res) throw new Error("No se pudo guardar");
-      onSave(
-        (
-          res as {
-            data: Barber;
-          }
-        ).data,
-      );
+        ? await put<ApiResponse<Barber>>(`barber/${initial.id}`, body)
+        : await post<ApiResponse<Barber>>("barber", body);
+      if (!res?.data) throw new Error("No se pudo guardar");
+      onSave(res.data);
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error inesperado");
@@ -145,16 +79,11 @@ function BarberModal({
       setLoading(false);
     }
   }
+
   return (
     <ModalBase open={open} onClose={onClose} maxW="max-w-sm">
       <div className="px-6 py-5">
-        <h3
-          className="mb-4 text-lg font-bold"
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-text-primary)",
-          }}
-        >
+        <h3 className="font-display text-text-primary mb-4 text-lg font-bold">
           {initial ? "Editar barbero" : "Nuevo barbero"}
         </h3>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -169,18 +98,12 @@ function BarberModal({
             onChange={setSlug}
             placeholder="juan-perez"
           />
-          <p
-            className="-mt-1 text-xs"
-            style={{
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <p className="text-text-muted font-body -mt-1 text-xs">
             Solo minúsculas, números y guiones. Se usa en la URL del perfil.
           </p>
           <FieldInput
             label="Bio"
-            value={bio}
+            value={bio ?? ""}
             onChange={setBio}
             placeholder="Especialista en..."
           />
@@ -192,14 +115,7 @@ function BarberModal({
           />
 
           {error && (
-            <p
-              className="rounded-lg px-3 py-2 text-xs"
-              style={{
-                background: "rgba(220,100,100,0.1)",
-                color: "var(--color-error)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <p className="bg-error/10 text-error font-body rounded-lg px-3 py-2 text-xs">
               {error}
             </p>
           )}
@@ -214,10 +130,7 @@ function BarberModal({
             <button
               type="submit"
               disabled={loading}
-              className="btn-marca flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5"
-              style={{
-                opacity: loading ? 0.7 : 1,
-              }}
+              className="btn-marca flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 disabled:opacity-70"
             >
               {loading ? <Spinner size={14} /> : "Guardar"}
             </button>
@@ -227,6 +140,8 @@ function BarberModal({
     </ModalBase>
   );
 }
+
+// ── Panel: horarios del barbero ───────────────────────────────
 function SchedulePanel({
   barber,
   onClose,
@@ -250,6 +165,7 @@ function SchedulePanel({
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
   async function handleSave() {
     setSaving(true);
     setSaved(false);
@@ -260,10 +176,7 @@ function SchedulePanel({
           .map((s) =>
             s.id
               ? put(`barber-schedule/${s.id}`, s)
-              : post(`barber-schedule`, {
-                  ...s,
-                  barberId: barber.id,
-                }),
+              : post(`barber-schedule`, { ...s, barberId: barber.id }),
           ),
       );
       setSaved(true);
@@ -272,28 +185,17 @@ function SchedulePanel({
       setSaving(false);
     }
   }
+
   return (
     <ModalBase open onClose={onClose} maxW="max-w-md">
       <div className="px-6 py-5">
         <div className="mb-5 flex items-center gap-3">
           <UserAvatar name={barber.name} size="md" />
           <div>
-            <h3
-              className="text-base font-bold"
-              style={{
-                fontFamily: "var(--font-display)",
-                color: "var(--color-text-primary)",
-              }}
-            >
+            <h3 className="font-display text-text-primary text-base font-bold">
               Horarios de {barber.name.split(" ")[0]}
             </h3>
-            <p
-              className="text-xs"
-              style={{
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <p className="text-text-muted font-body text-xs">
               Configurá los días y horas de trabajo
             </p>
           </div>
@@ -303,45 +205,29 @@ function SchedulePanel({
           {schedules.map((s, i) => (
             <div
               key={s.dayOfWeek}
-              className="flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-150"
-              style={{
-                background: s.isActive
-                  ? "rgba(248,223,176,0.05)"
-                  : "rgba(0,0,0,0.15)",
-                border: `1px solid ${s.isActive ? "var(--color-border-strong)" : "var(--color-border)"}`,
-                opacity: s.isActive ? 1 : 0.5,
-              }}
+              className={`flex items-center gap-3 rounded-xl border px-3 py-3 transition-all duration-150 ${
+                s.isActive
+                  ? "bg-marca/5 border-border-strong"
+                  : "border-border bg-black/15 opacity-50"
+              }`}
             >
-              {}
               <button
                 onClick={() =>
                   setSchedules((prev) =>
                     prev.map((x) =>
-                      x.dayOfWeek === i
-                        ? {
-                            ...x,
-                            isActive: !x.isActive,
-                          }
-                        : x,
+                      x.dayOfWeek === i ? { ...x, isActive: !x.isActive } : x,
                     ),
                   )
                 }
-                className="size-8 shrink-0 rounded-lg text-xs font-bold transition-all duration-150"
-                style={{
-                  background: s.isActive
-                    ? "rgba(248,223,176,0.15)"
-                    : "rgba(0,0,0,0.3)",
-                  color: s.isActive
-                    ? "var(--color-marca)"
-                    : "var(--color-text-muted)",
-                  border: `1px solid ${s.isActive ? "var(--color-border-strong)" : "var(--color-border)"}`,
-                  fontFamily: "var(--font-body)",
-                }}
+                className={`font-body size-8 shrink-0 rounded-lg border text-xs font-bold transition-all duration-150 ${
+                  s.isActive
+                    ? "bg-marca/15 text-marca border-border-strong"
+                    : "text-text-muted border-border bg-black/30"
+                }`}
               >
                 {DAYS[i]}
               </button>
 
-              {}
               <div className="flex flex-1 items-center gap-2">
                 <input
                   type="time"
@@ -351,31 +237,14 @@ function SchedulePanel({
                     setSchedules((prev) =>
                       prev.map((x) =>
                         x.dayOfWeek === i
-                          ? {
-                              ...x,
-                              startTime: e.target.value,
-                            }
+                          ? { ...x, startTime: e.target.value }
                           : x,
                       ),
                     )
                   }
-                  className="flex-1 rounded-lg px-2.5 py-1.5 text-xs outline-none"
-                  style={{
-                    background: "rgba(0,0,0,0.25)",
-                    border: "1px solid var(--color-border)",
-                    color: "var(--color-text-primary)",
-                    fontFamily: "var(--font-body)",
-                    colorScheme: "dark",
-                  }}
+                  className="border-border text-text-primary font-body flex-1 rounded-lg border bg-black/25 px-2.5 py-1.5 text-xs [color-scheme:dark] outline-none"
                 />
-                <span
-                  className="text-xs"
-                  style={{
-                    color: "var(--color-text-muted)",
-                  }}
-                >
-                  a
-                </span>
+                <span className="text-text-muted text-xs">a</span>
                 <input
                   type="time"
                   value={s.endTime}
@@ -384,49 +253,25 @@ function SchedulePanel({
                     setSchedules((prev) =>
                       prev.map((x) =>
                         x.dayOfWeek === i
-                          ? {
-                              ...x,
-                              endTime: e.target.value,
-                            }
+                          ? { ...x, endTime: e.target.value }
                           : x,
                       ),
                     )
                   }
-                  className="flex-1 rounded-lg px-2.5 py-1.5 text-xs outline-none"
-                  style={{
-                    background: "rgba(0,0,0,0.25)",
-                    border: "1px solid var(--color-border)",
-                    color: "var(--color-text-primary)",
-                    fontFamily: "var(--font-body)",
-                    colorScheme: "dark",
-                  }}
+                  className="border-border text-text-primary font-body flex-1 rounded-lg border bg-black/25 px-2.5 py-1.5 text-xs [color-scheme:dark] outline-none"
                 />
               </div>
             </div>
           ))}
         </div>
 
-        <p
-          className="mt-3 mb-4 text-xs"
-          style={{
-            color: "var(--color-text-muted)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <p className="text-text-muted font-body mt-3 mb-4 text-xs">
           Los slots se generan cada 10 minutos. El frontend los agrupa según la
           duración del servicio.
         </p>
 
         {saved && (
-          <div
-            className="mb-3 rounded-lg px-3 py-2 text-xs"
-            style={{
-              background: "rgba(134,197,134,0.1)",
-              color: "var(--color-success)",
-              border: "1px solid rgba(134,197,134,0.2)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <div className="bg-success/10 text-success border-success/20 font-body mb-3 rounded-lg border px-3 py-2 text-xs">
             ✓ Horarios guardados correctamente
           </div>
         )}
@@ -441,10 +286,7 @@ function SchedulePanel({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="btn-marca flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5"
-            style={{
-              opacity: saving ? 0.7 : 1,
-            }}
+            className="btn-marca flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 disabled:opacity-70"
           >
             {saving ? <Spinner size={14} /> : "Guardar horarios"}
           </button>
@@ -453,57 +295,43 @@ function SchedulePanel({
     </ModalBase>
   );
 }
+
+// ── Página ────────────────────────────────────────────────────
 export default function Barberos() {
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(true);
   const [barberModal, setBarberModal] = useState(false);
   const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
   const [schedulesFor, setSchedulesFor] = useState<Barber | null>(null);
+
   useEffect(() => {
-    api<{
-      data: Barber[];
-    }>("barber?all=true")
+    api<ApiResponse<Barber[]>>("barber?all=true")
       .then((r) => setBarbers(r?.data ?? []))
       .finally(() => setLoading(false));
   }, []);
+
   async function softDelete(id: string) {
     if (!confirm("¿Desactivar este barbero? No se borrará su historial."))
       return;
-    const res = await put<{
-      data: Barber;
-    }>(`barber/${id}`, {
+    const res = await put<ApiResponse<Barber>>(`barber/${id}`, {
       isActive: false,
     });
     if (res)
       setBarbers((prev) =>
-        prev.map((b) =>
-          b.id === id
-            ? {
-                ...b,
-                isActive: false,
-              }
-            : b,
-        ),
+        prev.map((b) => (b.id === id ? { ...b, isActive: false } : b)),
       );
   }
+
   async function reactivate(id: string) {
-    const res = await put<{
-      data: Barber;
-    }>(`barber/${id}`, {
+    const res = await put<ApiResponse<Barber>>(`barber/${id}`, {
       isActive: true,
     });
     if (res)
       setBarbers((prev) =>
-        prev.map((b) =>
-          b.id === id
-            ? {
-                ...b,
-                isActive: true,
-              }
-            : b,
-        ),
+        prev.map((b) => (b.id === id ? { ...b, isActive: true } : b)),
       );
   }
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -511,6 +339,7 @@ export default function Barberos() {
       </div>
     );
   }
+
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
@@ -541,71 +370,36 @@ export default function Barberos() {
           {barbers.map((b) => (
             <div
               key={b.id}
-              className="card flex items-center gap-4"
-              style={{
-                opacity: b.isActive ? 1 : 0.55,
-              }}
+              className={`card flex items-center gap-4 ${b.isActive ? "" : "opacity-55"}`}
             >
               <UserAvatar name={b.name} size="lg" />
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p
-                    className="text-sm font-bold"
-                    style={{
-                      color: "var(--color-text-primary)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
+                  <p className="text-text-primary font-body text-sm font-bold">
                     {b.name}
                   </p>
                   {!b.isActive && (
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[10px]"
-                      style={{
-                        background: "rgba(224,128,128,0.1)",
-                        color: "var(--color-error)",
-                        fontFamily: "var(--font-body)",
-                      }}
-                    >
+                    <span className="bg-error/10 text-error font-body rounded-full px-2 py-0.5 text-[10px]">
                       Inactivo
                     </span>
                   )}
                 </div>
-                <p
-                  className="mt-0.5 text-xs"
-                  style={{
-                    color: "var(--color-text-muted)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
+                <p className="text-text-muted font-body mt-0.5 text-xs">
                   @{b.slug}
                   {b.experienceYears ? ` · ${b.experienceYears} años` : ""}
                 </p>
                 {b.bio && (
-                  <p
-                    className="mt-0.5 truncate text-xs"
-                    style={{
-                      color: "var(--color-text-muted)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
+                  <p className="text-text-muted font-body mt-0.5 truncate text-xs">
                     {b.bio}
                   </p>
                 )}
               </div>
 
-              {}
               <div className="flex shrink-0 items-center gap-1.5">
                 <button
                   onClick={() => setSchedulesFor(b)}
-                  className="h-8 rounded-lg px-3 text-xs font-semibold transition-colors duration-150"
-                  style={{
-                    background: "rgba(248,223,176,0.06)",
-                    color: "var(--color-marca)",
-                    border: "1px solid var(--color-border)",
-                    fontFamily: "var(--font-body)",
-                  }}
+                  className="bg-marca/6 text-marca border-border font-body h-8 rounded-lg border px-3 text-xs font-semibold transition-colors duration-150"
                   title="Ver horarios"
                 >
                   Horarios
@@ -615,12 +409,7 @@ export default function Barberos() {
                     setEditingBarber(b);
                     setBarberModal(true);
                   }}
-                  className="flex size-8 items-center justify-center rounded-lg text-sm transition-colors duration-150"
-                  style={{
-                    background: "rgba(248,223,176,0.06)",
-                    color: "var(--color-text-muted)",
-                    border: "1px solid var(--color-border)",
-                  }}
+                  className="bg-marca/6 text-text-muted border-border flex size-8 items-center justify-center rounded-lg border text-sm transition-colors duration-150"
                   title="Editar"
                 >
                   ✏
@@ -628,12 +417,7 @@ export default function Barberos() {
                 {b.isActive ? (
                   <button
                     onClick={() => softDelete(b.id)}
-                    className="flex size-8 items-center justify-center rounded-lg text-xs transition-colors duration-150"
-                    style={{
-                      background: "rgba(224,128,128,0.06)",
-                      color: "var(--color-error)",
-                      border: "1px solid rgba(224,128,128,0.15)",
-                    }}
+                    className="bg-error/6 text-error border-error/15 flex size-8 items-center justify-center rounded-lg border text-xs transition-colors duration-150"
                     title="Desactivar"
                   >
                     ✕
@@ -641,12 +425,7 @@ export default function Barberos() {
                 ) : (
                   <button
                     onClick={() => reactivate(b.id)}
-                    className="flex size-8 items-center justify-center rounded-lg text-xs transition-colors duration-150"
-                    style={{
-                      background: "rgba(134,197,134,0.06)",
-                      color: "var(--color-success)",
-                      border: "1px solid rgba(134,197,134,0.15)",
-                    }}
+                    className="bg-success/6 text-success border-success/15 flex size-8 items-center justify-center rounded-lg border text-xs transition-colors duration-150"
                     title="Reactivar"
                   >
                     ↺

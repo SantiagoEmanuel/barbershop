@@ -6,59 +6,27 @@ import { formatARS } from "../components/ui/formatters";
 import { SectionHeader } from "../components/ui/sectionHeader";
 import { Spinner } from "../components/ui/spinner";
 import { api, post, put } from "../lib/api";
-interface Appointment {
-  id: string;
-  clientName: string;
-  clientPhone: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
-  priceSnapshot: number;
-  notes?: string;
-  service: {
-    id: string;
-    name: string;
-    durationMinutes: number;
-    price: number;
-  };
-  barber: {
-    id: string;
-    name: string;
-  };
-  client?: {
-    id: string;
-    name: string;
-  };
+import type {
+  ApiResponse,
+  Appointment,
+  CartItem,
+  PaymentMethod,
+  PaymentMethodType,
+  Product,
+} from "../types";
+
+const PAYMENT_ICONS: Record<PaymentMethodType, string> = {
+  cash: "💵",
+  card: "💳",
+  online: "📱",
+};
+
+function PaymentIcon({ type }: { type: PaymentMethodType }) {
+  return <span>{PAYMENT_ICONS[type]}</span>;
 }
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  description?: string;
-}
-interface PaymentMethod {
-  id: string;
-  name: string;
-  type: "cash" | "card" | "online";
-}
-interface CartItem {
-  product: Product;
-  quantity: number;
-}
-function PaymentIcon({ type }: { type: PaymentMethod["type"] }) {
-  const map = {
-    cash: "💵",
-    card: "💳",
-    online: "📱",
-  };
-  return <span>{map[type]}</span>;
-}
+
 export default function CierreServicio() {
-  const { appointmentId } = useParams<{
-    appointmentId: string;
-  }>();
+  const { appointmentId } = useParams<{ appointmentId: string }>();
   const navigate = useNavigate();
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -70,18 +38,13 @@ export default function CierreServicio() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [productSearch, setProductSearch] = useState("");
+
   useEffect(() => {
     if (!appointmentId) return;
     Promise.all([
-      api<{
-        data: Appointment;
-      }>(`appointments/${appointmentId}`),
-      api<{
-        data: Product[];
-      }>("product"),
-      api<{
-        data: PaymentMethod[];
-      }>("payment-methods"),
+      api<ApiResponse<Appointment>>(`appointments/${appointmentId}`),
+      api<ApiResponse<Product[]>>("product"),
+      api<ApiResponse<PaymentMethod[]>>("payment-methods"),
     ])
       .then(([apptRes, prodRes, pmRes]) => {
         setAppointment(apptRes?.data ?? null);
@@ -91,63 +54,47 @@ export default function CierreServicio() {
       })
       .finally(() => setLoading(false));
   }, [appointmentId]);
+
   function addToCart(product: Product) {
     setCart((prev) => {
       const exists = prev.find((i) => i.product.id === product.id);
       if (exists) {
         return prev.map((i) =>
           i.product.id === product.id
-            ? {
-                ...i,
-                quantity: Math.min(i.quantity + 1, product.stock),
-              }
+            ? { ...i, quantity: Math.min(i.quantity + 1, product.stock) }
             : i,
         );
       }
-      return [
-        ...prev,
-        {
-          product,
-          quantity: 1,
-        },
-      ];
+      return [...prev, { product, quantity: 1 }];
     });
   }
+
   function removeFromCart(productId: string) {
     setCart((prev) => prev.filter((i) => i.product.id !== productId));
   }
+
   function updateQty(productId: string, qty: number) {
-    if (qty <= 0) {
-      removeFromCart(productId);
-      return;
-    }
+    if (qty <= 0) return removeFromCart(productId);
     setCart((prev) =>
       prev.map((i) =>
-        i.product.id === productId
-          ? {
-              ...i,
-              quantity: qty,
-            }
-          : i,
+        i.product.id === productId ? { ...i, quantity: qty } : i,
       ),
     );
   }
+
   const serviceTotal = appointment?.priceSnapshot ?? 0;
   const productsTotal = cart.reduce(
     (acc, i) => acc + i.product.price * i.quantity,
     0,
   );
   const grandTotal = serviceTotal + productsTotal;
+
   async function handleConfirm() {
     if (!appointment || !selectedPayment) return;
     setSubmitting(true);
     setError("");
     try {
-      const orderRes = await post<{
-        data: {
-          id: string;
-        };
-      }>("order", {
+      const orderRes = await post<ApiResponse<{ id: string }>>("order", {
         appointmentId: appointment.id,
         paymentMethodId: selectedPayment,
         amount: grandTotal,
@@ -163,6 +110,7 @@ export default function CierreServicio() {
       setSubmitting(false);
     }
   }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -170,6 +118,7 @@ export default function CierreServicio() {
       </div>
     );
   }
+
   if (!appointment) {
     return (
       <EmptyState
@@ -187,45 +136,21 @@ export default function CierreServicio() {
       />
     );
   }
+
   if (success) {
     return (
       <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-4 py-16 text-center">
-        <div
-          className="flex size-16 items-center justify-center rounded-full text-2xl"
-          style={{
-            background: "rgba(134,197,134,0.12)",
-            border: "1px solid rgba(134,197,134,0.3)",
-            color: "var(--color-success)",
-          }}
-        >
+        <div className="bg-success/12 border-success/30 text-success flex size-16 items-center justify-center rounded-full border text-2xl">
           ✓
         </div>
         <div>
-          <h3
-            className="mb-2 text-xl font-bold"
-            style={{
-              fontFamily: "var(--font-display)",
-              color: "var(--color-text-primary)",
-            }}
-          >
+          <h3 className="font-display text-text-primary mb-2 text-xl font-bold">
             Servicio cerrado
           </h3>
-          <p
-            className="text-sm"
-            style={{
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <p className="text-text-muted font-body text-sm">
             La orden por{" "}
-            <strong
-              style={{
-                color: "var(--color-marca)",
-              }}
-            >
-              {formatARS(grandTotal)}
-            </strong>{" "}
-            fue registrada correctamente.
+            <strong className="text-marca">{formatARS(grandTotal)}</strong> fue
+            registrada correctamente.
           </p>
         </div>
         <div className="flex w-full gap-2">
@@ -245,76 +170,46 @@ export default function CierreServicio() {
       </div>
     );
   }
+
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(productSearch.toLowerCase()),
   );
+
+  const isCompleted = appointment.status === "completed";
+
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="rounded-lg p-2 text-sm"
-          style={{
-            color: "var(--color-text-muted)",
-            background: "rgba(248,223,176,0.06)",
-            border: "1px solid var(--color-border)",
-          }}
+          className="text-text-muted bg-marca/6 border-border rounded-lg border p-2 text-sm"
         >
           ← Volver
         </button>
         <SectionHeader eyebrow="Admin" title="Cerrar servicio" />
       </div>
 
-      {}
+      {/* Info del turno */}
       <div className="card flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p
-              className="mb-1 text-xs font-bold tracking-widest uppercase"
-              style={{
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <p className="text-text-muted font-body mb-1 text-xs font-bold tracking-widest uppercase">
               Cliente
             </p>
-            <p
-              className="text-lg font-bold"
-              style={{
-                fontFamily: "var(--font-display)",
-                color: "var(--color-text-primary)",
-              }}
-            >
+            <p className="font-display text-text-primary text-lg font-bold">
               {appointment.clientName}
             </p>
-            <p
-              className="text-sm"
-              style={{
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <p className="text-text-muted font-body text-sm">
               {appointment.clientPhone}
             </p>
           </div>
           <StatusBadge status={appointment.status} />
         </div>
 
-        <div
-          className="grid grid-cols-2 gap-3 pt-3 sm:grid-cols-4"
-          style={{
-            borderTop: "1px solid var(--color-border)",
-          }}
-        >
+        <div className="border-border grid grid-cols-2 gap-3 border-t pt-3 sm:grid-cols-4">
           {[
-            {
-              label: "Barbero",
-              value: appointment.barber?.name,
-            },
-            {
-              label: "Servicio",
-              value: appointment.service?.name,
-            },
+            { label: "Barbero", value: appointment.barber?.name },
+            { label: "Servicio", value: appointment.service?.name },
             {
               label: "Horario",
               value: `${appointment.startTime}–${appointment.endTime}`,
@@ -326,23 +221,13 @@ export default function CierreServicio() {
             },
           ].map((item) => (
             <div key={item.label}>
-              <p
-                className="mb-0.5 text-xs"
-                style={{
-                  color: "var(--color-text-muted)",
-                  fontFamily: "var(--font-body)",
-                }}
-              >
+              <p className="text-text-muted font-body mb-0.5 text-xs">
                 {item.label}
               </p>
               <p
-                className="text-sm font-semibold"
-                style={{
-                  color: item.accent
-                    ? "var(--color-marca)"
-                    : "var(--color-text-primary)",
-                  fontFamily: "var(--font-body)",
-                }}
+                className={`font-body text-sm font-semibold ${
+                  item.accent ? "text-marca" : "text-text-primary"
+                }`}
               >
                 {item.value}
               </p>
@@ -351,60 +236,30 @@ export default function CierreServicio() {
         </div>
 
         {appointment.notes && (
-          <div
-            className="rounded-lg px-3 py-2.5 text-sm"
-            style={{
-              background: "rgba(248,223,176,0.05)",
-              border: "1px solid var(--color-border)",
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
+          <div className="bg-marca/5 border-border text-text-muted font-body rounded-lg border px-3 py-2.5 text-sm">
             📝 {appointment.notes}
           </div>
         )}
       </div>
 
-      {}
-      {appointment.status !== "completed" && (
+      {/* Productos adicionales */}
+      {!isCompleted && (
         <div className="card flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <p
-              className="text-sm font-bold"
-              style={{
-                color: "var(--color-text-primary)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <p className="text-text-primary font-body text-sm font-bold">
               Productos adicionales
             </p>
-            <span
-              className="text-xs"
-              style={{
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
-              Opcional
-            </span>
+            <span className="text-text-muted font-body text-xs">Opcional</span>
           </div>
 
-          {}
           <input
             type="text"
             placeholder="Buscar producto..."
             value={productSearch}
             onChange={(e) => setProductSearch(e.target.value)}
-            className="w-full rounded-xl px-3.5 py-2.5 text-sm outline-none"
-            style={{
-              background: "rgba(0,0,0,0.25)",
-              border: "1px solid var(--color-border)",
-              color: "var(--color-text-primary)",
-              fontFamily: "var(--font-body)",
-            }}
+            className="border-border text-text-primary font-body w-full rounded-xl border bg-black/25 px-3.5 py-2.5 text-sm outline-none"
           />
 
-          {}
           <div className="grid max-h-48 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             {filteredProducts.map((p) => {
               const inCart = cart.find((i) => i.product.id === p.id);
@@ -413,42 +268,21 @@ export default function CierreServicio() {
                   key={p.id}
                   onClick={() => addToCart(p)}
                   disabled={p.stock === 0}
-                  className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-150"
-                  style={{
-                    background: inCart
-                      ? "rgba(248,223,176,0.08)"
-                      : "rgba(0,0,0,0.2)",
-                    border: `1px solid ${inCart ? "var(--color-border-strong)" : "var(--color-border)"}`,
-                    opacity: p.stock === 0 ? 0.4 : 1,
-                    cursor: p.stock === 0 ? "not-allowed" : "pointer",
-                  }}
+                  className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
+                    inCart
+                      ? "bg-marca/8 border-border-strong"
+                      : "border-border bg-black/20"
+                  }`}
                 >
                   <div className="min-w-0">
-                    <p
-                      className="truncate font-semibold"
-                      style={{
-                        color: "var(--color-text-primary)",
-                        fontFamily: "var(--font-body)",
-                      }}
-                    >
+                    <p className="text-text-primary font-body truncate font-semibold">
                       {p.name}
                     </p>
-                    <p
-                      className="text-xs"
-                      style={{
-                        color: "var(--color-text-muted)",
-                      }}
-                    >
+                    <p className="text-text-muted text-xs">
                       {p.stock === 0 ? "Sin stock" : `Stock: ${p.stock}`}
                     </p>
                   </div>
-                  <span
-                    className="shrink-0 text-xs font-bold"
-                    style={{
-                      color: "var(--color-marca)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
+                  <span className="text-marca font-body shrink-0 text-xs font-bold">
                     {formatARS(p.price)}
                   </span>
                 </button>
@@ -456,39 +290,17 @@ export default function CierreServicio() {
             })}
           </div>
 
-          {}
           {cart.length > 0 && (
-            <div
-              className="flex flex-col gap-2 pt-3"
-              style={{
-                borderTop: "1px solid var(--color-border)",
-              }}
-            >
-              <p
-                className="text-xs font-bold tracking-widest uppercase"
-                style={{
-                  color: "var(--color-text-muted)",
-                  fontFamily: "var(--font-body)",
-                }}
-              >
+            <div className="border-border flex flex-col gap-2 border-t pt-3">
+              <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
                 Productos seleccionados
               </p>
               {cart.map((item) => (
                 <div
                   key={item.product.id}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2"
-                  style={{
-                    background: "rgba(248,223,176,0.06)",
-                    border: "1px solid var(--color-border)",
-                  }}
+                  className="bg-marca/6 border-border flex items-center gap-3 rounded-xl border px-3 py-2"
                 >
-                  <p
-                    className="flex-1 text-sm font-medium"
-                    style={{
-                      color: "var(--color-text-primary)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
+                  <p className="text-text-primary font-body flex-1 text-sm font-medium">
                     {item.product.name}
                   </p>
                   <div className="flex items-center gap-2">
@@ -496,22 +308,11 @@ export default function CierreServicio() {
                       onClick={() =>
                         updateQty(item.product.id, item.quantity - 1)
                       }
-                      className="flex size-6 items-center justify-center rounded-lg text-sm"
-                      style={{
-                        background: "rgba(0,0,0,0.3)",
-                        color: "var(--color-text-secondary)",
-                        border: "1px solid var(--color-border)",
-                      }}
+                      className="text-text-secondary border-border flex size-6 items-center justify-center rounded-lg border bg-black/30 text-sm"
                     >
                       −
                     </button>
-                    <span
-                      className="w-5 text-center text-sm font-bold"
-                      style={{
-                        color: "var(--color-text-primary)",
-                        fontFamily: "var(--font-body)",
-                      }}
-                    >
+                    <span className="text-text-primary font-body w-5 text-center text-sm font-bold">
                       {item.quantity}
                     </span>
                     <button
@@ -519,31 +320,17 @@ export default function CierreServicio() {
                         updateQty(item.product.id, item.quantity + 1)
                       }
                       disabled={item.quantity >= item.product.stock}
-                      className="flex size-6 items-center justify-center rounded-lg text-sm"
-                      style={{
-                        background: "rgba(0,0,0,0.3)",
-                        color: "var(--color-text-secondary)",
-                        border: "1px solid var(--color-border)",
-                      }}
+                      className="text-text-secondary border-border flex size-6 items-center justify-center rounded-lg border bg-black/30 text-sm disabled:opacity-40"
                     >
                       +
                     </button>
                   </div>
-                  <span
-                    className="w-16 text-right text-sm font-bold"
-                    style={{
-                      color: "var(--color-marca)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
+                  <span className="text-marca font-body w-16 text-right text-sm font-bold">
                     {formatARS(item.product.price * item.quantity)}
                   </span>
                   <button
                     onClick={() => removeFromCart(item.product.id)}
-                    style={{
-                      color: "var(--color-error)",
-                      fontSize: 14,
-                    }}
+                    className="text-error text-sm"
                   >
                     ✕
                   </button>
@@ -554,127 +341,59 @@ export default function CierreServicio() {
         </div>
       )}
 
-      {}
-      {appointment.status !== "completed" && (
+      {/* Resumen + pago */}
+      {!isCompleted && (
         <div className="card flex flex-col gap-4">
-          {}
-          <div className="flex flex-col gap-2">
-            <div
-              className="flex justify-between text-sm"
-              style={{
-                fontFamily: "var(--font-body)",
-              }}
-            >
-              <span
-                style={{
-                  color: "var(--color-text-muted)",
-                }}
-              >
-                Servicio
-              </span>
-              <span
-                style={{
-                  color: "var(--color-text-primary)",
-                }}
-              >
+          <div className="font-body flex flex-col gap-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-text-muted">Servicio</span>
+              <span className="text-text-primary">
                 {formatARS(serviceTotal)}
               </span>
             </div>
             {cart.map((i) => (
-              <div
-                key={i.product.id}
-                className="flex justify-between text-sm"
-                style={{
-                  fontFamily: "var(--font-body)",
-                }}
-              >
-                <span
-                  style={{
-                    color: "var(--color-text-muted)",
-                  }}
-                >
+              <div key={i.product.id} className="flex justify-between text-sm">
+                <span className="text-text-muted">
                   {i.product.name} ×{i.quantity}
                 </span>
-                <span
-                  style={{
-                    color: "var(--color-text-primary)",
-                  }}
-                >
+                <span className="text-text-primary">
                   {formatARS(i.product.price * i.quantity)}
                 </span>
               </div>
             ))}
-            <div
-              className="flex justify-between pt-2 text-base font-bold"
-              style={{
-                borderTop: "1px solid var(--color-border)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
-              <span
-                style={{
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                Total
-              </span>
-              <span
-                style={{
-                  color: "var(--color-marca)",
-                }}
-              >
-                {formatARS(grandTotal)}
-              </span>
+            <div className="border-border flex justify-between border-t pt-2 text-base font-bold">
+              <span className="text-text-primary">Total</span>
+              <span className="text-marca">{formatARS(grandTotal)}</span>
             </div>
           </div>
 
-          {}
           <div>
-            <p
-              className="mb-2 text-xs font-bold tracking-widest uppercase"
-              style={{
-                color: "var(--color-text-muted)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <p className="text-text-muted font-body mb-2 text-xs font-bold tracking-widest uppercase">
               Método de pago
             </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {paymentMethods.map((pm) => (
-                <button
-                  key={pm.id}
-                  onClick={() => setSelectedPayment(pm.id)}
-                  className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-sm font-semibold transition-all duration-150"
-                  style={{
-                    background:
-                      selectedPayment === pm.id
-                        ? "rgba(248,223,176,0.1)"
-                        : "rgba(0,0,0,0.2)",
-                    border: `1px solid ${selectedPayment === pm.id ? "var(--color-border-strong)" : "var(--color-border)"}`,
-                    color:
-                      selectedPayment === pm.id
-                        ? "var(--color-marca)"
-                        : "var(--color-text-secondary)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
-                  <PaymentIcon type={pm.type} />
-                  {pm.name}
-                </button>
-              ))}
+              {paymentMethods.map((pm) => {
+                const selected = selectedPayment === pm.id;
+                return (
+                  <button
+                    key={pm.id}
+                    onClick={() => setSelectedPayment(pm.id)}
+                    className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left text-sm font-semibold transition-all duration-150 ${
+                      selected
+                        ? "bg-marca/10 border-border-strong text-marca"
+                        : "border-border text-text-secondary bg-black/20"
+                    }`}
+                  >
+                    <PaymentIcon type={pm.type} />
+                    {pm.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {error && (
-            <div
-              className="rounded-xl px-3 py-2.5 text-sm"
-              style={{
-                background: "rgba(220,100,100,0.1)",
-                border: "1px solid var(--color-border-error)",
-                color: "var(--color-error)",
-                fontFamily: "var(--font-body)",
-              }}
-            >
+            <div className="bg-error/10 border-border-error text-error font-body rounded-xl border px-3 py-2.5 text-sm">
               {error}
             </div>
           )}
@@ -682,11 +401,7 @@ export default function CierreServicio() {
           <button
             onClick={handleConfirm}
             disabled={submitting || !selectedPayment}
-            className="btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-4"
-            style={{
-              opacity: submitting ? 0.7 : 1,
-              fontSize: "0.9rem",
-            }}
+            className="btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[0.9rem] disabled:opacity-70"
           >
             {submitting ? (
               <Spinner size={18} />
@@ -697,17 +412,8 @@ export default function CierreServicio() {
         </div>
       )}
 
-      {}
-      {appointment.status === "completed" && (
-        <div
-          className="rounded-xl px-4 py-5 text-center text-sm"
-          style={{
-            background: "rgba(134,197,134,0.06)",
-            border: "1px solid rgba(134,197,134,0.2)",
-            color: "var(--color-success)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+      {isCompleted && (
+        <div className="bg-success/6 border-success/20 text-success font-body rounded-xl border px-4 py-5 text-center text-sm">
           ✓ Este turno ya fue completado y cobrado.
         </div>
       )}

@@ -15,24 +15,11 @@ export function SectionHeader({
     <div className="mb-6 flex w-full flex-col items-center justify-between gap-4">
       <div className="flex w-full flex-col justify-center gap-2">
         {eyebrow && <span className="badge-marca m-auto">{eyebrow}</span>}
-        <h2
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "1.5rem",
-            color: "var(--color-text-primary)",
-            fontWeight: 700,
-          }}
-          className="text-center"
-        >
+        <h2 className="font-display text-text-primary text-center text-2xl font-bold">
           {title}
         </h2>
         {description && (
-          <p
-            className="text-center text-sm"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            {description}
-          </p>
+          <p className="text-text-muted text-center text-sm">{description}</p>
         )}
       </div>
       {action && <div className="shrink-0">{action}</div>}
