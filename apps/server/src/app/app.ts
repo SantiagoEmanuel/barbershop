@@ -20,7 +20,7 @@ app.use(
     origin: [
       "http://localhost",
       "http://localhost:5173",
-      "https://barbershop-8xkp.onrender.com/",
+      "https://barbershop-web-lac.vercel.app/",
     ],
     credentials: true,
   }),
