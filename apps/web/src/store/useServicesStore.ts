@@ -1,30 +1,26 @@
 import { create } from "zustand";
 import { api } from "../lib/api";
+import type { ApiResponse, Service } from "../types";
 
-export interface Service {
-  id: string;
-  name: string;
-  description?: string | null;
-  price: number;
-  durationMinutes: number;
-  isActive: boolean;
-  key: number;
-}
-
-interface UseService {
-  service: Service[] | null;
+interface UseServicesState {
+  services: Service[] | null;
   loading: boolean;
   getServices: () => Promise<void>;
 }
 
-export const useService = create<UseService>((set) => ({
-  service: null,
+/**
+ * Store global de servicios activos.
+ * Reemplaza al hook duplicado que vivía en hooks/useService.ts (que rompía
+ * cuando el endpoint devolvía null porque hacía response.data sin chequeo).
+ */
+export const useServicesStore = create<UseServicesState>((set) => ({
+  services: null,
   loading: false,
   getServices: async () => {
     set({ loading: true });
-    const res = await api<{ data: Service[] }>("service");
+    const res = await api<ApiResponse<Service[]>>("service");
     set({
-      service: res?.data ?? null,
+      services: res?.data ?? null,
       loading: false,
     });
   },
