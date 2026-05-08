@@ -5,7 +5,14 @@
     },
   ],
   "settings": {
-    "cSpell.words": ["Microservicios", "Tauri", "testeado", "Turborepo"],
+    "cSpell.words": [
+      "Microservicios",
+      "Peko",
+      "Quimilí",
+      "Tauri",
+      "testeado",
+      "Turborepo",
+    ],
     "files.associations": {
       "base.css": "tailwindcss",
       "global.css": "tailwindcss",
