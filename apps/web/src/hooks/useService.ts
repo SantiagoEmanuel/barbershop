@@ -1,20 +1,8 @@
-import { checkArrayIsValid, type Service } from "@config/zod";
-import { create } from "zustand";
-import { api } from "../lib/api";
-
-type UseService = {
-  service: Service[] | null;
-  getServices: () => Promise<void>;
-};
-export const useService = create<UseService>((set) => ({
-  service: null,
-  getServices: async () => {
-    const response = await api("service", { method: "GET" });
-
-    const data = checkArrayIsValid(response.data);
-
-    set(() => ({
-      service: data,
-    }));
-  },
-}));
+/**
+ * @deprecated Mantenido como re-export por compatibilidad.
+ * Importá `useServicesStore` desde `../store/useServicesStore` directamente.
+ *
+ * Antes acá vivía un store duplicado que rompía en runtime al hacer
+ * `response.data` sin chequear null cuando la API fallaba.
+ */
+export { useServicesStore as useService } from "../store/useServicesStore";
