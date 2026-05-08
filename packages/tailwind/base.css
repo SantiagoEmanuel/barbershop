@@ -1,65 +1,231 @@
+/* ── Fuentes ─────────────────────────────────────────────────
+   Fraunces: serif expresiva con personalidad de barbería clásica
+   Nunito:   sans redondeada, cálida — el "amigo"
+   ──────────────────────────────────────────────────────────── */
+/* Se movió el import de la fuente a global.css dentro de web por un error al importar las fuentes */
+
+/* ── Design tokens ─────────────────────────────────────────── */
 @theme {
-  --color-primary: rgb(54, 154, 241);
-  --color-secondary: rgba(84, 87, 87, 0.9);
-  --color-action: rgba(229, 81, 79, 0.92);
+  /* Identidad / marca */
+  --color-marca: #f8dfb0; /* dorado cálido (+contraste vs #F6E2BD original) */
+  --color-marca-deep: #d4a853; /* hover / active / emphasis */
+  --color-marca-subtle: rgba(248, 223, 176, 0.12); /* backgrounds sutiles */
 
-  --color-dark-teal-50: #e7fbfd;
-  --color-dark-teal-100: #d0f7fb;
-  --color-dark-teal-200: #a1eff7;
-  --color-dark-teal-300: #71e7f4;
-  --color-dark-teal-400: #42def0;
-  --color-dark-teal-500: #13d6ec;
-  --color-dark-teal-600: #0fabbd;
-  --color-dark-teal-700: #0b818e;
-  --color-dark-teal-800: #08565e;
-  --color-dark-teal-900: #042b2f;
-  --color-dark-teal-950: #031e21;
+  /* Texto */
+  --color-text-primary: #efeede; /* sin cambio — muy legible */
+  --color-text-secondary: #cbc5c1; /* sin cambio */
+  --color-text-muted: #8b8899; /* nuevo — hints, placeholders, footer */
 
-  --color-sky-surge-50: #e7f8fd;
-  --color-sky-surge-100: #d0f2fb;
-  --color-sky-surge-200: #a0e5f8;
-  --color-sky-surge-300: #71d8f4;
-  --color-sky-surge-400: #41cbf1;
-  --color-sky-surge-500: #12beed;
-  --color-sky-surge-600: #0e98be;
-  --color-sky-surge-700: #0b728e;
-  --color-sky-surge-800: #074c5f;
-  --color-sky-surge-900: #04262f;
-  --color-sky-surge-950: #021b21;
+  /* Fondo */
+  --color-background: #272630; /* levemente más oscuro (era #282730) */
+  --color-surface: #323140; /* azul-violeta oscuro, más profundidad */
+  --color-surface-2: #3e3d4e; /* superficie elevada (modales, dropdowns) */
+  --color-surface-3: #4a4960; /* hover dentro de surface-2 */
 
-  --color-white-smoke-50: #f5f1f0;
-  --color-white-smoke-100: #ebe3e0;
-  --color-white-smoke-200: #d6c7c2;
-  --color-white-smoke-300: #c2aba3;
-  --color-white-smoke-400: #ad8f85;
-  --color-white-smoke-500: #997366;
-  --color-white-smoke-600: #7a5c52;
-  --color-white-smoke-700: #5c453d;
-  --color-white-smoke-800: #3d2e29;
-  --color-white-smoke-900: #1f1714;
-  --color-white-smoke-950: #15100e;
+  /* Semánticos */
+  --color-success: #86c586;
+  --color-error: #e08080;
+  --color-warning: #e6b96a;
 
-  --color-midnight-violet-50: #f4eff5;
-  --color-midnight-violet-100: #eae0eb;
-  --color-midnight-violet-200: #d5c1d7;
-  --color-midnight-violet-300: #bfa2c3;
-  --color-midnight-violet-400: #aa83af;
-  --color-midnight-violet-500: #95639c;
-  --color-midnight-violet-600: #77507c;
-  --color-midnight-violet-700: #593c5d;
-  --color-midnight-violet-800: #3c283e;
-  --color-midnight-violet-900: #1e141f;
-  --color-midnight-violet-950: #150e16;
+  /* Bordes */
+  --color-border: rgba(248, 223, 176, 0.1);
+  --color-border-strong: rgba(248, 223, 176, 0.25);
+  --color-border-error: rgba(220, 100, 100, 0.3);
 
-  --color-coral-glow-50: #feeee6;
-  --color-coral-glow-100: #feddcd;
-  --color-coral-glow-200: #fcba9c;
-  --color-coral-glow-300: #fb986a;
-  --color-coral-glow-400: #fa7538;
-  --color-coral-glow-500: #f95306;
-  --color-coral-glow-600: #c74205;
-  --color-coral-glow-700: #953204;
-  --color-coral-glow-800: #632103;
-  --color-coral-glow-900: #321101;
-  --color-coral-glow-950: #230c01;
+  /* Tipografía */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+
+  /* Radios */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-full: 9999px;
+}
+
+/* ── Base global ───────────────────────────────────────────── */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-text-primary);
+  }
+
+  /* Scrollbar sutil que respeta el tema */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-background);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(248, 223, 176, 0.15);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(248, 223, 176, 0.28);
+  }
+
+  /* Focus visible accesible */
+  :focus-visible {
+    outline: 2px solid rgba(248, 223, 176, 0.6);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Selección de texto */
+  ::selection {
+    background: rgba(248, 223, 176, 0.2);
+    color: var(--color-text-primary);
+  }
+}
+
+/* ── Utilidades de layout ──────────────────────────────────── */
+@layer utilities {
+  /* Contenedor principal responsive */
+  .container-layout {
+    width: 100%;
+    max-width: 72rem; /* 1152px — cómodo para contenido de barbería */
+    margin-inline: auto;
+    padding-inline: 1rem; /* 16px mobile */
+  }
+
+  @media (min-width: 640px) {
+    .container-layout {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-layout {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Texto display */
+  .text-display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.05;
+  }
+
+  /* Badge de marca */
+  .badge-marca {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: rgba(248, 223, 176, 0.1);
+    color: var(--color-marca);
+    border: 1px solid rgba(248, 223, 176, 0.2);
+    font-family: var(--font-body);
+  }
+
+  /* Línea decorativa dorada */
+  .line-marca {
+    display: block;
+    width: 2.5rem;
+    height: 2px;
+    background: var(--color-marca);
+    border-radius: var(--radius-full);
+  }
+
+  /* Botón primario de la marca */
+  .btn-marca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: var(--radius-md);
+    background: var(--color-marca);
+    color: #272630;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+    border: none;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      transform 0.15s;
+    text-decoration: none;
+  }
+
+  .btn-marca:hover {
+    background: #f0d49a;
+  }
+  .btn-marca:active {
+    transform: scale(0.97);
+  }
+
+  /* Botón ghost */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: 1px solid rgba(248, 223, 176, 0.18);
+    cursor: pointer;
+    transition:
+      border-color 0.2s,
+      color 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-ghost:hover {
+    border-color: rgba(248, 223, 176, 0.4);
+    color: var(--color-marca);
+  }
+
+  /* Card surface */
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+  }
+
+  .card-elevated {
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+  }
 }
