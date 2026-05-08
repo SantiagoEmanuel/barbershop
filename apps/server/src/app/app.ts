@@ -19,8 +19,9 @@ app.use(
   cors({
     origin: [
       "http://localhost",
-      "http://localhost:5173",
-      "https://barbershop-web-lac.vercel.app/",
+      "https://barbershop-web-lac.vercel.app",
+      "http://barbershop-web-lac.vercel.app",
+      "*",
     ],
     credentials: true,
   }),
