@@ -120,6 +120,12 @@
     }
   }
 
+  @media (min-width: 748px) {
+    .container-layout {
+      padding-inline: 1.65rem;
+    }
+  }
+
   @media (min-width: 1024px) {
     .container-layout {
       padding-inline: 2rem;
