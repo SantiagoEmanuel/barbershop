@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { todayISO } from "../components/ui/formatters";
 import type { BookingStep } from "../types";
 
 interface BookingState {
@@ -18,6 +19,7 @@ interface BookingState {
 
   clientName: string;
   clientPhone: string;
+  clientEmail: string;
   notes: string;
 
   // Acciones
@@ -33,7 +35,12 @@ interface BookingState {
   ) => void;
   setDate: (date: string) => void;
   setSlot: (startTime: string) => void;
-  setClient: (name: string, phone: string, notes: string) => void;
+  setClient: (
+    name: string,
+    phone: string,
+    notes: string,
+    email: string,
+  ) => void;
   reset: () => void;
 }
 
@@ -46,10 +53,11 @@ const defaultState = {
   serviceName: "",
   servicePrice: 0,
   serviceDuration: 0,
-  date: "",
+  date: todayISO(),
   startTime: "",
   clientName: "",
   clientPhone: "",
+  clientEmail: "",
   notes: "",
 };
 
@@ -69,7 +77,7 @@ export const useBookingStore = create<BookingState>((set) => ({
     }),
   setDate: (date) => set({ date }),
   setSlot: (startTime) => set({ startTime }),
-  setClient: (clientName, clientPhone, notes) =>
-    set({ clientName, clientPhone, notes }),
+  setClient: (clientName, clientPhone, notes, clientEmail) =>
+    set({ clientName, clientPhone, notes, clientEmail }),
   reset: () => set(defaultState),
 }));

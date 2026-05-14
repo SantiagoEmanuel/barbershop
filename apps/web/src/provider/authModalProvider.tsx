@@ -1,10 +1,16 @@
 import { useState, type ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 import { AuthModal } from "../components/authModal";
-import { Footer } from "../components/layout/footer";
-import { Navbar } from "../components/navbar";
 import { AuthModalContext } from "../context/authModalContext";
 
+/**
+ * Provider del modal de auth + toaster global.
+ *
+ * Solo provee contexto y monta los singletons (AuthModal + Toaster). El layout
+ * visual (Navbar, Footer) ahora lo arman cada uno de los layouts (RootLayout,
+ * AdminLayout), no este provider. Eso permite que el AuthModalProvider envuelva
+ * TODA la app, incluido /admin/*, sin duplicar navegación.
+ */
 export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [authOpen, setAuthOpen] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "register">("login");
@@ -20,16 +26,8 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthModalContext.Provider value={{ openAuth, closeAuth }}>
-      <div className="bg-background text-text-primary font-body flex min-h-dvh flex-col">
-        <Navbar onOpenAuth={openAuth} />
-
-        {/* padding-top compensa la navbar fixed */}
-        <main className="flex-1 pt-14 sm:pt-16">{children}</main>
-
-        <Footer />
-      </div>
+      {children}
       <Toaster />
-
       <AuthModal open={authOpen} onClose={closeAuth} defaultTab={authTab} />
     </AuthModalContext.Provider>
   );

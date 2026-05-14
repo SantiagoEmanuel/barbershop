@@ -1,12 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import BookingModal from "../components/bookingModal";
+import { UserAvatar } from "../components/ui/avatar";
 import { formatARS } from "../components/ui/formatters";
+import { SectionHeader } from "../components/ui/sectionHeader";
+import { Spinner } from "../components/ui/spinner";
+import { api } from "../lib/api";
 import { useBookingStore } from "../store/useBookingStore";
 import { useServicesStore } from "../store/useServicesStore";
+import type { ApiResponse, Barber } from "../types";
 
 const STATS = [
-  { num: "10+", label: "Años de experiencia" },
-  { num: "3", label: "Barberos especializados" },
+  { num: "5+", label: "Años de experiencia" },
+  { num: "1", label: "Barberos especializados" },
   { num: "5k+", label: "Clientes atendidos" },
   { num: "5★", label: "Valoración promedio" },
 ];
@@ -15,21 +20,27 @@ export default function Home() {
   const openBooking = useBookingStore((s) => s.openModal);
   const services = useServicesStore((s) => s.services);
   const getServices = useServicesStore((s) => s.getServices);
+  const [barbers, setBarbers] = useState<Barber[] | null>(null);
 
   useEffect(() => {
     getServices();
+    api<ApiResponse<Barber[]>>("barber").then((r) => setBarbers(r?.data ?? []));
   }, [getServices]);
+
+  function scrollTo(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  }
 
   return (
     <>
-      {/* Hero */}
-      <section className="relative flex min-h-[85dvh] flex-col justify-between overflow-hidden px-5 pt-10 pb-8 sm:px-10 sm:pt-16">
+      {/* ── Hero ────────────────────────────────────────────── */}
+      <section className="relative mx-auto flex min-h-[85dvh] max-w-4xl flex-col justify-between overflow-hidden px-5 pt-10 pb-8 sm:px-10 sm:pt-16">
         {/* Tijera decorativa de fondo */}
-
         <img
-          src="scissors_icon.png"
-          alt="scissors icon bg"
-          className="text-marca/3 font-display [clamp(18rem, 50vw, 38rem)] pointer-events-none absolute top-1/2 right-0 z-0 -translate-y-1/2 rotate-90 leading-none opacity-30 select-none"
+          src="/scissors_icon.png"
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 right-[-15%] z-0 hidden w-md -translate-y-1/2 rotate-90 opacity-[0.2] select-none sm:right-0 sm:block lg:w-xl"
         />
 
         {/* Línea decorativa superior */}
@@ -38,14 +49,14 @@ export default function Home() {
         <div className="relative z-10 flex max-w-xl flex-col gap-6">
           <div className="flex items-center gap-3">
             <span className="line-marca" />
-            <p className="text-marca font-body text-xs tracking-[0.25em] uppercase">
-              Desde 2014 · Quimilí
+            <p className="text-marca font-body text-[10px] tracking-[0.25em] uppercase sm:text-xs">
+              Desde 2020 · Quimilí
             </p>
           </div>
 
           <h1
             className="font-display text-text-primary leading-[1.05] font-bold"
-            style={{ fontSize: "clamp(2.5rem, 7vw, 4.5rem)" }}
+            style={{ fontSize: "clamp(2.25rem, 7vw, 4.5rem)" }}
           >
             Siéntate, saca tu turno y{" "}
             <span className="text-marca font-normal italic">
@@ -54,8 +65,8 @@ export default function Home() {
             a nosotros.
           </h1>
 
-          <p className="text-text-muted font-body max-w-sm text-base leading-relaxed">
-            Más de diez años dando forma al estilo de los hombres de Quimilí.
+          <p className="text-text-muted font-body max-w-sm text-sm leading-relaxed sm:text-base">
+            Más de cinco años dando forma al estilo de los hombres de Quimilí.
             Sin vueltas, sin esperas, sin sorpresas.
           </p>
 
@@ -67,11 +78,7 @@ export default function Home() {
               Sacar turno
             </button>
             <button
-              onClick={() =>
-                document.getElementById("servicios")?.scrollIntoView({
-                  behavior: "smooth",
-                })
-              }
+              onClick={() => scrollTo("servicios")}
               className="btn-ghost rounded-xl px-6 py-3 text-sm"
             >
               Ver servicios →
@@ -84,12 +91,12 @@ export default function Home() {
           {STATS.map((s) => (
             <div
               key={s.num}
-              className="bg-surface flex flex-col gap-1 px-5 py-4"
+              className="bg-surface flex flex-col gap-1 px-4 py-4 sm:px-5"
             >
-              <span className="text-marca font-display text-2xl font-bold">
+              <span className="text-marca font-display text-xl font-bold sm:text-2xl">
                 {s.num}
               </span>
-              <span className="text-text-muted font-body text-xs">
+              <span className="text-text-muted font-body text-[11px] leading-tight sm:text-xs">
                 {s.label}
               </span>
             </div>
@@ -97,32 +104,42 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Servicios */}
+      {/* ── Servicios ─────────────────────────────────────────── */}
       <section
         id="servicios"
-        className="mx-auto w-full max-w-6xl px-5 py-14 sm:px-10"
+        className="mx-auto w-full max-w-4xl px-5 py-12 sm:px-10 sm:py-16"
       >
-        <div className="mb-8 flex flex-col gap-2">
-          <span className="badge-marca">Nuestros servicios</span>
-          <h2 className="font-display text-text-primary text-[1.75rem] font-bold">
-            ¿Qué necesitás hoy?
-          </h2>
+        <div className="mb-8 sm:mb-10">
+          <SectionHeader
+            eyebrow="Nuestros servicios"
+            title="¿Qué necesitás hoy?"
+            description="Tocá un servicio para reservar tu turno en menos de un minuto."
+            align="center"
+          />
         </div>
 
-        {services && services.length > 0 ? (
+        {services == null ? (
+          <div className="flex justify-center py-12">
+            <Spinner size={28} />
+          </div>
+        ) : services.length === 0 ? (
+          <p className="text-text-muted font-body text-center text-sm">
+            Aún no hay servicios cargados.
+          </p>
+        ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((s, i) => (
               <button
                 key={s.id}
                 onClick={openBooking}
-                className={`card hover:border-border-strong group flex flex-col gap-3 text-left transition-all duration-200 hover:-translate-y-px ${
+                className={`bg-surface border-border hover:border-marca/35 group flex flex-col gap-3 rounded-2xl border p-5 text-left transition-all duration-200 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] ${
                   i === 0 ? "sm:col-span-full" : ""
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
+                  <div className="min-w-0 flex-1">
                     <p
-                      className={`text-marca font-display font-bold ${i === 0 ? "text-[1.2rem]" : "text-base"}`}
+                      className={`text-marca font-display font-bold ${i === 0 ? "text-xl sm:text-2xl" : "text-base sm:text-lg"}`}
                     >
                       {s.name}
                     </p>
@@ -133,7 +150,7 @@ export default function Home() {
                     )}
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-text-primary font-display text-lg font-bold">
+                    <p className="text-text-primary font-display text-lg font-bold tabular-nums">
                       {formatARS(s.price)}
                     </p>
                     <p className="text-text-muted font-body text-xs">
@@ -141,35 +158,94 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
+                <p className="text-marca font-body mt-auto text-xs font-semibold opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                  Reservar →
+                </p>
               </button>
             ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3 py-12">
-            <div className="bg-marca/8 border-border flex size-12 items-center justify-center rounded-full border">
-              ✂️
-            </div>
-            <p className="text-text-muted font-body">Cargando servicios...</p>
           </div>
         )}
       </section>
 
-      {/* CTA final */}
-      <section className="bg-surface border-border-strong mx-4 mb-14 flex flex-col items-center justify-between gap-6 rounded-2xl border px-6 py-10 sm:mx-10 sm:flex-row sm:px-12 sm:py-12">
-        <div className="flex flex-col gap-2 text-center sm:text-left">
-          <h3 className="font-display text-text-primary text-[1.4rem] font-bold">
-            ¿Listo para verte bien?
-          </h3>
-          <p className="text-text-muted font-body text-[0.9rem]">
-            Reservá tu turno en menos de un minuto. Sin cuentas, sin vueltas.
-          </p>
+      {/* ── Barberos ──────────────────────────────────────────── */}
+      <section
+        id="barberos"
+        className="bg-surface/40 border-border mx-auto w-full max-w-4xl rounded-none border-y px-4 md:rounded-2xl"
+      >
+        <div className="mx-auto w-full max-w-4xl px-5 py-12 sm:px-10 sm:py-16">
+          <div className="mb-8 sm:mb-10">
+            <SectionHeader
+              eyebrow="El equipo"
+              title="Nuestros barberos"
+              description="Los que se encargan de que salgas a la calle como nuevo."
+              align="center"
+            />
+          </div>
+
+          {barbers == null ? (
+            <div className="flex justify-center py-12">
+              <Spinner size={28} />
+            </div>
+          ) : barbers.length === 0 ? (
+            <p className="text-text-muted font-body text-center text-sm">
+              Pronto sumamos al equipo.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {barbers.map((b) => (
+                <article
+                  key={b.id}
+                  className="bg-surface border-border hover:border-marca/30 flex flex-col gap-3 rounded-2xl border p-5 transition-colors duration-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <UserAvatar name={b.name} size="lg" />
+                    <div className="min-w-0">
+                      <p className="text-text-primary font-display text-base font-bold">
+                        {b.name}
+                      </p>
+                      {b.experienceYears != null && (
+                        <p className="text-text-muted font-body text-xs">
+                          {b.experienceYears} años de experiencia
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {b.bio && (
+                    <p className="text-text-secondary font-body text-sm leading-relaxed">
+                      {b.bio}
+                    </p>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
         </div>
-        <button
-          onClick={openBooking}
-          className="btn-marca shrink-0 rounded-xl px-8 py-3.5 text-base"
-        >
-          Sacar turno ahora
-        </button>
+      </section>
+
+      {/* ── CTA final ─────────────────────────────────────────── */}
+      <section className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
+        <div className="bg-surface border-border-strong relative mx-auto flex w-full flex-col items-center gap-5 overflow-hidden rounded-2xl border px-6 py-10 text-center sm:px-12 sm:py-14">
+          <span
+            aria-hidden
+            className="bg-marca/8 text-marca pointer-events-none absolute -top-12 -right-12 flex size-44 items-center justify-center rounded-full text-6xl opacity-30"
+          >
+            ✂
+          </span>
+          <div className="relative z-10 flex flex-col gap-2">
+            <h3 className="font-display text-text-primary text-2xl font-bold sm:text-3xl">
+              ¿Listo para verte bien?
+            </h3>
+            <p className="text-text-muted font-body max-w-md text-sm sm:text-base">
+              Reservá tu turno en menos de un minuto. Sin cuentas, sin vueltas.
+            </p>
+          </div>
+          <button
+            onClick={openBooking}
+            className="btn-marca relative z-10 rounded-xl px-8 py-3.5 text-base"
+          >
+            Sacar turno ahora
+          </button>
+        </div>
       </section>
 
       <BookingModal />

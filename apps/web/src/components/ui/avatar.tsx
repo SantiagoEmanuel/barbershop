@@ -22,7 +22,7 @@ export function UserAvatar({
 
   return (
     <span
-      className={`${SIZES[size]} bg-marca/15 text-marca border-marca/30 font-body inline-flex shrink-0 items-center justify-center rounded-full border font-semibold`}
+      className={`${SIZES[size]} bg-marca/15 text-marca border-marca/30 font-body inline-flex shrink-0 items-center justify-center rounded-full border font-semibold uppercase`}
     >
       {initials}
     </span>

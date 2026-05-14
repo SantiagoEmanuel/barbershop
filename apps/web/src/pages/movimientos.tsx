@@ -190,7 +190,7 @@ export default function Movimientos() {
                   <div
                     className={`min-h-1 w-full rounded-t-lg transition-all duration-500 ${
                       d.total > 0
-                        ? "from-marca-deep to-marca bg-gradient-to-t"
+                        ? "from-marca-deep to-marca bg-linear-to-t"
                         : "bg-marca/8"
                     }`}
                     style={{ height: `${Math.max(pct, 3)}%` }}

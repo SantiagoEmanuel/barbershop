@@ -62,7 +62,7 @@ export default function Reservas() {
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="bg-surface border-border text-text-primary font-body rounded-xl border px-4 py-2.5 text-sm [color-scheme:dark] outline-none"
+          className="bg-surface border-border text-text-primary font-body rounded-xl border px-4 py-2.5 text-sm scheme-dark outline-none"
         />
         <select
           value={selectedBarber}

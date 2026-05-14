@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, post } from "../lib/api";
+import { cn } from "../lib/cn";
+import { timeToMinutes } from "../lib/timeTominutes";
 import { useBookingStore } from "../store/useBookingStore";
 import type { ApiResponse, Barber, Service, Slot } from "../types";
 import { ModalBase } from "./modalBase";
@@ -252,7 +254,6 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
         setValidSlots(filterValidSlots(slots, serviceDuration));
       })
       .finally(() => setLoadingSlots(false));
-     
   }, [date, barberId]);
 
   useEffect(() => {
@@ -281,7 +282,7 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
           min={todayISO()}
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="border-border focus:border-border-strong text-text-primary font-body w-full rounded-xl border bg-black/25 px-4 py-3 text-sm [color-scheme:dark] transition-all duration-200 outline-none"
+          className="border-border focus:border-border-strong text-text-primary font-body w-full rounded-xl border bg-black/25 px-4 py-3 text-sm scheme-dark transition-all duration-200 outline-none"
         />
       </div>
 
@@ -303,6 +304,13 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
             <>
               <div className="grid grid-cols-3 gap-2">
                 {validSlots.map((s) => {
+                  if (
+                    timeToMinutes(s.startTime) <
+                      new Date().getHours() * 60 + new Date().getMinutes() &&
+                    date === todayISO()
+                  ) {
+                    return;
+                  }
                   const selected = startTime === s.startTime;
                   return (
                     <button
@@ -311,11 +319,12 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
                         setSlot(s.startTime);
                         onNext();
                       }}
-                      className={`font-body rounded-xl border py-2.5 text-sm font-semibold transition-all duration-150 ${
+                      className={cn(
+                        "font-body rounded-xl border py-2.5 text-sm font-semibold transition-all duration-150",
                         selected
                           ? "bg-marca/15 border-border-strong text-marca"
-                          : "border-border text-text-secondary bg-black/20"
-                      }`}
+                          : "border-border text-text-secondary bg-black/20",
+                      )}
                     >
                       {s.startTime}
                     </button>
@@ -336,7 +345,9 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
 
 // ── Step 4: datos cliente ─────────────────────────────────────
 function StepClient({ onNext }: { onNext: () => void }) {
-  const { clientName, clientPhone, notes, setClient } = useBookingStore();
+  const { clientEmail, clientName, clientPhone, notes, setClient } =
+    useBookingStore();
+  const [email, setEmail] = useState(clientEmail);
   const [name, setName] = useState(clientName);
   const [phone, setPhone] = useState(clientPhone);
   const [note, setNote] = useState(notes);
@@ -344,7 +355,7 @@ function StepClient({ onNext }: { onNext: () => void }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) return;
-    setClient(name.trim(), phone.trim(), note.trim());
+    setClient(name.trim(), phone.trim(), note.trim(), email.trim());
     onNext();
   }
 
@@ -363,9 +374,19 @@ function StepClient({ onNext }: { onNext: () => void }) {
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Field
+          label="Email *"
+          type="email"
+          placeholder="tu-correo@gmail.com"
+          autoFocus
+          value={email}
+          onChange={setEmail}
+          required
+        />
+        <Field
           label="Nombre completo *"
           type="text"
           placeholder="Juan Pérez"
+          className="capitalize"
           value={name}
           onChange={setName}
           required
@@ -387,7 +408,7 @@ function StepClient({ onNext }: { onNext: () => void }) {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}
-            className="border-border focus:border-border-strong text-text-primary font-body w-full resize-none rounded-xl border bg-black/25 px-4 py-3 text-sm transition-all duration-200 outline-none"
+            className="border-border focus:border-border-strong text-text-primary font-body w-full resize-none rounded-xl border bg-black/25 px-4 py-3 text-sm capitalize transition-all duration-200 outline-none"
           />
         </div>
         <button
@@ -419,6 +440,7 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
         startTime: store.startTime,
         clientName: store.clientName,
         clientPhone: store.clientPhone,
+        clientEmail: store.clientEmail,
         notes: store.notes,
       });
       if (!res) throw new Error("Error al reservar el turno");
@@ -442,7 +464,12 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
           </h3>
           <p className="text-text-muted font-body text-sm">
             Te esperamos el{" "}
-            <strong className="text-text-primary">{store.date}</strong> a las{" "}
+            <strong className="text-text-primary">
+              {new Date(store.date).toLocaleDateString("es-AR", {
+                timeZone: "America/Argentina/Buenos_Aires",
+              })}
+            </strong>{" "}
+            a las{" "}
             <strong className="text-text-primary">{store.startTime}</strong> con{" "}
             <strong className="text-marca">{store.barberName}</strong>.
           </p>
@@ -464,7 +491,12 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
     { label: "Barbero", value: store.barberName },
     { label: "Servicio", value: store.serviceName },
     { label: "Precio", value: formatARS(store.servicePrice) },
-    { label: "Fecha", value: store.date },
+    {
+      label: "Fecha",
+      value: new Date(store.date).toLocaleDateString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+      }),
+    },
     { label: "Hora", value: store.startTime },
     { label: "Nombre", value: store.clientName },
     { label: "Teléfono", value: store.clientPhone },

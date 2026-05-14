@@ -5,6 +5,8 @@ export interface Schedule {
   endTime: string;
   slotDurationMinutes: number;
   isActive: boolean;
+  startBreak: string;
+  endBreak: string;
 }
 
 export interface Barber {
@@ -15,5 +17,5 @@ export interface Barber {
   avatarUrl?: string | null;
   experienceYears?: number | null;
   isActive?: boolean;
-  schedules?: Schedule[];
+  schedules: Schedule[];
 }

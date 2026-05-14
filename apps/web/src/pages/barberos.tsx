@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ModalBase } from "../components/modalBase";
 import { UserAvatar } from "../components/ui/avatar";
+import { ConfirmModal } from "../components/ui/confirmModal";
 import { EmptyState } from "../components/ui/emptyState";
 import { FieldInput } from "../components/ui/fieldInput";
 import { SectionHeader } from "../components/ui/sectionHeader";
@@ -149,16 +150,20 @@ function SchedulePanel({
   barber: Barber;
   onClose: () => void;
 }) {
+  console.log({ barber });
+
   const [schedules, setSchedules] = useState<Schedule[]>(
     DAYS.map((_, i) => {
-      const existing = barber.schedules?.find((s) => s.dayOfWeek === i);
+      const existing = barber.schedules.find((s) => s.dayOfWeek === i);
       return (
         existing ?? {
           dayOfWeek: i,
           startTime: "09:00",
           endTime: i === 6 ? "14:00" : "19:00",
-          slotDurationMinutes: 10,
+          slotDurationMinutes: 30,
           isActive: i >= 1 && i <= 6,
+          startBreak: "13:00",
+          endBreak: "16:00",
         }
       );
     }),
@@ -175,8 +180,8 @@ function SchedulePanel({
           .filter((s) => s.isActive)
           .map((s) =>
             s.id
-              ? put(`barber-schedule/${s.id}`, s)
-              : post(`barber-schedule`, { ...s, barberId: barber.id }),
+              ? put(`barber/schedule/${s.id}`, s)
+              : post(`barber/schedule`, { ...s, barberId: barber.id }),
           ),
       );
       setSaved(true);
@@ -228,38 +233,79 @@ function SchedulePanel({
                 {DAYS[i]}
               </button>
 
-              <div className="flex flex-1 items-center gap-2">
-                <input
-                  type="time"
-                  value={s.startTime}
-                  disabled={!s.isActive}
-                  onChange={(e) =>
-                    setSchedules((prev) =>
-                      prev.map((x) =>
-                        x.dayOfWeek === i
-                          ? { ...x, startTime: e.target.value }
-                          : x,
-                      ),
-                    )
-                  }
-                  className="border-border text-text-primary font-body flex-1 rounded-lg border bg-black/25 px-2.5 py-1.5 text-xs [color-scheme:dark] outline-none"
-                />
-                <span className="text-text-muted text-xs">a</span>
-                <input
-                  type="time"
-                  value={s.endTime}
-                  disabled={!s.isActive}
-                  onChange={(e) =>
-                    setSchedules((prev) =>
-                      prev.map((x) =>
-                        x.dayOfWeek === i
-                          ? { ...x, endTime: e.target.value }
-                          : x,
-                      ),
-                    )
-                  }
-                  className="border-border text-text-primary font-body flex-1 rounded-lg border bg-black/25 px-2.5 py-1.5 text-xs [color-scheme:dark] outline-none"
-                />
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-1 flex-col items-center gap-2">
+                  <span>Horario de trabajo</span>
+                  <div className="flex flex-1 items-center gap-2">
+                    <input
+                      type="time"
+                      value={s.startTime}
+                      disabled={!s.isActive}
+                      onChange={(e) =>
+                        setSchedules((prev) =>
+                          prev.map((x) =>
+                            x.dayOfWeek === i
+                              ? { ...x, startTime: e.target.value }
+                              : x,
+                          ),
+                        )
+                      }
+                      className="border-border text-text-primary font-body flex-1 rounded-lg border bg-black/25 px-2.5 py-1.5 text-xs scheme-dark outline-none"
+                    />
+                    <span className="text-text-muted text-xs">a</span>
+                    <input
+                      type="time"
+                      value={s.endTime}
+                      disabled={!s.isActive}
+                      onChange={(e) =>
+                        setSchedules((prev) =>
+                          prev.map((x) =>
+                            x.dayOfWeek === i
+                              ? { ...x, endTime: e.target.value }
+                              : x,
+                          ),
+                        )
+                      }
+                      className="border-border text-text-primary font-body flex-1 rounded-lg border bg-black/25 px-2.5 py-1.5 text-xs scheme-dark outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-1 flex-col items-center gap-2">
+                  <span>Horario de descanso</span>
+                  <div className="flex flex-1 items-center gap-2">
+                    <input
+                      type="time"
+                      value={s.startBreak}
+                      disabled={!s.isActive}
+                      onChange={(e) =>
+                        setSchedules((prev) =>
+                          prev.map((x) =>
+                            x.dayOfWeek === i
+                              ? { ...x, startBreak: e.target.value }
+                              : x,
+                          ),
+                        )
+                      }
+                      className="border-border text-text-primary font-body flex-1 rounded-lg border bg-black/25 px-2.5 py-1.5 text-xs scheme-dark outline-none"
+                    />
+                    <span className="text-text-muted text-xs">a</span>
+                    <input
+                      type="time"
+                      value={s.endBreak}
+                      disabled={!s.isActive}
+                      onChange={(e) =>
+                        setSchedules((prev) =>
+                          prev.map((x) =>
+                            x.dayOfWeek === i
+                              ? { ...x, endBreak: e.target.value }
+                              : x,
+                          ),
+                        )
+                      }
+                      className="border-border text-text-primary font-body flex-1 rounded-lg border bg-black/25 px-2.5 py-1.5 text-xs scheme-dark outline-none"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -303,6 +349,8 @@ export default function Barberos() {
   const [barberModal, setBarberModal] = useState(false);
   const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
   const [schedulesFor, setSchedulesFor] = useState<Barber | null>(null);
+  const [deactivating, setDeactivating] = useState<Barber | null>(null);
+  const [deactivatingLoading, setDeactivatingLoading] = useState(false);
 
   useEffect(() => {
     api<ApiResponse<Barber[]>>("barber?all=true")
@@ -311,15 +359,19 @@ export default function Barberos() {
   }, []);
 
   async function softDelete(id: string) {
-    if (!confirm("¿Desactivar este barbero? No se borrará su historial."))
-      return;
-    const res = await put<ApiResponse<Barber>>(`barber/${id}`, {
-      isActive: false,
-    });
-    if (res)
-      setBarbers((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, isActive: false } : b)),
-      );
+    setDeactivatingLoading(true);
+    try {
+      const res = await put<ApiResponse<Barber>>(`barber/${id}`, {
+        isActive: false,
+      });
+      if (res)
+        setBarbers((prev) =>
+          prev.map((b) => (b.id === id ? { ...b, isActive: false } : b)),
+        );
+      setDeactivating(null);
+    } finally {
+      setDeactivatingLoading(false);
+    }
   }
 
   async function reactivate(id: string) {
@@ -416,7 +468,7 @@ export default function Barberos() {
                 </button>
                 {b.isActive ? (
                   <button
-                    onClick={() => softDelete(b.id)}
+                    onClick={() => setDeactivating(b)}
                     className="bg-error/6 text-error border-error/15 flex size-8 items-center justify-center rounded-lg border text-xs transition-colors duration-150"
                     title="Desactivar"
                   >
@@ -456,6 +508,18 @@ export default function Barberos() {
           onClose={() => setSchedulesFor(null)}
         />
       )}
+
+      <ConfirmModal
+        open={deactivating != null}
+        onClose={() => setDeactivating(null)}
+        onConfirm={() => deactivating && softDelete(deactivating.id)}
+        title={`¿Desactivar a ${deactivating?.name ?? ""}?`}
+        description="No se borrará su historial. Podés reactivarlo cuando quieras."
+        confirmLabel="Sí, desactivar"
+        cancelLabel="No, mantener"
+        variant="danger"
+        loading={deactivatingLoading}
+      />
     </div>
   );
 }

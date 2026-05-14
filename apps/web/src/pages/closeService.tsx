@@ -176,7 +176,6 @@ export default function CierreServicio() {
   );
 
   const isCompleted = appointment.status === "completed";
-
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -196,11 +195,11 @@ export default function CierreServicio() {
             <p className="text-text-muted font-body mb-1 text-xs font-bold tracking-widest uppercase">
               Cliente
             </p>
-            <p className="font-display text-text-primary text-lg font-bold">
+            <p className="font-display text-text-primary text-lg font-bold capitalize">
               {appointment.clientName}
             </p>
             <p className="text-text-muted font-body text-sm">
-              {appointment.clientPhone}
+              Nro: {appointment.clientPhone}
             </p>
           </div>
           <StatusBadge status={appointment.status} />
@@ -208,8 +207,8 @@ export default function CierreServicio() {
 
         <div className="border-border grid grid-cols-2 gap-3 border-t pt-3 sm:grid-cols-4">
           {[
-            { label: "Barbero", value: appointment.barber?.name },
-            { label: "Servicio", value: appointment.service?.name },
+            { label: "Barbero", value: appointment.barber.name },
+            { label: "Servicio", value: appointment.service.name },
             {
               label: "Horario",
               value: `${appointment.startTime}–${appointment.endTime}`,

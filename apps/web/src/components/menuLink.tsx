@@ -1,3 +1,9 @@
+import type { ReactNode } from "react";
+
+/**
+ * Link de menú con icono + label. Usado en UserMenu (dropdown desde navbar).
+ * El icono se pinta a `currentColor`, así sigue el cambio de color del hover.
+ */
 export function MenuLink({
   href,
   icon,
@@ -5,7 +11,7 @@ export function MenuLink({
   onClose,
 }: {
   href: string;
-  icon: string;
+  icon: ReactNode;
   label: string;
   onClose: () => void;
 }) {
@@ -13,9 +19,12 @@ export function MenuLink({
     <a
       href={href}
       onClick={onClose}
-      className="text-text-secondary hover:bg-marca/6 hover:text-marca font-body flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium no-underline transition-colors duration-150"
+      className="text-text-secondary hover:bg-marca/8 hover:text-marca font-body flex items-center gap-3 px-4 py-2.5 text-sm font-medium no-underline transition-colors duration-150"
     >
-      <span className="text-[13px] opacity-70">{icon}</span> {label}
+      <span aria-hidden className="shrink-0 opacity-80">
+        {icon}
+      </span>
+      <span className="truncate">{label}</span>
     </a>
   );
 }

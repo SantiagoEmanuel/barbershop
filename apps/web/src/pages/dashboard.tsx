@@ -107,7 +107,7 @@ export default function Dashboard() {
           <EmptyState
             icon="🎉"
             title="No hay turnos pendientes"
-            description="Todo el día está libre o completado."
+            description="Todos los turnos están completados"
           />
         ) : (
           <div className="flex flex-col gap-2">
@@ -134,6 +134,49 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
+        )}
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
+            Todos los turnos de hoy
+          </p>
+          <button
+            onClick={() => navigate("/admin/turnos")}
+            className="text-marca font-body text-xs font-semibold"
+          >
+            Ver todos →
+          </button>
+        </div>
+        {appointments.length === 0 ? (
+          <EmptyState
+            icon="🎉"
+            title="No hay turnos para hoy"
+            description="Todo el día está libre"
+          />
+        ) : (
+          appointments
+            .sort((a, b) => a.startTime.localeCompare(b.startTime))
+            .slice(0, 5)
+            .map((a) => (
+              <button
+                key={a.id}
+                className="bg-surface border-border hover:border-border-strong flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition-all duration-150"
+              >
+                <div className="bg-marca/8 border-border flex size-10 shrink-0 flex-col items-center justify-center rounded-xl border">
+                  <span className="text-marca font-body text-xs leading-none font-bold">
+                    {a.startTime}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-text-primary font-body text-sm font-semibold">
+                    {a.clientName}
+                  </p>
+                  <p className="text-text-muted font-body text-xs">
+                    {a.service?.name} · {a.barber?.name}
+                  </p>
+                </div>
+                <StatusBadge status={a.status} />
+              </button>
+            ))
         )}
       </div>
     </div>
