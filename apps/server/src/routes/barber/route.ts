@@ -15,6 +15,18 @@ barberRouter.post(
   verifyRole("admin"),
   BarberController.create,
 );
+barberRouter.post(
+  "/schedule",
+  verifyToken,
+  verifyRole("admin"),
+  BarberController.createSchedule,
+);
+barberRouter.put(
+  "/schedule/:id",
+  verifyToken,
+  verifyRole("admin"),
+  BarberController.updateSchedule,
+);
 barberRouter.put(
   "/:id",
   verifyToken,

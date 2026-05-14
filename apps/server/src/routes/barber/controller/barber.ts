@@ -123,6 +123,124 @@ export default class BarberController {
         .json({ message: err.message ?? "Error interno", data: null });
     }
   }
+  static async createSchedule(req: Request, res: Response) {
+    const {
+      barberId,
+      dayOfWeek,
+      endTime,
+      isActive,
+      startTime,
+      endBreak,
+      startBreak,
+    } = req.body;
+
+    if (
+      !barberId ||
+      !dayOfWeek ||
+      !endTime ||
+      !isActive ||
+      !startTime ||
+      !endBreak ||
+      !startBreak
+    ) {
+      return res.status(400).json({
+        message: "Datos inválidos",
+        data: null,
+      });
+    }
+
+    try {
+      const data = await BarberModel.createSchedule({
+        barberId,
+        dayOfWeek,
+        endBreak,
+        endTime,
+        startBreak,
+        startTime,
+        isActive,
+      });
+
+      if (!data) {
+        return res.status(404).json({
+          message: "No se pudo guardar el horario",
+          data: null,
+        });
+      }
+
+      return res.status(201).json({
+        message: "Horarios creados",
+        data,
+      });
+    } catch (err: any) {
+      if (err.message?.includes("UNIQUE")) {
+        return res
+          .status(409)
+          .json({ message: "El slug ya está en uso", data: null });
+      }
+      return res
+        .status(500)
+        .json({ message: err.message ?? "Error interno", data: null });
+    }
+  }
+  static async updateSchedule(req: Request, res: Response) {
+    const {
+      barberId,
+      dayOfWeek,
+      endTime,
+      isActive,
+      startTime,
+      endBreak,
+      startBreak,
+    } = req.body;
+    const id = req.params.id;
+
+    if (
+      !barberId ||
+      !dayOfWeek ||
+      !endTime ||
+      !isActive ||
+      !startTime ||
+      !endBreak ||
+      !startBreak
+    ) {
+      return res.status(400).json({
+        message: "Datos inválidos",
+        data: null,
+      });
+    }
+
+    try {
+      const data = await BarberModel.updateSchedule(id as string, {
+        barberId,
+        dayOfWeek,
+        endBreak,
+        endTime,
+        startBreak,
+        startTime,
+        isActive,
+      });
+
+      if (!data) {
+        return res.status(404).json({
+          message: "No se pudo actualizar el horario",
+          data: null,
+        });
+      }
+
+      return res.status(201).json({
+        message: "Horarios actualizados",
+        data,
+      });
+    } catch (err: any) {
+      if (err.message?.includes("UNIQUE")) {
+        res.status(409).json({ message: "El slug ya está en uso", data: null });
+        return;
+      }
+      return res
+        .status(500)
+        .json({ message: err.message ?? "Error interno", data: null });
+    }
+  }
 
   static async remove(req: Request, res: Response): Promise<void> {
     const { id } = req.params;

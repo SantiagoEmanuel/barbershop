@@ -24,6 +24,8 @@ interface GenerateSlotsParams {
   startTime: string; // "09:00"
   endTime: string; // "19:00"
   slotDurationMinutes: number; // 30
+  startBreak: string;
+  endBreak: string;
 }
 
 /**
@@ -34,9 +36,13 @@ export function generateSlots({
   startTime,
   endTime,
   slotDurationMinutes,
+  startBreak,
+  endBreak,
 }: GenerateSlotsParams): Slot[] {
   const start = timeToMinutes(startTime);
   const end = timeToMinutes(endTime);
+  const startBreakInMinutes = timeToMinutes(startBreak);
+  const endBreakInMinutes = timeToMinutes(endBreak);
 
   if (start >= end || slotDurationMinutes <= 0) return [];
 
@@ -44,6 +50,13 @@ export function generateSlots({
   let current = start;
 
   while (current + slotDurationMinutes <= end) {
+    if (
+      current + slotDurationMinutes < endBreakInMinutes &&
+      current + slotDurationMinutes > startBreakInMinutes
+    ) {
+      current = endBreakInMinutes;
+      continue;
+    }
     slots.push({
       startTime: minutesToTime(current),
       endTime: minutesToTime(current + slotDurationMinutes),

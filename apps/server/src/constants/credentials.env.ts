@@ -9,7 +9,14 @@ const Env = object({
   TURSO_URL: string(),
   JWT_SECRET: string(),
   HASH_SALT: coerce.number(),
+  MAILERSEND_TOKEN: string(),
 });
 
-export const { TURSO_TOKEN, TURSO_URL, PORT, JWT_SECRET, HASH_SALT } =
-  Env.parse(process.env);
+export const {
+  TURSO_TOKEN,
+  TURSO_URL,
+  PORT,
+  JWT_SECRET,
+  HASH_SALT,
+  MAILERSEND_TOKEN,
+} = Env.parse(process.env);

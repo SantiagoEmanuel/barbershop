@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -149,6 +149,8 @@ export const barberSchedules = table(
     startTime: text("start_time").notNull(),
     /** Formato 'HH:MM', ej: '19:00' */
     endTime: text("end_time").notNull(),
+    startBreak: text("start_brake").notNull(),
+    endBreak: text("end_brake").notNull(),
     /**
      * Cada cuántos minutos existe un slot disponible.
      * Debe coincidir con (o ser múltiplo de) service.durationMinutes.
@@ -215,8 +217,9 @@ export const appointments = table(
      */
     clientId: text("client_id").references(() => users.id),
     /** Para turnos sin cuenta registrada (walk-in / telefónico). */
-    clientName: text("client_name"),
-    clientPhone: text("client_phone"),
+    clientName: text("client_name").notNull(),
+    clientPhone: text("client_phone").notNull(),
+    clientEmail: text("client_email").notNull(),
     /** Fecha del turno en formato ISO 'YYYY-MM-DD'. */
     date: text("date").notNull(),
     /** Hora de inicio: 'HH:MM' */
@@ -272,11 +275,9 @@ export const appointments = table(
     index("idx_appointments_status").on(t.status),
     // Restringir doble reserva: un barbero no puede tener dos turnos
     // que empiecen a la misma hora en el mismo día
-    uniqueIndex("uq_appointments_barber_date_start").on(
-      t.barberId,
-      t.date,
-      t.startTime,
-    ),
+    uniqueIndex("uq_appointments_barber_date_start")
+      .on(t.barberId, t.date, t.startTime)
+      .where(sql`status IN ('pending', 'confirmed')`),
   ],
 );
 

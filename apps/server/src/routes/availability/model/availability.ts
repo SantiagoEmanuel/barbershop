@@ -30,6 +30,7 @@ export default class AvailabilityModel {
     if (!schedule) return [];
 
     let { startTime, endTime } = schedule;
+    const { startBreak, endBreak } = schedule;
     const { slotDurationMinutes } = schedule;
 
     // 2. Excepciones puntuales (feriados / horario modificado)
@@ -47,7 +48,13 @@ export default class AvailabilityModel {
     }
 
     // 3. Generar todos los slots del día
-    const slots = generateSlots({ startTime, endTime, slotDurationMinutes });
+    const slots = generateSlots({
+      startTime,
+      endTime,
+      slotDurationMinutes,
+      startBreak,
+      endBreak,
+    });
     if (slots.length === 0) return [];
 
     // 4. Turnos ya ocupados (pending o confirmed) — status cancelled/no_show quedan libres
@@ -55,7 +62,7 @@ export default class AvailabilityModel {
       where: and(
         eq(appointments.barberId, barberId),
         eq(appointments.date, date),
-        inArray(appointments.status, ["pending", "confirmed"]),
+        inArray(appointments.status, ["pending", "confirmed", "completed"]),
       ),
       columns: { startTime: true, endTime: true },
     });

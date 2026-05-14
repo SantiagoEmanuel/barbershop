@@ -9,6 +9,7 @@ export interface Appointment {
   clientId: string | undefined;
   clientName: string;
   clientPhone: string;
+  clientEmail: string | undefined;
   priceSnapshot: number;
   startTime: string;
   endTime: string;
@@ -24,6 +25,11 @@ export default class AppointmentModel {
   static async getById(id: string) {
     const data = await db.query.appointments.findFirst({
       where: eq(appointments.id, id),
+      with: {
+        service: true,
+        barber: true,
+        client: true,
+      },
     });
 
     if (!data) {
@@ -36,7 +42,9 @@ export default class AppointmentModel {
     try {
       const data = await db.query.appointments.findMany({
         where: and(
-          eq(appointments.barberId, barberId as string),
+          barberId !== "all"
+            ? eq(appointments.barberId, barberId as string)
+            : inArray(appointments.status, ["pending", "confirmed"]),
           eq(appointments.date, date as string),
         ),
         with: {
@@ -45,6 +53,7 @@ export default class AppointmentModel {
           client: true,
         },
       });
+
       return data;
     } catch (err: any) {
       throw new AppError(

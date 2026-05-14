@@ -2,6 +2,7 @@ import { JWT_SECRET } from "@/constants/credentials.env";
 import AvailabilityModel from "@/routes/availability/model/availability";
 import ServiceModel from "@/routes/services/model/service";
 import { minutesToTime, timeToMinutes } from "@/utils/availability";
+import { sendEmailToClient } from "@/utils/sendMail";
 import { Request, Response } from "express";
 import { JwtPayload, verify } from "jsonwebtoken";
 import AppointmentModel, { Appointment } from "../model/appointment";
@@ -17,9 +18,15 @@ export default class AppointmentController {
       clientPhone,
       notes,
     }: Appointment = req.body;
+    let { clientEmail }: Appointment = req.body;
     const token = req.cookies.auth_token;
-    const payload = verify(token, JWT_SECRET) as JwtPayload;
-    const clientId = payload.id;
+    let clientId = null;
+
+    if (token) {
+      const payload = verify(token, JWT_SECRET) as JwtPayload;
+      clientId = payload.id;
+      clientEmail = payload.email;
+    }
 
     if (
       !barberId ||
@@ -27,7 +34,8 @@ export default class AppointmentController {
       !serviceId ||
       !startTime ||
       !clientName ||
-      !clientPhone
+      !clientPhone ||
+      !clientEmail
     ) {
       return res.status(400).json({
         message:
@@ -77,6 +85,7 @@ export default class AppointmentController {
         startTime,
         clientName,
         clientPhone,
+        clientEmail,
         clientId,
         notes,
         endTime: minutesToTime(newEndTime),
@@ -90,12 +99,17 @@ export default class AppointmentController {
         });
       }
 
+      const appointment = await AppointmentModel.getById(newAppointment.id);
+
+      await sendEmailToClient(appointment);
+
       return res.status(201).json({
         message: "Turno agendado correctamente",
         data: newAppointment,
       });
     } catch (err: any) {
       const status = typeof err.status === "number" ? err.status : 500;
+      console.log({ err });
       res
         .status(status)
         .json({ message: err.message ?? "Error interno", data: null });

@@ -1,5 +1,5 @@
 import { db } from "@/db/db";
-import { barbers } from "@/db/turso/schema";
+import { barbers, barberSchedules } from "@/db/turso/schema";
 import { eq } from "drizzle-orm";
 
 interface CreateBarberData {
@@ -19,11 +19,24 @@ interface UpdateBarberData {
   isActive?: boolean;
 }
 
+interface UpdateBarberSchedule {
+  barberId: string;
+  dayOfWeek: number;
+  endTime: string;
+  isActive: boolean;
+  startTime: string;
+  startBreak: string;
+  endBreak: string;
+}
+
 export default class BarberModel {
   static async getAll({ includeInactive = false } = {}) {
     return db.query.barbers.findMany({
       where: includeInactive ? undefined : eq(barbers.isActive, true),
       orderBy: (b, { asc }) => [asc(b.name)],
+      with: {
+        schedules: true,
+      },
     });
   }
 
@@ -62,6 +75,31 @@ export default class BarberModel {
       .where(eq(barbers.id, id))
       .returning();
     return updated ?? null;
+  }
+
+  static async updateSchedule(id: string, data: UpdateBarberSchedule) {
+    if (Object.keys(data).length === 0) {
+      throw new Error("No se enviaron campos para actualizar");
+    }
+
+    const [update] = await db
+      .update(barberSchedules)
+      .set(data)
+      .where(eq(barberSchedules.id, id))
+      .returning();
+
+    return update ?? null;
+  }
+  static async createSchedule(data: UpdateBarberSchedule) {
+    if (Object.keys(data).length === 0) {
+      throw new Error("No se pudo guardar el horario");
+    }
+
+    const update = await db
+      .insert(barberSchedules)
+      .values({ ...data, slotDurationMinutes: 30 });
+
+    return update ?? null;
   }
 
   /** Soft-delete — nunca borrar un barbero con historial de turnos */
