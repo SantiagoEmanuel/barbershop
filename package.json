@@ -12,7 +12,7 @@
     "format:check": "prettier --check \"**/*.{js,ts,jsx,tsx,css,md,json}\"",
     "update-version": "changeset",
     "check-version": "changeset version",
-    "db:studio": "pnpm drizzle-kit studio --filter server",
+    "studio": "pnpm -r studio",
     "test": "pnpm -r test"
   },
   "keywords": [],
