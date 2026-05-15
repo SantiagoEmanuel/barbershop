@@ -1,4 +1,9 @@
+import { HOST } from "@/constants/credentials.env";
 import { errorHandler } from "@/middleware/error.middleware";
+import {
+  authLimiter,
+  bookingLimiter,
+} from "@/middleware/ratelimiter.middleware";
 import appointmentRouter from "@/routes/appointments/route";
 import authRouter from "@/routes/auth/route";
 import availabilityRouter from "@/routes/availability/route";
@@ -13,22 +18,34 @@ import express, { json } from "express";
 import helmet from "helmet";
 
 const app = express();
+const isProd = process.env.NODE_ENV === "production";
 
 // ── Middlewares globales ──────────────────────────────────────
 app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    frameguard: { action: "deny" },
+    strictTransportSecurity: isProd
+      ? { maxAge: 31536000, includeSubDomains: true }
+      : false,
+    hidePoweredBy: true,
+    noSniff: true,
+    crossOriginEmbedderPolicy: false,
+  }),
+);
+app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://barbershop-web-lac.vercel.app",
-      "http://barbershop-web-lac.vercel.app",
-      "*",
-    ],
+    origin: isProd ? JSON.parse(HOST) : "http://localhost:5173",
     credentials: true,
   }),
 );
-app.use(helmet());
 app.use(cookieParser());
 app.use(json());
+
+// ── Limitadores -----------------------------------------------------
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/appointments", bookingLimiter);
 
 // ── Rutas ─────────────────────────────────────────────────────
 app.use("/api/auth", authRouter);
