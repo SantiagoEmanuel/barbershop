@@ -10,6 +10,7 @@ const Env = object({
   JWT_SECRET: string(),
   HASH_SALT: coerce.number(),
   MAILERSEND_TOKEN: string(),
+  HOST: string(),
 });
 
 export const {
@@ -19,4 +20,5 @@ export const {
   JWT_SECRET,
   HASH_SALT,
   MAILERSEND_TOKEN,
+  HOST,
 } = Env.parse(process.env);
