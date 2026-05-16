@@ -1,49 +1,32 @@
-import { Package, Plus, Scissors, Trash2 } from "lucide-react";
+import { Package, Scissors } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { CartLineRow } from "../components/cartLineRow";
+import { PickerTabButton } from "../components/pickerTabButton";
 import { StatCard } from "../components/statCard";
 import { EmptyState } from "../components/ui/emptyState";
 import { formatARS, todayISO } from "../components/ui/formatters";
+import { Row } from "../components/ui/row";
 import { SectionHeader } from "../components/ui/sectionHeader";
 import { Spinner } from "../components/ui/spinner";
 import { api, post } from "../lib/api";
-import { cn } from "../lib/cn";
 import { useServicesStore } from "../store/useServicesStore";
-import type {
-  ApiResponse,
-  Barber,
-  Product,
-  SaleRecord,
-  Service,
-} from "../types";
-
-type PickerTab = "products" | "services";
-
-type CartLine =
-  | {
-      kind: "product";
-      id: string;
-      name: string;
-      price: number;
-      quantity: number;
-      stock: number;
-    }
-  | {
-      kind: "service";
-      id: string;
-      name: string;
-      price: number;
-      quantity: number;
-    };
+import type { ApiResponse, Barber, Order, Product, Service } from "../types";
+import type { CartLine } from "../types/cartLine";
+import type { PickerTab } from "../types/picker";
 
 export default function Ventas() {
   const [products, setProducts] = useState<Product[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
-  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [todayOrders, setTodayOrders] = useState<Order[]>([]);
   const services = useServicesStore((s) => s.services);
   const getServices = useServicesStore((s) => s.getServices);
   const [picker, setPicker] = useState<PickerTab>("products");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [selectedBarber, setSelectedBarber] = useState("");
+  const [selectedPayment, setSelectedPayment] = useState("");
+  const [paymentMethods, setPaymentMethods] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -54,13 +37,16 @@ export default function Ventas() {
     Promise.all([
       api<ApiResponse<Product[]>>("product"),
       api<ApiResponse<Barber[]>>("barber"),
-      api<ApiResponse<SaleRecord[]>>(`product-sales?date=${todayISO()}`),
+      api<ApiResponse<Order[]>>(`order?date=${todayISO()}`),
+      api<ApiResponse<{ id: string; name: string }[]>>("payment-methods"),
     ])
-      .then(([prodRes, barberRes, salesRes]) => {
+      .then(([prodRes, barberRes, ordersRes, pmRes]) => {
         setProducts(prodRes?.data ?? []);
         setBarbers(barberRes?.data ?? []);
-        setSales(salesRes?.data ?? []);
+        setTodayOrders(ordersRes?.data ?? []);
+        setPaymentMethods(pmRes?.data ?? []);
         if (barberRes?.data?.[0]) setSelectedBarber(barberRes.data[0].id);
+        if (pmRes?.data?.[0]) setSelectedPayment(pmRes.data[0].id);
       })
       .finally(() => setLoading(false));
     getServices();
@@ -70,21 +56,11 @@ export default function Ventas() {
     setCart((prev) => {
       const existing = prev.find(
         (l) => l.kind === "product" && l.id === p.id,
-      ) as
-        | Extract<
-            CartLine,
-            {
-              kind: "product";
-            }
-          >
-        | undefined;
+      ) as Extract<CartLine, { kind: "product" }> | undefined;
       if (existing) {
         return prev.map((l) =>
           l.kind === "product" && l.id === p.id
-            ? {
-                ...l,
-                quantity: Math.min(l.quantity + 1, p.stock),
-              }
+            ? { ...l, quantity: Math.min(l.quantity + 1, p.stock) }
             : l,
         );
       }
@@ -104,23 +80,11 @@ export default function Ventas() {
 
   function addService(s: Service) {
     setCart((prev) => {
-      const existing = prev.find(
-        (l) => l.kind === "service" && l.id === s.id,
-      ) as
-        | Extract<
-            CartLine,
-            {
-              kind: "service";
-            }
-          >
-        | undefined;
+      const existing = prev.find((l) => l.kind === "service" && l.id === s.id);
       if (existing) {
         return prev.map((l) =>
           l.kind === "service" && l.id === s.id
-            ? {
-                ...l,
-                quantity: l.quantity + 1,
-              }
+            ? { ...l, quantity: l.quantity + 1 }
             : l,
         );
       }
@@ -148,15 +112,9 @@ export default function Ventas() {
       prev.map((l) => {
         if (l.kind !== line.kind || l.id !== line.id) return l;
         if (l.kind === "product") {
-          return {
-            ...l,
-            quantity: Math.min(qty, l.stock),
-          };
+          return { ...l, quantity: Math.min(qty, l.stock) };
         }
-        return {
-          ...l,
-          quantity: qty,
-        };
+        return { ...l, quantity: qty };
       }),
     );
   }
@@ -175,69 +133,39 @@ export default function Ventas() {
       itemCount: cart.reduce((acc, l) => acc + l.quantity, 0),
     };
   }, [cart]);
-  const dailyTotal = sales.reduce(
-    (acc, s) => acc + s.priceSnapshot * s.quantity,
-    0,
-  );
+
+  const dailyTotal = todayOrders
+    .filter((o) => o.status === "paid")
+    .reduce((acc, o) => acc + o.amount, 0);
 
   async function handleSell() {
-    if (cart.length === 0 || !selectedBarber) return;
+    if (cart.length === 0 || !selectedBarber || !selectedPayment) return;
     setSubmitting(true);
     setError("");
     setSuccess("");
     try {
-      const productCalls = cart
-        .filter(
-          (
-            l,
-          ): l is Extract<
-            CartLine,
-            {
-              kind: "product";
-            }
-          > => l.kind === "product",
-        )
-        .map((l) =>
-          post("product-sales", {
-            productId: l.id,
-            soldBy: selectedBarber,
-            quantity: l.quantity,
-            priceSnapshot: l.price,
-          }),
-        );
+      const res = await post<ApiResponse<Order>>("order/counter", {
+        paymentMethodId: selectedPayment,
+        amount: totals.grandTotal,
+        soldBy: selectedBarber,
+        items: cart.map((l) => ({
+          kind: l.kind,
+          id: l.id,
+          quantity: l.quantity,
+          priceSnapshot: l.price,
+        })),
+      });
 
-      const serviceCalls = cart
-        .filter(
-          (
-            l,
-          ): l is Extract<
-            CartLine,
-            {
-              kind: "service";
-            }
-          > => l.kind === "service",
-        )
-        .map((l) =>
-          post("service-sales", {
-            serviceId: l.id,
-            soldBy: selectedBarber,
-            quantity: l.quantity,
-            priceSnapshot: l.price,
-          }),
-        );
+      if (!res?.data) throw new Error("No se pudo registrar la venta");
 
-      await Promise.all([...productCalls, ...serviceCalls]);
       setProducts((prev) =>
         prev.map((p) => {
           const line = cart.find((l) => l.kind === "product" && l.id === p.id);
-          return line
-            ? {
-                ...p,
-                stock: p.stock - line.quantity,
-              }
-            : p;
+          return line ? { ...p, stock: p.stock - line.quantity } : p;
         }),
       );
+
+      setTodayOrders((prev) => [res.data!, ...prev]);
 
       setSuccess(
         `Venta registrada: ${formatARS(totals.grandTotal)} · ${totals.itemCount} item${totals.itemCount > 1 ? "s" : ""}`,
@@ -277,7 +205,7 @@ export default function Ventas() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Ventas hoy" value={sales.length} icon="🛒" />
+        <StatCard label="Órdenes hoy" value={todayOrders.length} icon="🛒" />
         <StatCard
           label="Total facturado hoy"
           value={formatARS(dailyTotal)}
@@ -342,72 +270,63 @@ export default function Ventas() {
                 description="No hay productos disponibles para vender."
               />
             ) : (
-              <div className="grid max-h-112 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
-                {filteredProducts.map((p) => {
-                  const inCart = cart.find(
-                    (l) => l.kind === "product" && l.id === p.id,
-                  );
-                  return (
-                    <PickerCard
-                      key={p.id}
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {filteredProducts.map((p) => (
+                  <li key={p.id}>
+                    <button
                       onClick={() => addProduct(p)}
-                      active={!!inCart}
-                      title={p.name}
-                      meta={`Stock: ${p.stock}${inCart ? ` · En carrito: ${inCart.quantity}` : ""}`}
-                      price={p.price}
-                      kind="product"
-                    />
-                  );
-                })}
-              </div>
+                      className="bg-surface border-border hover:border-marca w-full rounded-xl border p-3 text-left transition-colors"
+                    >
+                      <p className="text-text-primary font-body text-sm font-medium">
+                        {p.name}
+                      </p>
+                      <p className="text-marca font-body mt-0.5 text-xs font-semibold">
+                        {formatARS(p.price)}
+                      </p>
+                      <p className="text-text-muted font-body text-xs">
+                        Stock: {p.stock}
+                      </p>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )
           ) : filteredServices.length === 0 ? (
             <EmptyState
               icon="✂️"
               title="Sin servicios"
-              description="No hay servicios cargados todavía."
+              description="No hay servicios activos."
             />
           ) : (
-            <div className="grid max-h-112 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
-              {filteredServices.map((s) => {
-                const inCart = cart.find(
-                  (l) => l.kind === "service" && l.id === s.id,
-                );
-                return (
-                  <PickerCard
-                    key={s.id}
+            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {filteredServices.map((s) => (
+                <li key={s.id}>
+                  <button
                     onClick={() => addService(s)}
-                    active={!!inCart}
-                    title={s.name}
-                    meta={`${s.durationMinutes} min${inCart ? ` · En carrito: ${inCart.quantity}` : ""}`}
-                    price={s.price}
-                    kind="service"
-                  />
-                );
-              })}
-            </div>
+                    className="bg-surface border-border hover:border-marca w-full rounded-xl border p-3 text-left transition-colors"
+                  >
+                    <p className="text-text-primary font-body text-sm font-medium">
+                      {s.name}
+                    </p>
+                    <p className="text-marca font-body mt-0.5 text-xs font-semibold">
+                      {formatARS(s.price)}
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
-        <aside className="bg-surface border-border lg:bg-surface/60 flex flex-col gap-3 self-start rounded-2xl border p-4 sm:p-5 lg:sticky lg:top-24">
-          <header className="flex items-center justify-between">
-            <p className="text-text-primary font-display text-base font-bold">
-              Carrito
-            </p>
-            {cart.length > 0 && (
-              <button
-                onClick={() => setCart([])}
-                className="text-text-muted hover:text-error font-body text-xs transition-colors"
-              >
-                Vaciar
-              </button>
-            )}
-          </header>
+        <div className="bg-surface border-border flex flex-col gap-3 rounded-2xl border p-4">
+          <p className="text-text-primary font-body text-sm font-semibold">
+            Carrito
+          </p>
 
           {cart.length === 0 ? (
             <div className="border-border flex flex-1 items-center justify-center rounded-xl border border-dashed py-10">
               <p className="text-text-muted font-body text-center text-sm">
-                Toca un producto o servicio
+                Tocá un producto o servicio
                 <br />
                 para agregarlo
               </p>
@@ -425,6 +344,24 @@ export default function Ventas() {
                   />
                 ))}
               </ul>
+
+              {/* Método de pago */}
+              <div>
+                <label className="text-text-muted font-body mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+                  Método de pago *
+                </label>
+                <select
+                  value={selectedPayment}
+                  onChange={(e) => setSelectedPayment(e.target.value)}
+                  className="bg-surface border-border text-text-primary font-body w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                >
+                  {paymentMethods.map((pm) => (
+                    <option key={pm.id} value={pm.id}>
+                      {pm.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div className="border-border flex flex-col gap-1 border-t pt-3">
                 {totals.servicesTotal > 0 && (
@@ -451,249 +388,27 @@ export default function Ventas() {
                   {error}
                 </div>
               )}
+              {success && (
+                <div className="bg-success/10 text-success font-body rounded-lg px-3 py-2 text-xs">
+                  {success}
+                </div>
+              )}
 
               <button
                 onClick={handleSell}
-                disabled={submitting || !selectedBarber}
+                disabled={submitting || !selectedBarber || !selectedPayment}
                 className="btn-marca mt-1 flex w-full items-center justify-center gap-2 rounded-xl py-3 disabled:opacity-60"
               >
                 {submitting ? (
                   <Spinner size={16} />
                 ) : (
-                  <>
-                    <Plus size={16} /> Registrar venta
-                  </>
+                  `Confirmar venta · ${formatARS(totals.grandTotal)}`
                 )}
               </button>
             </>
           )}
-
-          {success && (
-            <div className="bg-success/10 border-success/30 text-success font-body rounded-lg border px-3 py-2 text-xs">
-              ✓ {success}
-            </div>
-          )}
-        </aside>
-      </div>
-
-      {sales.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
-            Ventas registradas hoy
-          </p>
-          <div className="flex flex-col gap-2">
-            {sales.map((s) => (
-              <div
-                key={s.id}
-                className="bg-surface border-border flex items-center gap-3 rounded-xl border px-4 py-3"
-              >
-                <Package
-                  size={16}
-                  className="text-text-muted shrink-0 opacity-70"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-text-primary font-body text-sm font-semibold">
-                    {s.product?.name}
-                  </p>
-                  <p className="text-text-muted font-body text-xs">
-                    ×{s.quantity} · {s.barber?.name}
-                  </p>
-                </div>
-                <span className="text-marca font-body text-sm font-bold tabular-nums">
-                  {formatARS(s.priceSnapshot * s.quantity)}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
-      )}
-    </div>
-  );
-}
-function PickerTabButton({
-  active,
-  onClick,
-  icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "font-body inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200",
-        active
-          ? "bg-marca text-background"
-          : "text-text-muted hover:text-text-primary bg-transparent",
-      )}
-    >
-      {icon} {label}
-    </button>
-  );
-}
-function PickerCard({
-  onClick,
-  active,
-  title,
-  meta,
-  price,
-  kind,
-}: {
-  onClick: () => void;
-  active: boolean;
-  title: string;
-  meta: string;
-  price: number;
-  kind: "product" | "service";
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "group flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150",
-        active
-          ? "bg-marca/8 border-border-strong"
-          : "bg-surface border-border hover:border-marca/30",
-      )}
-    >
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className={cn(
-              "shrink-0 opacity-70",
-              kind === "service" ? "text-marca" : "text-text-muted",
-            )}
-          >
-            {kind === "service" ? (
-              <Scissors size={12} />
-            ) : (
-              <Package size={12} />
-            )}
-          </span>
-          <p className="text-text-primary font-body truncate text-sm font-semibold">
-            {title}
-          </p>
-        </div>
-        <p className="text-text-muted font-body mt-0.5 text-xs">{meta}</p>
       </div>
-      <div className="shrink-0 text-right">
-        <p className="text-marca font-body text-sm font-bold tabular-nums">
-          {formatARS(price)}
-        </p>
-        {active && (
-          <span className="text-success font-body text-[10px]">✓ Agregado</span>
-        )}
-      </div>
-    </button>
-  );
-}
-function CartLineRow({
-  line,
-  type = "service",
-  onUpdate,
-  onRemove,
-}: {
-  line: CartLine;
-  type: "product" | "service";
-  onUpdate: (qty: number) => void;
-  onRemove: () => void;
-}) {
-  const isService = line.kind === "service";
-  const max = line.kind === "product" ? line.stock : Infinity;
-  return (
-    <li
-      className={cn(
-        "border-border flex items-center gap-2 rounded-lg border px-2.5 py-2",
-        isService ? "bg-marca/5" : "bg-black/15",
-      )}
-    >
-      <span
-        aria-hidden
-        className={cn(
-          "shrink-0",
-          isService ? "text-marca" : "text-text-muted opacity-70",
-        )}
-      >
-        {isService ? <Scissors size={12} /> : <Package size={12} />}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-text-primary font-body truncate text-xs font-semibold">
-          {line.name}
-        </p>
-        <p className="text-text-muted font-body text-[10px] tabular-nums">
-          {formatARS(line.price)} c/u
-        </p>
-      </div>
-      {type === "product" && (
-        <div className="flex shrink-0 items-center gap-1.5">
-          <button
-            onClick={() => onUpdate(line.quantity - 1)}
-            className="text-text-secondary border-border hover:border-marca/35 flex size-6 items-center justify-center rounded-md border bg-black/30 text-xs font-bold"
-          >
-            −
-          </button>
-          <span className="text-text-primary font-body w-5 text-center text-xs font-bold tabular-nums">
-            {line.quantity}
-          </span>
-          <button
-            onClick={() => onUpdate(line.quantity + 1)}
-            disabled={line.quantity >= max}
-            className="text-text-secondary border-border hover:border-marca/35 flex size-6 items-center justify-center rounded-md border bg-black/30 text-xs font-bold disabled:opacity-40"
-          >
-            +
-          </button>
-        </div>
-      )}
-      <span className="text-marca font-body w-16 shrink-0 text-right text-xs font-bold tabular-nums">
-        {formatARS(line.price * line.quantity)}
-      </span>
-      <button
-        onClick={onRemove}
-        aria-label="Eliminar"
-        className="text-text-muted hover:text-error transition-colors"
-      >
-        <Trash2 size={14} />
-      </button>
-    </li>
-  );
-}
-function Row({
-  label,
-  value,
-  emphasis = false,
-}: {
-  label: string;
-  value: string;
-  emphasis?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <span
-        className={cn(
-          "font-body",
-          emphasis
-            ? "text-text-primary text-sm font-bold"
-            : "text-text-muted text-xs",
-        )}
-      >
-        {label}
-      </span>
-      <span
-        className={cn(
-          "font-body tabular-nums",
-          emphasis
-            ? "text-marca text-base font-bold"
-            : "text-text-primary text-xs",
-        )}
-      >
-        {value}
-      </span>
     </div>
   );
 }
