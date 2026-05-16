@@ -294,7 +294,6 @@ export const orders = table(
      * UNIQUE enforza esto a nivel DB, no solo en la app.
      */
     appointmentId: text("appointment_id")
-      .notNull()
       .unique()
       .references(() => appointments.id),
     paymentMethodId: text("payment_method_id")
