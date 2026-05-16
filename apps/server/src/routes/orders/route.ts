@@ -4,20 +4,29 @@ import OrderController from "./controller/order";
 
 const orderRouter = Router();
 
-// Solo admin puede ver y gestionar órdenes
+orderRouter.get(
+  "/all",
+  verifyToken,
+  verifyRole("admin"),
+  OrderController.getAll,
+);
+
 orderRouter.get(
   "/",
   verifyToken,
   verifyRole("admin"),
   OrderController.getOrders,
 );
+
 orderRouter.get(
   "/:id",
   verifyToken,
   verifyRole("admin"),
   OrderController.getById,
 );
+
 orderRouter.post("/", verifyToken, OrderController.create);
+
 orderRouter.put(
   "/:id/update",
   verifyToken,

@@ -4,7 +4,7 @@ import AppError from "@/utils/AppError";
 import { eq } from "drizzle-orm";
 
 interface CreateOrderData {
-  appointmentId: string;
+  appointmentId?: string;
   paymentMethodId: string;
   amount: number;
 }
@@ -20,19 +20,19 @@ interface UpdateOrderData {
 
 export default class OrderModel {
   static async create(data: CreateOrderData) {
-    // Verificar que el appointment exista antes de insertar
-    const apt = await db.query.appointments.findFirst({
-      where: eq(appointments.id, data.appointmentId),
-    });
-    if (!apt)
-      throw Object.assign(new Error("El turno no existe"), { status: 404 });
+    if (data.appointmentId) {
+      const apt = await db.query.appointments.findFirst({
+        where: eq(appointments.id, data.appointmentId),
+      });
+      if (!apt)
+        throw Object.assign(new Error("El turno no existe"), { status: 404 });
+    }
 
     try {
       const [created] = await db.insert(orders).values(data).returning();
       if (!created) throw new Error("No se pudo generar la orden");
       return created;
     } catch (err: any) {
-      // El constraint UNIQUE appointments_id actúa como segunda barrera
       if (err.message?.includes("UNIQUE")) {
         throw new AppError(
           "Este turno ya tiene una orden de pago asociada",
@@ -43,11 +43,6 @@ export default class OrderModel {
     }
   }
 
-  /**
-   * Devuelve todas las órdenes con sus relaciones.
-   * El filtro por fecha se aplica en memoria sobre appointment.date
-   * porque Drizzle no permite WHERE dentro de .with() de relaciones one-to-one.
-   */
   static async getByDate(date: Date) {
     const dateStr = date.toISOString().split("T")[0] as string;
 
@@ -60,8 +55,27 @@ export default class OrderModel {
       },
     });
 
-    // Filtrar por la fecha del appointment en memoria
-    return allOrders.filter((o) => o.appointment?.date === dateStr);
+    return allOrders.filter((o) => {
+      const d =
+        o.appointment?.date ??
+        (o.createdAt instanceof Date
+          ? o.createdAt.toISOString()
+          : String(o.createdAt)
+        ).split("T")[0];
+      return d === dateStr;
+    });
+  }
+
+  static async getAll() {
+    return db.query.orders.findMany({
+      with: {
+        appointment: {
+          with: { barber: true, service: true, client: true },
+        },
+        paymentMethod: true,
+      },
+      orderBy: (o, { desc }) => [desc(o.createdAt)],
+    });
   }
 
   static async getById(id: string) {
@@ -85,7 +99,6 @@ export default class OrderModel {
 
     const patch = { ...data } as Record<string, unknown>;
 
-    // Auto-completar paidAt cuando el status pasa a "paid"
     if (data.status === "paid" && !data.paidAt) {
       patch.paidAt = new Date();
     }

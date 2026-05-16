@@ -26,6 +26,16 @@ export default class OrderController {
         .json({ message: err.message ?? "Error interno", data: null });
     }
   }
+  static async getAll(_req: Request, res: Response): Promise<void> {
+    try {
+      const data = await OrderModel.getAll();
+      res.json({ message: "OK", data });
+    } catch (err: any) {
+      res
+        .status(500)
+        .json({ message: err.message ?? "Error interno", data: null });
+    }
+  }
 
   static async getById(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
@@ -50,9 +60,9 @@ export default class OrderController {
       amount?: number;
     };
 
-    if (!appointmentId || !paymentMethodId || amount == null) {
+    if (!paymentMethodId || amount == null) {
       res.status(400).json({
-        message: "Campos requeridos: appointmentId, paymentMethodId, amount",
+        message: "Campos requeridos: paymentMethodId, amount",
         data: null,
       });
       return;
