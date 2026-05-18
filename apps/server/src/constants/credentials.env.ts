@@ -11,6 +11,11 @@ const Env = object({
   HASH_SALT: coerce.number(),
   MAILERSEND_TOKEN: string(),
   HOST: string(),
+  MP_ACCESS_TOKEN: string(),
+  MP_WEBHOOK_SECRET: string(),
+  PUBLIC_API_URL: string(),
+  PUBLIC_WEB_URL: string(),
+  LOCALHOST_IP: string(),
 });
 
 export const {
@@ -21,4 +26,9 @@ export const {
   HASH_SALT,
   MAILERSEND_TOKEN,
   HOST,
+  MP_ACCESS_TOKEN,
+  MP_WEBHOOK_SECRET,
+  PUBLIC_API_URL,
+  PUBLIC_WEB_URL,
+  LOCALHOST_IP,
 } = Env.parse(process.env);
