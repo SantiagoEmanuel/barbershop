@@ -3,6 +3,13 @@ import { appointments } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
 import { and, count, eq, gt, inArray, lt } from "drizzle-orm";
 
+export type AppointmentStatus =
+  | "pending"
+  | "confirmed"
+  | "completed"
+  | "cancelled"
+  | "no_show";
+
 export interface Appointment {
   barberId: string;
   serviceId: string;
@@ -15,6 +22,7 @@ export interface Appointment {
   endTime: string;
   date: string;
   notes: string | undefined;
+  status: AppointmentStatus;
 }
 
 interface AppointmentProps {

@@ -17,6 +17,7 @@ export default class AppointmentController {
       clientName,
       clientPhone,
       notes,
+      status,
     }: Appointment = req.body;
     let { clientEmail }: Appointment = req.body;
     const token = req.cookies.auth_token;
@@ -90,6 +91,7 @@ export default class AppointmentController {
         notes,
         endTime: minutesToTime(newEndTime),
         priceSnapshot: service.price,
+        status,
       });
 
       if (!newAppointment) {
