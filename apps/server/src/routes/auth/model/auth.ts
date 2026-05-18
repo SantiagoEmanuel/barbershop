@@ -14,7 +14,8 @@ export type User = {
   phone: string;
   isActive: boolean;
   createdAt: Date;
-  password: string;
+  password?: string;
+  verify: boolean;
 };
 
 type NewUser = {
@@ -51,8 +52,15 @@ export default class AuthModel {
     }
 
     const dataSecured = {
-      ...newUser,
-      password: null,
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      username: newUser.username,
+      role: newUser.role,
+      phone: newUser.phone,
+      isActive: newUser.isActive,
+      verify: newUser.verify,
+      createdAt: newUser.createdAt,
     };
 
     return dataSecured;
@@ -78,6 +86,21 @@ export default class AuthModel {
       throw new AppError("Usuario inexistente", 404);
     }
     return user;
+  }
+  static async confirm(id: string) {
+    const user = await db
+      .update(users)
+      .set({
+        verify: true,
+      })
+      .where(eq(users.id, id))
+      .returning();
+
+    if (!user) {
+      return false;
+    }
+
+    return true;
   }
   static async hashPassword(password: string) {
     return hashSync(password, HASH_SALT);

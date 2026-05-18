@@ -1,5 +1,6 @@
 import { JWT_SECRET } from "@/constants/credentials.env";
 import AppError from "@/utils/AppError";
+import { confirmEmail } from "@/utils/sendMail";
 import { Request, Response } from "express";
 import { sign, verify } from "jsonwebtoken";
 import AuthModel, { User } from "../model/auth";
@@ -76,6 +77,8 @@ export default class AuthController {
         password: passwordHashed,
       });
 
+      confirmEmail(data);
+
       return res.status(201).json({
         message: "Usuario creado exitosamente",
         data: data,
@@ -86,6 +89,45 @@ export default class AuthController {
         message: err.message || "Server Error",
       });
     }
+  }
+  static async confirm(req: Request, res: Response) {
+    const id = req.query.id as string;
+
+    if (!id) {
+      throw new AppError("DATOS INVÁLIDOS", 403);
+    }
+
+    try {
+      const userExist = await AuthModel.getById(id);
+      if (!userExist) {
+        throw new AppError("Usuario inexistente", 404);
+      }
+
+      const check = await AuthModel.confirm(id);
+
+      if (!check) {
+        return res.status(400).json({
+          message: "No se pudo verificar tu usuario",
+          data: null,
+        });
+      }
+
+      return res.status(200).json({
+        message: "Usuario verificado correctamente",
+        data: check,
+      });
+    } catch (err: any) {
+      const status = err.status ?? 500;
+      const message = err.message ?? "Server Error";
+      return res.status(status).json({ message, data: null });
+    }
+  }
+  static async logout(_req: Request, res: Response) {
+    res.clearCookie("auth_token");
+    res.status(200).json({
+      message: "Sesión cerrada",
+      data: null,
+    });
   }
   static async restoreSession(req: Request, res: Response) {
     const token = req.cookies.auth_token;
