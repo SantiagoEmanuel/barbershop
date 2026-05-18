@@ -1,4 +1,4 @@
-import { HOST } from "@/constants/credentials.env";
+import { HOST, LOCALHOST_IP } from "@/constants/credentials.env";
 import { errorHandler } from "@/middleware/error.middleware";
 import {
   authLimiter,
@@ -35,7 +35,7 @@ app.use(
 );
 app.use(
   cors({
-    origin: isProd ? JSON.parse(HOST) : "http://localhost:5173",
+    origin: isProd ? JSON.parse(HOST) : ["http://localhost:5173", LOCALHOST_IP],
     credentials: true,
   }),
 );
