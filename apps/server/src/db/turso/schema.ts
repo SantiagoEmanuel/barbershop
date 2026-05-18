@@ -43,12 +43,13 @@ export const users = table(
       .notNull()
       .default("client"),
     /** Útil para recordatorios por WhatsApp o SMS. */
-    phone: text("phone"),
+    phone: text("phone").notNull().unique(),
     /**
      * Soft-delete: nunca borrar un usuario con historial de turnos.
      * is_active = false lo oculta del sistema sin romper FK históricas.
      */
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    verify: integer("verify", { mode: "boolean" }).notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [
