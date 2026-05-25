@@ -7,6 +7,7 @@ import AdminGuard from "../guard/adminGuard";
 import Barberos from "../pages/barberos";
 import CierreServicio from "../pages/closeService";
 import ConfirmUser from "../pages/confirm";
+import ConfirmTurno from "../pages/confirmTurno";
 import Dashboard from "../pages/dashboard";
 import Home from "../pages/home";
 import Movimientos from "../pages/movimientos";
@@ -42,6 +43,7 @@ export const routes: RouteObject[] = [
           // Reutilizamos Perfil — ya tiene la sección de turnos
           { path: "mis-turnos", Component: Perfil },
           { path: "confirm", Component: ConfirmUser },
+          { path: "turno/confirmar/:appointmentId", Component: ConfirmTurno },
           { path: "payment-verification", Component: PaymentVerification },
         ],
       },
