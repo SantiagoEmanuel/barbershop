@@ -1,4 +1,4 @@
-import app from "@/app/app";
+import app from "@/config";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
