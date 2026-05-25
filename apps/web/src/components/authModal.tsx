@@ -83,12 +83,12 @@ export function AuthModal({
       setTab("login");
       setError("¡Cuenta creada! Ingresando.");
       toast.success("¡Cuenta creada!");
-      toast.loading("Ingresando a tu cuenta");
       const log = await api<ApiResponse<User>>(`auth`, {
         method: "POST",
         body: JSON.stringify({ email: loginEmail, password: loginPass }),
       });
       if (!log) {
+        toast.error("No se pudo iniciar automáticamente tu sesión");
         throw new Error("Error al iniciar sesión");
       }
       await setUser(log.data);
