@@ -46,43 +46,50 @@ interface Appointment {
   } | null;
 }
 
-function setTEXT(data: Appointment) {
-  const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
+export async function confirmShift(data: Appointment) {
+  if (!data) {
+    return;
+  }
+  const recipient = [new Recipient(data.clientEmail, data.clientName)];
   const confirmUrl = `https://pekobarber.com/api/appointments/${data.id}/confirm`;
 
-  return `
-    PEKO BARBER
+  const emailParams = new EmailParams()
+    .setFrom(sentFrom)
+    .setTo(recipient)
+    .setReplyTo(sentFrom)
+    .setSubject(`PEKO BARBER - CONFIRMA TU TURNO`)
+    .setHtml(confirmShiftHTML(data, confirmUrl))
+    .setText(confirmShiftTEXT(data, confirmUrl));
 
-    Hola ${data.clientName}.
-
-    Tu turno está pendiente de confirmación.
-
-    Servicio: ${data.service.name}
-    Barbero: ${data.barber.name}
-    Fecha: ${formattedDate}
-    Horario: ${data.startTime}hs - ${data.endTime}hs
-    Precio: $${formatARS(data.priceSnapshot)}
-
-    Confirma tu turno:
-    ${confirmUrl}
-  `;
+  await mailerSend.email.send(emailParams);
 }
 
-function setHTML(data: Appointment) {
+export function confirmEmail(data: Partial<User>) {
+  if (!data) {
+    return;
+  }
+  const recipient = [new Recipient(data.email!, data.name)];
+  const confirmUrl = `https://pekobarber.com/api/auth/confirm?id=${data.id}`;
+
+  const emailParams = new EmailParams()
+    .setFrom(sentFrom)
+    .setTo(recipient)
+    .setReplyTo(sentFrom)
+    .setSubject(`PEKO BARBER - CONFIRMA TU CORREO`)
+    .setHtml(confirmEmailHTML(data, confirmUrl))
+    .setText(confirmEmailText(data, confirmUrl));
+
+  mailerSend.email.send(emailParams);
+  return;
+}
+
+function confirmShiftHTML(data: Appointment, confirmUrl: string) {
   const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-
-  const confirmUrl = `https://pekobarber.com/api/appointments/${data.id}/confirm`;
 
   return `
   <!DOCTYPE html>
@@ -400,25 +407,33 @@ function setHTML(data: Appointment) {
   `;
 }
 
-export async function sendEmailToClient(data: Appointment) {
-  if (!data) {
-    return;
-  }
-  const recipient = [new Recipient(data.clientEmail, data.clientName)];
+function confirmShiftTEXT(data: Appointment, confirmUrl: string) {
+  const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
-  const emailParams = new EmailParams()
-    .setFrom(sentFrom)
-    .setTo(recipient)
-    .setReplyTo(sentFrom)
-    .setSubject(`PEKO BARBER - CONFIRMA TU TURNO`)
-    .setHtml(setHTML(data))
-    .setText(setTEXT(data));
+  return `
+    PEKO BARBER
 
-  await mailerSend.email.send(emailParams);
+    Hola ${data.clientName}.
+
+    Tu turno está pendiente de confirmación.
+
+    Servicio: ${data.service.name}
+    Barbero: ${data.barber.name}
+    Fecha: ${formattedDate}
+    Horario: ${data.startTime}hs - ${data.endTime}hs
+    Precio: $${formatARS(data.priceSnapshot)}
+
+    Confirma tu turno:
+    ${confirmUrl}
+  `;
 }
 
-function confirmEmailHTML(data: Partial<User>) {
-  const confirmUrl = `https://pekobarber.com/api/auth/confirm?id=${data.id}`;
+function confirmEmailHTML(data: Partial<User>, confirmUrl: string) {
   return `
     <!DOCTYPE html>
   <html lang="es">
@@ -590,9 +605,7 @@ function confirmEmailHTML(data: Partial<User>) {
   `;
 }
 
-function confirmEmailText(data: Partial<User>) {
-  const confirmUrl = `https://pekobarber.com/api/auth/confirm?id=${data.id}`;
-
+function confirmEmailText(data: Partial<User>, confirmUrl: string) {
   return `
   Hola ${data.name}!
 
@@ -600,21 +613,4 @@ function confirmEmailText(data: Partial<User>) {
 
   confirmar correo: ${confirmUrl}
   `;
-}
-export function confirmEmail(data: Partial<User>) {
-  if (!data) {
-    return;
-  }
-  const recipient = [new Recipient(data.email!, data.name)];
-
-  const emailParams = new EmailParams()
-    .setFrom(sentFrom)
-    .setTo(recipient)
-    .setReplyTo(sentFrom)
-    .setSubject(`PEKO BARBER - CONFIRMA TU CORREO`)
-    .setHtml(confirmEmailHTML(data))
-    .setText(confirmEmailText(data));
-
-  mailerSend.email.send(emailParams);
-  return;
 }
