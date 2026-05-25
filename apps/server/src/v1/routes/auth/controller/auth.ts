@@ -19,26 +19,26 @@ export default class AuthController {
     try {
       const user = await AuthModel.login(email);
 
-      if (!AuthModel.hashVerify(password, user.password)) {
+      if (!(await AuthModel.hashVerify(password, user.password))) {
         throw new AppError("Credenciales inválidas", 400);
       }
 
       const token = sign(
         {
-          email: user.email,
-          username: user.username,
           id: user.id,
-          isActive: user.isActive,
           role: user.role,
-          name: user.name,
+          email: user.email,
         },
         JWT_SECRET,
+        {
+          expiresIn: 86400 * 2,
+        },
       );
 
       return res
         .cookie("auth_token", token, {
           httpOnly: true,
-          maxAge: 60 * 60 * 48 * 1000,
+          maxAge: 86400 * 2,
           secure: process.env.NODE_ENV === "production",
           sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
         })
@@ -57,14 +57,7 @@ export default class AuthController {
     }
   }
   static async create(req: Request, res: Response) {
-    const {
-      name,
-      email,
-      username,
-      password,
-      role = "client",
-      phone,
-    } = req.body;
+    const { name, email, username, password, phone } = req.body;
 
     if (!name || !email || !username || !password || !phone) {
       return res.status(400).json({
@@ -80,7 +73,6 @@ export default class AuthController {
         username,
         name,
         email,
-        role,
         phone,
         password: passwordHashed,
       });
@@ -163,13 +155,12 @@ export default class AuthController {
       const newToken = sign(
         {
           id: user.id,
-          email: user.email,
           role: user.role,
-          name: user.name,
+          email: user.email,
         },
         JWT_SECRET,
         {
-          expiresIn: 60 * 60 * 48 * 1000,
+          expiresIn: 84600 * 2,
         },
       );
 
@@ -177,7 +168,7 @@ export default class AuthController {
         .clearCookie("auth_token")
         .cookie("auth_token", newToken, {
           httpOnly: true,
-          maxAge: 60 * 60 * 48 * 1000,
+          maxAge: 86400 * 2,
           secure: process.env.NODE_ENV === "production",
           sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
         })
