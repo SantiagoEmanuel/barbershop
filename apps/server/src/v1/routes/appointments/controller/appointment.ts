@@ -1,6 +1,6 @@
 import { JWT_SECRET } from "@/constants/credentials.env";
 import { minutesToTime, timeToMinutes } from "@/utils/availability";
-import { sendEmailToClient } from "@/utils/sendMail";
+import { confirmShift } from "@/utils/sendMail";
 import AvailabilityModel from "@/v1/routes/availability/model/availability";
 import ServiceModel from "@/v1/routes/services/model/service";
 import { Request, Response } from "express";
@@ -104,7 +104,7 @@ export default class AppointmentController {
 
       const appointment = await AppointmentModel.getById(newAppointment.id);
 
-      await sendEmailToClient(appointment);
+      await confirmShift(appointment);
 
       return res.status(201).json({
         message: "Turno agendado correctamente",
