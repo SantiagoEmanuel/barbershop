@@ -3,7 +3,8 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["vite-plugin-pwa/react"]
   },
   "references": [
     { "path": "./tsconfig.app.json" },
