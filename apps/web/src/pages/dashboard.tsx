@@ -1,11 +1,13 @@
+import {
+  EmptyState,
+  SectionHeader,
+  Spinner,
+  StatCard,
+} from "@config/components";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { StatCard } from "../components/statCard";
 import { StatusBadge } from "../components/statusBadge";
-import { EmptyState } from "../components/ui/emptyState";
 import { formatARS, formatDate, todayISO } from "../components/ui/formatters";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api } from "../lib/api";
 import type { ApiResponse, Appointment } from "../types";
 const QUICK_LINKS = [

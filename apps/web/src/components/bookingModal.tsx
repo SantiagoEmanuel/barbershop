@@ -1,3 +1,4 @@
+import { Field, ModalBase, Spinner } from "@config/components";
 import { useEffect, useState } from "react";
 import { api, post } from "../lib/api";
 import { cn } from "../lib/cn";
@@ -10,10 +11,7 @@ import {
   type Service,
   type Slot,
 } from "../types";
-import { ModalBase } from "./modalBase";
-import { Field } from "./ui/field";
 import { formatARS, todayISO, todayISOArgentina } from "./ui/formatters";
-import { Spinner } from "./ui/spinner";
 
 // ── Helpers de tiempo ─────────────────────────────────────────
 function toMin(time: string): number {

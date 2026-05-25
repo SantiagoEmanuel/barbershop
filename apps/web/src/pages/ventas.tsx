@@ -1,13 +1,15 @@
+import {
+  EmptyState,
+  PickerTabButton,
+  Row,
+  SectionHeader,
+  Spinner,
+  StatCard,
+} from "@config/components";
 import { Package, Scissors } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { CartLineRow } from "../components/cartLineRow";
-import { PickerTabButton } from "../components/pickerTabButton";
-import { StatCard } from "../components/statCard";
-import { EmptyState } from "../components/ui/emptyState";
 import { formatARS, todayISO } from "../components/ui/formatters";
-import { Row } from "../components/ui/row";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api, post } from "../lib/api";
 import { useServicesStore } from "../store/useServicesStore";
 import {

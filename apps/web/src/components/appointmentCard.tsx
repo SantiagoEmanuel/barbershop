@@ -1,8 +1,8 @@
+import { ConfirmModal } from "@config/components";
 import { useState } from "react";
 import { put } from "../lib/api";
 import type { Appointment } from "../types";
 import { StatusBadge } from "./statusBadge";
-import { ConfirmModal } from "./ui/confirmModal";
 import { formatARS, formatDate } from "./ui/formatters";
 
 /**

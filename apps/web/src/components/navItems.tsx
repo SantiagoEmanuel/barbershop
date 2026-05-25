@@ -1,5 +1,5 @@
+import { Icon } from "@config/components";
 import type { NavItem } from "../types";
-import { Icon } from "./ui/icon";
 
 /**
  * Items de navegación del panel admin. Se consume desde Sidebar y MobileDrawer.

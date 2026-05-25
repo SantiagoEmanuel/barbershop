@@ -1,9 +1,7 @@
+import { SectionHeader, Spinner, UserAvatar } from "@config/components";
 import { useEffect, useState } from "react";
 import BookingModal from "../components/bookingModal";
-import { UserAvatar } from "../components/ui/avatar";
 import { formatARS } from "../components/ui/formatters";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api } from "../lib/api";
 import { useBookingStore } from "../store/useBookingStore";
 import { useServicesStore } from "../store/useServicesStore";

@@ -1,11 +1,13 @@
+import {
+  ConfirmModal,
+  EmptyState,
+  FieldInput,
+  ModalBase,
+  SectionHeader,
+  Spinner,
+  UserAvatar,
+} from "@config/components";
 import { useEffect, useState } from "react";
-import { ModalBase } from "../components/modalBase";
-import { UserAvatar } from "../components/ui/avatar";
-import { ConfirmModal } from "../components/ui/confirmModal";
-import { EmptyState } from "../components/ui/emptyState";
-import { FieldInput } from "../components/ui/fieldInput";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api, post, put } from "../lib/api";
 import type { ApiResponse, Barber, Schedule } from "../types";
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];

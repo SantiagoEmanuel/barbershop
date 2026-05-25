@@ -1,3 +1,4 @@
+import { UserAvatar } from "@config/components";
 import {
   Calendar,
   LogOut,
@@ -10,7 +11,6 @@ import { useLocation } from "react-router";
 import { useAuthStore } from "../store/useAuthStore";
 import type { User } from "../types";
 import { MenuLink } from "./menuLink";
-import { UserAvatar } from "./ui/avatar";
 
 /**
  * Menú dropdown del usuario que se abre desde el avatar en el navbar.

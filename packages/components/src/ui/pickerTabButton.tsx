@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "../lib/cn";
 
 export function PickerTabButton({
@@ -8,7 +9,7 @@ export function PickerTabButton({
 }: {
   active: boolean;
   onClick: () => void;
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
 }) {
   return (

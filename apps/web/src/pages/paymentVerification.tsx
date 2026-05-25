@@ -1,9 +1,9 @@
+import { Spinner } from "@config/components";
 import { PaymentActions } from "../components/payment/paymentActions";
 import { PaymentCard } from "../components/payment/paymentCard";
 import { PaymentDetails } from "../components/payment/paymentDetails";
 import { PAYMENT_STATUS_CONTENT } from "../components/payment/paymentStatusContent";
 import { PaymentStatusIcon } from "../components/payment/paymentStatusIcon";
-import { Spinner } from "../components/ui/spinner";
 import { usePaymentVerification } from "../hooks/usePaymentVerification";
 
 export default function PaymentVerification() {

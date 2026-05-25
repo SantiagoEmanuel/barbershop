@@ -1,4 +1,4 @@
-import { Icon } from "./ui/icon";
+import { Icon } from "@config/components";
 
 export function MobileHeader({ onOpenDrawer }: { onOpenDrawer: () => void }) {
   return (

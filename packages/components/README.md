@@ -1,73 +1,68 @@
 # @config/components
 
-Shared UI component library for the monorepo. Built with React 19 and Tailwind CSS v4.
+Librería de componentes UI compartidos del monorepo. React 19 + Tailwind CSS v4.
 
-## Requirements
+## Cómo se distribuye
 
-React 19+ and React DOM 19+ must be installed in the consuming app. They are declared as peer dependencies and not bundled.
+El paquete **exporta el source TypeScript directamente** (`src/index.ts`), sin
+paso de build. La app consumidora usa un bundler (Vite) que transpila el TSX y
+hace tree-shaking. React y React DOM 19 deben estar instalados en la app
+(declarados como `peerDependencies`).
 
-## Usage
+## Uso
 
-Add as a dependency in any app:
+1. Agregar la dependencia (ya presente en `apps/web`):
 
 ```json
-{
-  "dependencies": {
-    "@config/components": "workspace:*"
-  }
-}
+{ "dependencies": { "@config/components": "workspace:*" } }
 ```
 
-Import components directly:
+2. Importar los componentes:
 
 ```tsx
-import { Button } from "@config/components";
-
-export default function Page() {
-  return <Button>Click me</Button>;
-}
+import { Spinner, SectionHeader, StatCard } from "@config/components";
 ```
 
-## Available components
+## Tailwind
 
-### Button
+Los componentes usan los design tokens del tema (`@config/tailwindcss`:
+`text-marca`, `bg-surface`, `font-body`, etc.). Como Tailwind v4 ignora
+`node_modules` al escanear clases, la app consumidora **debe incluir el source
+de este paquete** vía `@source` en su CSS para que esas clases se generen:
+
+```css
+@import "tailwindcss";
+@source "../../../../packages/components/src";
+```
+
+(ver `apps/web/src/css/global.css`).
+
+## Componentes disponibles
+
+`AuthField`, `AuthSubmit`, `BrandLogo`, `Button`, `ConfirmModal`, `EmptyState`,
+`Field`, `FieldInput`, `Icon`, `ModalBase`, `PickerTabButton`, `Row`,
+`SectionHeader`, `Spinner`, `StatCard`, `UserAvatar` — y el helper `cn`.
+
+## Agregar un componente
+
+1. Crear el archivo en `src/ui/`:
 
 ```tsx
-import { Button } from "@config/components";
+// src/ui/badge.tsx
+import type { ReactNode } from "react";
 
-<Button>Label</Button>;
-```
-
-| Prop       | Type        | Description    |
-| ---------- | ----------- | -------------- |
-| `children` | `ReactNode` | Button content |
-
-## Adding a new component
-
-1. Create the file under `packages/components/UI/`:
-
-```tsx
-// packages/components/UI/badge.tsx
-import { ReactNode } from "react";
-
-interface Props {
-  children: ReactNode;
-}
-
-export default function Badge({ children }: Props) {
-  return <span>{children}</span>;
+export function Badge({ children }: { children: ReactNode }) {
+  return <span className="badge-marca">{children}</span>;
 }
 ```
 
-2. Export it from `packages/components/index.ts`:
+2. Exportarlo desde `src/index.ts`:
 
 ```ts
-import Badge from "./UI/badge";
-
-export { Button, Badge };
+export { Badge } from "./ui/badge";
 ```
 
-## Notes
+## Notas
 
-- This package exports TypeScript source directly (`.ts` / `.tsx`). Consuming apps are expected to use a bundler (Vite, Webpack, etc.) that handles TypeScript transpilation.
-- Styles rely on Tailwind CSS v4. The consuming app must have Tailwind configured and import `@config/tailwindcss` or its own Tailwind setup.
+- Exporta `.ts`/`.tsx` source: requiere bundler en la app consumidora.
+- `verbatimModuleSyntax` está activo: usá `import type` para imports de tipos.

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+
 export function ModalBase({
   open,
   onClose,

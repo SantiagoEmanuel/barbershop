@@ -1,9 +1,8 @@
+import { Icon, UserAvatar } from "@config/components";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "../store/useAuthStore";
 import { NAV_ITEMS } from "./navItems";
 import { SideNavItem } from "./sideNavItem";
-import { UserAvatar } from "./ui/avatar";
-import { Icon } from "./ui/icon";
 
 /**
  * Sidebar fija para desktop del panel admin.
