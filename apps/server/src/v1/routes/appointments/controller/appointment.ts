@@ -210,6 +210,49 @@ export default class AppointmentController {
         .json({ message: err.message ?? "Error interno", data: null });
     }
   }
+  /**
+   * Confirmación pública desde el link del email (cliente sin sesión).
+   * El id es un UUID no adivinable → oficia de token de capacidad.
+   * Solo transiciona pending → confirmed; idempotente si ya está confirmado.
+   */
+  static async confirm(req: Request, res: Response) {
+    const id = req.params.id as string;
+
+    if (!id) {
+      return res.status(400).json({ message: "Turno inválido", data: null });
+    }
+
+    try {
+      const appointment = await AppointmentModel.getById(id);
+
+      if (appointment.status === "confirmed") {
+        return res.status(200).json({
+          message: "Tu turno ya estaba confirmado",
+          data: appointment,
+        });
+      }
+
+      if (appointment.status !== "pending") {
+        return res.status(409).json({
+          message: "Este turno ya no puede confirmarse",
+          data: null,
+        });
+      }
+
+      await AppointmentModel.update("confirmed", id);
+      const confirmed = await AppointmentModel.getById(id);
+
+      return res.status(200).json({
+        message: "Turno confirmado",
+        data: confirmed,
+      });
+    } catch (err: any) {
+      const status = typeof err.status === "number" ? err.status : 500;
+      return res
+        .status(status)
+        .json({ message: err.message ?? "Error interno", data: null });
+    }
+  }
   static async my(req: Request, res: Response) {
     const id = req.user!.id;
 
