@@ -4,7 +4,7 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -12,6 +12,8 @@
     "resolveJsonModule": true,
     "ignoreDeprecations": "6.0",
     "paths": {
+      "@/v1/*": ["./src/v1/*"],
+      "@/v2/*": ["./src/v2/*"],
       "@/*": ["./src/*"]
     }
   },

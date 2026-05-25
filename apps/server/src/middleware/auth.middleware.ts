@@ -17,20 +17,30 @@ declare global {
   }
 }
 
+export function checkToken(req: Request, _res: Response, next: NextFunction) {
+  const token = req.cookies.auth_token;
+
+  if (!token) {
+    next();
+    return;
+  }
+
+  const decoded = jwt.verify(token, JWT_SECRET as string) as JwtPayload;
+  req.user = decoded;
+
+  next();
+  return;
+}
+
 /**
  * Verifica que el request tenga un JWT válido en el header Authorization.
  * Si es válido, adjunta el payload decodificado en req.user.
  */
-export function verifyToken(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
+export function verifyToken(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies.auth_token;
 
   if (!token) {
-    res.status(401).json({ message: "Token requerido", data: null });
-    return;
+    return res.status(401).json({ message: "Token requerido", data: null });
   }
 
   try {
@@ -38,7 +48,9 @@ export function verifyToken(
     req.user = decoded;
     next();
   } catch {
-    res.status(401).json({ message: "Token inválido o expirado", data: null });
+    return res
+      .status(401)
+      .json({ message: "Token inválido o expirado", data: null });
   }
 }
 
@@ -47,18 +59,16 @@ export function verifyToken(
  * Debe usarse después de verifyToken.
  */
 export function verifyRole(...roles: Array<"admin" | "client">) {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
-      res.status(401).json({ message: "No autenticado", data: null });
-      return;
+      return res.status(401).json({ message: "No autenticado", data: null });
     }
 
     if (!roles.includes(req.user.role)) {
-      res.status(403).json({
+      return res.status(403).json({
         message: "No tenés permisos para realizar esta acción",
         data: null,
       });
-      return;
     }
 
     next();

@@ -1,6 +1,6 @@
-import app from "@/app/app";
-import { PORT } from "@/constants/credentials.env";
+import app from "./config";
+import { PORT } from "./constants/credentials.env";
 
 app.listen(PORT, () => {
-  console.log("Server running");
+  console.log(`Server running`);
 });
