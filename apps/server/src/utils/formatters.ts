@@ -1,4 +1,4 @@
-import { AppointmentStatus } from "@/routes/appointments/model/appointment";
+import type { AppointmentStatus } from "@/v1/routes/appointments/model/appointment";
 
 export function formatARS(cents: number) {
   return new Intl.NumberFormat("es-AR", {

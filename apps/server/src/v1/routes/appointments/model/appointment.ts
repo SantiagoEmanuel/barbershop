@@ -50,9 +50,11 @@ export default class AppointmentModel {
     try {
       const data = await db.query.appointments.findMany({
         where: and(
+          // "all" → todos los barberos (sin filtrar por barbero ni estado),
+          // necesario para que el dashboard calcule completados y facturación.
           barberId !== "all"
             ? eq(appointments.barberId, barberId as string)
-            : inArray(appointments.status, ["pending", "confirmed"]),
+            : undefined,
           eq(appointments.date, date as string),
         ),
         with: {

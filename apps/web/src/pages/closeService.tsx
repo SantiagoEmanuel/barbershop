@@ -25,7 +25,7 @@ const PAYMENT_ICONS: Record<PaymentMethodType, string> = {
 function PaymentIcon({ type }: { type: PaymentMethodType }) {
   return <span>{PAYMENT_ICONS[type]}</span>;
 }
-initMercadoPago("APP_USR-999a3934-24a6-4ec1-b874-0f1534c4ca36");
+initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY as string);
 export default function CierreServicio() {
   const { appointmentId } = useParams<{
     appointmentId: string;
