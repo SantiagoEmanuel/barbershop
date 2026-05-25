@@ -12,34 +12,27 @@ import { api } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { useBookingStore } from "../store/useBookingStore";
 import type { ApiResponse, Appointment } from "../types";
-
 export default function Perfil() {
   const { user, logout } = useAuthStore();
   const openBooking = useBookingStore((s) => s.openModal);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Hooks ANTES del early return — no violar las reglas de hooks.
   useEffect(() => {
     if (!user) return;
     api<ApiResponse<Appointment[]>>("appointments/my")
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
   }, [user]);
-
   if (!user) return <Navigate to="/" replace />;
-
   const upcoming = appointments.filter((a) =>
     ["pending", "confirmed"].includes(a.status),
   );
   const history = appointments.filter((a) =>
     ["completed", "cancelled", "no_show"].includes(a.status),
   );
-
   return (
     <>
       <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-8 sm:px-6">
-        {/* Header de perfil */}
         <div className="card bg-surface border-border-strong flex items-center gap-4 border">
           <UserAvatar name={user.name} size="lg" />
           <div className="min-w-0 flex-1">
@@ -63,7 +56,6 @@ export default function Perfil() {
           </button>
         </div>
 
-        {/* Próximos turnos */}
         <div>
           <SectionHeader
             eyebrow="Mis turnos"
@@ -96,7 +88,7 @@ export default function Perfil() {
               }
             />
           ) : (
-            <div className="flex flex-col gap-2.5">
+            <div className="mt-8 flex flex-col gap-2.5">
               {upcoming.map((a) => (
                 <AppointmentCard
                   key={a.id}
@@ -104,7 +96,12 @@ export default function Perfil() {
                   onCancel={(id) =>
                     setAppointments((prev) =>
                       prev.map((x) =>
-                        x.id === id ? { ...x, status: "cancelled" } : x,
+                        x.id === id
+                          ? {
+                              ...x,
+                              status: "cancelled",
+                            }
+                          : x,
                       ),
                     )
                   }
@@ -114,20 +111,17 @@ export default function Perfil() {
           )}
         </div>
 
-        {/* Historial */}
         {history.length > 0 && (
-          <div>
+          <div className="my-4">
             <SectionHeader
               title="Historial"
               description="Tus visitas anteriores."
             />
-            <div className="flex flex-col gap-2">
+            <div className="mt-8 flex flex-col gap-2">
               {history.slice(0, 8).map((a) => (
                 <div
                   key={a.id}
-                  className={`bg-surface border-border flex items-center gap-3 rounded-xl border px-4 py-3 ${
-                    a.status === "cancelled" ? "opacity-55" : ""
-                  }`}
+                  className={`bg-surface border-border flex items-center gap-3 rounded-xl border px-4 py-3 ${a.status === "cancelled" ? "opacity-55" : ""}`}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-text-primary font-body text-sm font-semibold">

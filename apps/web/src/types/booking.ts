@@ -1,1 +1,1 @@
-export type BookingStep = 1 | 2 | 3 | 4 | 5;
+export type BookingStep = 1 | 2 | 3 | 4 | 5 | 6;

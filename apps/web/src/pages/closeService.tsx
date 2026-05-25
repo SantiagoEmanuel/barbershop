@@ -1,5 +1,8 @@
+import { initMercadoPago } from "@mercadopago/sdk-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { ModalBase } from "../components/modalBase";
 import { StatusBadge } from "../components/statusBadge";
 import { EmptyState } from "../components/ui/emptyState";
 import { formatARS } from "../components/ui/formatters";
@@ -14,19 +17,19 @@ import type {
   PaymentMethodType,
   Product,
 } from "../types";
-
 const PAYMENT_ICONS: Record<PaymentMethodType, string> = {
   cash: "💵",
   card: "💳",
   online: "📱",
 };
-
 function PaymentIcon({ type }: { type: PaymentMethodType }) {
   return <span>{PAYMENT_ICONS[type]}</span>;
 }
-
+initMercadoPago("APP_USR-999a3934-24a6-4ec1-b874-0f1534c4ca36");
 export default function CierreServicio() {
-  const { appointmentId } = useParams<{ appointmentId: string }>();
+  const { appointmentId } = useParams<{
+    appointmentId: string;
+  }>();
   const navigate = useNavigate();
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -38,7 +41,7 @@ export default function CierreServicio() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [productSearch, setProductSearch] = useState("");
-
+  const [preference, setPreference] = useState("");
   useEffect(() => {
     if (!appointmentId) return;
     Promise.all([
@@ -54,50 +57,64 @@ export default function CierreServicio() {
       })
       .finally(() => setLoading(false));
   }, [appointmentId]);
-
   function addToCart(product: Product) {
     setCart((prev) => {
       const exists = prev.find((i) => i.product.id === product.id);
       if (exists) {
         return prev.map((i) =>
           i.product.id === product.id
-            ? { ...i, quantity: Math.min(i.quantity + 1, product.stock) }
+            ? {
+                ...i,
+                quantity: Math.min(i.quantity + 1, product.stock),
+              }
             : i,
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [
+        ...prev,
+        {
+          product,
+          quantity: 1,
+        },
+      ];
     });
   }
-
   function removeFromCart(productId: string) {
     setCart((prev) => prev.filter((i) => i.product.id !== productId));
   }
-
   function updateQty(productId: string, qty: number) {
     if (qty <= 0) return removeFromCart(productId);
     setCart((prev) =>
       prev.map((i) =>
-        i.product.id === productId ? { ...i, quantity: qty } : i,
+        i.product.id === productId
+          ? {
+              ...i,
+              quantity: qty,
+            }
+          : i,
       ),
     );
   }
-
   const serviceTotal = appointment?.priceSnapshot ?? 0;
   const productsTotal = cart.reduce(
     (acc, i) => acc + i.product.price * i.quantity,
     0,
   );
   const grandTotal = serviceTotal + productsTotal;
-
   async function handleConfirm() {
     if (!appointment || !selectedPayment) return;
     setSubmitting(true);
     setError("");
     try {
-      const orderRes = await post<ApiResponse<{ id: string }>>("order", {
+      const orderRes = await post<
+        ApiResponse<{
+          id: string;
+        }>
+      >("order", {
         appointmentId: appointment.id,
         paymentMethodId: selectedPayment,
         amount: grandTotal,
+        status: "paid",
       });
       if (!orderRes) throw new Error("No se pudo crear la orden de pago");
       await put(`appointments/${appointment.id}/status`, {
@@ -110,7 +127,51 @@ export default function CierreServicio() {
       setSubmitting(false);
     }
   }
-
+  async function handlePaymentMethod(method: string, id: string) {
+    if (method === "online" && appointment) {
+      const items = cart.map((c) => {
+        return {
+          id: c.product.id,
+          title: c.product.name,
+          quantity: c.quantity,
+          unit_price: c.product.price,
+          currency_id: "ARS",
+        };
+      });
+      items.push({
+        id: appointment.id,
+        title: appointment.service.name,
+        quantity: 1,
+        unit_price: appointment.priceSnapshot,
+        currency_id: "ARS",
+      });
+      Promise.all([
+        await post<
+          ApiResponse<{
+            id: string;
+            init_point: string;
+            sandbox_init_point: string;
+          }>
+        >("mercadopago/create-preference", {
+          items,
+          payerEmail: appointment.clientEmail,
+          payerName: appointment.clientName,
+          paymentMethodId: id,
+          appointment: appointmentId,
+          amount: grandTotal,
+        }),
+      ]).then(async ([response]) => {
+        if (!response) {
+          setError("No se pudo generar los datos de la venta");
+          return;
+        }
+        console.log(response);
+        setPreference(response.data.sandbox_init_point);
+      });
+      return;
+    }
+    setSelectedPayment(id);
+  }
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -118,7 +179,6 @@ export default function CierreServicio() {
       </div>
     );
   }
-
   if (!appointment) {
     return (
       <EmptyState
@@ -136,7 +196,6 @@ export default function CierreServicio() {
       />
     );
   }
-
   if (success) {
     return (
       <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-4 py-16 text-center">
@@ -170,11 +229,9 @@ export default function CierreServicio() {
       </div>
     );
   }
-
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(productSearch.toLowerCase()),
   );
-
   const isCompleted = appointment.status === "completed";
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -188,7 +245,7 @@ export default function CierreServicio() {
         <SectionHeader eyebrow="Admin" title="Cerrar servicio" />
       </div>
 
-      {/* Info del turno */}
+      {}
       <div className="card flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -207,11 +264,17 @@ export default function CierreServicio() {
 
         <div className="border-border grid grid-cols-2 gap-3 border-t pt-3 sm:grid-cols-4">
           {[
-            { label: "Barbero", value: appointment.barber.name },
-            { label: "Servicio", value: appointment.service.name },
+            {
+              label: "Barbero",
+              value: appointment.barber.name,
+            },
+            {
+              label: "Servicio",
+              value: appointment.service.name,
+            },
             {
               label: "Horario",
-              value: `${appointment.startTime}–${appointment.endTime}`,
+              value: `${appointment.startTime}-${appointment.endTime}`,
             },
             {
               label: "Precio servicio",
@@ -224,9 +287,7 @@ export default function CierreServicio() {
                 {item.label}
               </p>
               <p
-                className={`font-body text-sm font-semibold ${
-                  item.accent ? "text-marca" : "text-text-primary"
-                }`}
+                className={`font-body text-sm font-semibold ${item.accent ? "text-marca" : "text-text-primary"}`}
               >
                 {item.value}
               </p>
@@ -241,7 +302,7 @@ export default function CierreServicio() {
         )}
       </div>
 
-      {/* Productos adicionales */}
+      {}
       {!isCompleted && (
         <div className="card flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -267,11 +328,7 @@ export default function CierreServicio() {
                   key={p.id}
                   onClick={() => addToCart(p)}
                   disabled={p.stock === 0}
-                  className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
-                    inCart
-                      ? "bg-marca/8 border-border-strong"
-                      : "border-border bg-black/20"
-                  }`}
+                  className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${inCart ? "bg-marca/8 border-border-strong" : "border-border bg-black/20"}`}
                 >
                   <div className="min-w-0">
                     <p className="text-text-primary font-body truncate font-semibold">
@@ -309,7 +366,7 @@ export default function CierreServicio() {
                       }
                       className="text-text-secondary border-border flex size-6 items-center justify-center rounded-lg border bg-black/30 text-sm"
                     >
-                      −
+                      -
                     </button>
                     <span className="text-text-primary font-body w-5 text-center text-sm font-bold">
                       {item.quantity}
@@ -340,7 +397,7 @@ export default function CierreServicio() {
         </div>
       )}
 
-      {/* Resumen + pago */}
+      {}
       {!isCompleted && (
         <div className="card flex flex-col gap-4">
           <div className="font-body flex flex-col gap-2">
@@ -353,7 +410,7 @@ export default function CierreServicio() {
             {cart.map((i) => (
               <div key={i.product.id} className="flex justify-between text-sm">
                 <span className="text-text-muted">
-                  {i.product.name} ×{i.quantity}
+                  {i.product.name} * {i.quantity}
                 </span>
                 <span className="text-text-primary">
                   {formatARS(i.product.price * i.quantity)}
@@ -367,28 +424,42 @@ export default function CierreServicio() {
           </div>
 
           <div>
-            <p className="text-text-muted font-body mb-2 text-xs font-bold tracking-widest uppercase">
-              Método de pago
-            </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {paymentMethods.map((pm) => {
-                const selected = selectedPayment === pm.id;
-                return (
-                  <button
-                    key={pm.id}
-                    onClick={() => setSelectedPayment(pm.id)}
-                    className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left text-sm font-semibold transition-all duration-150 ${
-                      selected
-                        ? "bg-marca/10 border-border-strong text-marca"
-                        : "border-border text-text-secondary bg-black/20"
-                    }`}
-                  >
-                    <PaymentIcon type={pm.type} />
-                    {pm.name}
-                  </button>
-                );
-              })}
-            </div>
+            {preference ? (
+              <>
+                <ModalBase
+                  open={preference !== ""}
+                  onClose={() => setPreference("")}
+                >
+                  <div className="min-h-[85dvh] p-4">
+                    <h1 className="mb-10 text-center text-xl">
+                      Escanea éste código para pagar
+                    </h1>
+                    <QRCodeSVG value={preference} className="h-full w-full" />
+                  </div>
+                </ModalBase>
+              </>
+            ) : (
+              <>
+                <p className="text-text-muted font-body mb-2 text-xs font-bold tracking-widest uppercase">
+                  Método de pago
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {paymentMethods.map((pm) => {
+                    const selected = selectedPayment === pm.id;
+                    return (
+                      <button
+                        key={pm.id}
+                        onClick={() => handlePaymentMethod(pm.type, pm.id)}
+                        className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left text-sm font-semibold capitalize transition-all duration-150 ${selected ? "bg-marca/10 border-border-strong text-marca" : "border-border text-text-secondary bg-black/20"}`}
+                      >
+                        <PaymentIcon type={pm.type} />
+                        {pm.name === "mercado pago" ? "Pagar con QR" : pm.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {error && (
@@ -400,7 +471,11 @@ export default function CierreServicio() {
           <button
             onClick={handleConfirm}
             disabled={submitting || !selectedPayment}
-            className="btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[0.9rem] disabled:opacity-70"
+            className={
+              !preference
+                ? "btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[0.9rem] disabled:opacity-70"
+                : "hidden"
+            }
           >
             {submitting ? (
               <Spinner size={18} />

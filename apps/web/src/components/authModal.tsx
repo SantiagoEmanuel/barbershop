@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { api } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 import type { ApiResponse, User } from "../types";
@@ -39,10 +40,16 @@ export function AuthModal({
         method: "POST",
         body: JSON.stringify({ email: loginEmail, password: loginPass }),
       });
+      toast.loading("Ingresando a tu cuenta", { duration: 2000 });
       if (!res?.data) throw new Error("Email o contraseña incorrectos");
       await setUser(res.data);
       onClose();
     } catch (err: unknown) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Error inesperado, inténtalo de nuevo",
+      );
       setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {
       setLoading(false);
@@ -71,10 +78,21 @@ export function AuthModal({
           password: regPass,
         }),
       });
+
       if (!res?.data) throw new Error("Error al registrarse");
       setTab("login");
-      setLoginEmail(regEmail);
-      setError("¡Cuenta creada! Ingresá con tu contraseña.");
+      setError("¡Cuenta creada! Ingresando.");
+      toast.success("¡Cuenta creada!");
+      toast.loading("Ingresando a tu cuenta");
+      const log = await api<ApiResponse<User>>(`auth`, {
+        method: "POST",
+        body: JSON.stringify({ email: loginEmail, password: loginPass }),
+      });
+      if (!log) {
+        throw new Error("Error al iniciar sesión");
+      }
+      await setUser(log.data);
+      onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {

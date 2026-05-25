@@ -22,6 +22,9 @@ interface BookingState {
   clientEmail: string;
   notes: string;
 
+  paymentMethod: string;
+  paymentMethodId: string;
+
   // Acciones
   openModal: () => void;
   closeModal: () => void;
@@ -41,6 +44,7 @@ interface BookingState {
     notes: string,
     email: string,
   ) => void;
+  setPaymentMethod: (method: string, id: string) => void;
   reset: () => void;
 }
 
@@ -59,6 +63,8 @@ const defaultState = {
   clientPhone: "",
   clientEmail: "",
   notes: "",
+  paymentMethod: "",
+  paymentMethodId: "",
 };
 
 export const useBookingStore = create<BookingState>((set) => ({
@@ -79,5 +85,6 @@ export const useBookingStore = create<BookingState>((set) => ({
   setSlot: (startTime) => set({ startTime }),
   setClient: (clientName, clientPhone, notes, clientEmail) =>
     set({ clientName, clientPhone, notes, clientEmail }),
+  setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
   reset: () => set(defaultState),
 }));

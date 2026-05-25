@@ -6,43 +6,56 @@ import { formatARS, todayISO } from "../components/ui/formatters";
 import { SectionHeader } from "../components/ui/sectionHeader";
 import { Spinner } from "../components/ui/spinner";
 import { api, put } from "../lib/api";
-import { useAuthStore } from "../store/useAuthStore";
 import type {
   ApiResponse,
   Appointment,
   AppointmentStatus,
   Barber,
 } from "../types";
-
-const STATUS_OPTIONS: { value: AppointmentStatus | "all"; label: string }[] = [
-  { value: "all", label: "Todos" },
-  { value: "pending", label: "Pendientes" },
-  { value: "confirmed", label: "Confirmados" },
-  { value: "completed", label: "Completados" },
-  { value: "cancelled", label: "Cancelados" },
-  { value: "no_show", label: "No se presentó" },
+const STATUS_OPTIONS: {
+  value: AppointmentStatus | "all";
+  label: string;
+}[] = [
+  {
+    value: "all",
+    label: "Todos",
+  },
+  {
+    value: "pending",
+    label: "Pendientes",
+  },
+  {
+    value: "confirmed",
+    label: "Confirmados",
+  },
+  {
+    value: "completed",
+    label: "Completados",
+  },
+  {
+    value: "cancelled",
+    label: "Cancelados",
+  },
+  {
+    value: "no_show",
+    label: "No se presentó",
+  },
 ];
-
 export default function Turnos() {
-  const user = useAuthStore((u) => u.user);
   const navigate = useNavigate();
   const [date, setDate] = useState(todayISO());
   const [barbers, setBarbers] = useState<Barber[]>([]);
-  const [selectedBarber, setSelectedBarber] = useState<string>(
-    user ? user.id : "all",
-  );
+  const [selectedBarber, setSelectedBarber] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">(
     "all",
   );
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     api<ApiResponse<Barber[]>>("barber?all=true").then((r) =>
       setBarbers(r?.data ?? []),
     );
   }, []);
-
   useEffect(() => {
     if (!date || selectedBarber === "all") return;
     setLoading(true);
@@ -52,20 +65,26 @@ export default function Turnos() {
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
   }, [date, selectedBarber]);
-
   async function changeStatus(id: string, status: AppointmentStatus) {
-    const res = await put(`appointments/${id}/status`, { status });
+    const res = await put(`appointments/${id}/status`, {
+      status,
+    });
     if (res) {
       setAppointments((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status } : a)),
+        prev.map((a) =>
+          a.id === id
+            ? {
+                ...a,
+                status,
+              }
+            : a,
+        ),
       );
     }
   }
-
   const filtered = appointments.filter((a) =>
     statusFilter === "all" ? true : a.status === statusFilter,
   );
-
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
@@ -74,7 +93,7 @@ export default function Turnos() {
         description="Gestioná y actualizá el estado de cada turno."
       />
 
-      {/* Filtros */}
+      {}
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           type="date"
@@ -85,9 +104,7 @@ export default function Turnos() {
         <select
           value={selectedBarber}
           onChange={(e) => setSelectedBarber(e.target.value)}
-          className={`bg-surface border-border font-body flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none ${
-            selectedBarber === "all" ? "text-text-muted" : "text-text-primary"
-          }`}
+          className={`bg-surface border-border font-body flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none ${selectedBarber === "all" ? "text-text-muted" : "text-text-primary"}`}
         >
           <option value="all">Seleccioná un barbero</option>
           {barbers.map((b) => (
@@ -142,19 +159,22 @@ export default function Turnos() {
     </div>
   );
 }
-
-// ── Card local del turno (con expand y acciones inline) ──────
 const NEXT_STATUS: Record<
   AppointmentStatus,
-  { label: string; value: AppointmentStatus } | null
+  {
+    label: string;
+    value: AppointmentStatus;
+  } | null
 > = {
-  pending: { label: "Confirmar", value: "confirmed" },
-  confirmed: { label: "Completar", value: "completed" },
+  pending: {
+    label: "Confirmar",
+    value: "confirmed",
+  },
+  confirmed: null,
   completed: null,
   cancelled: null,
   no_show: null,
 };
-
 function ShiftAppointmentCard({
   appointment: a,
   onChangeStatus,
@@ -166,7 +186,6 @@ function ShiftAppointmentCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const next = NEXT_STATUS[a.status];
-
   return (
     <div className="bg-surface border-border overflow-hidden rounded-xl border">
       <div
@@ -183,7 +202,7 @@ function ShiftAppointmentCard({
             {a.clientName}
           </p>
           <p className="text-text-muted font-body text-xs">
-            {a.service?.name} · {a.startTime}–{a.endTime}
+            {a.service?.name} · {a.startTime}-{a.endTime}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -232,12 +251,16 @@ function ShiftAppointmentCard({
                 No se presentó
               </button>
             )}
-            <button
-              onClick={onClose}
-              className="btn-ghost ml-auto rounded-lg px-4 py-2 text-xs"
-            >
-              Cerrar servicio →
-            </button>
+            {a.status !== "completed" &&
+              a.status !== "cancelled" &&
+              a.status !== "no_show" && (
+                <button
+                  onClick={onClose}
+                  className="btn-ghost ml-auto rounded-lg px-4 py-2 text-xs"
+                >
+                  Cerrar servicio →
+                </button>
+              )}
           </div>
         </div>
       )}

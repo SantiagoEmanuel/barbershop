@@ -1,3 +1,4 @@
+import { Toaster } from "react-hot-toast";
 import { Outlet } from "react-router";
 import { AuthModalProvider } from "../provider/authModalProvider";
 
@@ -13,6 +14,7 @@ export function RootLayout() {
   return (
     <AuthModalProvider>
       <Outlet />
+      <Toaster />
     </AuthModalProvider>
   );
 }

@@ -6,7 +6,7 @@ export async function api<T = unknown>(
 ): Promise<T | null> {
   const { headers, ...rest } = config;
   try {
-    const res = await fetch(`${BASE}/api/${endpoint}`, {
+    const res = await fetch(`${BASE}/${endpoint}`, {
       headers: {
         "content-type": "application/json",
         ...(headers as Record<string, string>),

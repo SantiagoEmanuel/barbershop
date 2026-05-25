@@ -1,6 +1,7 @@
 import toast from "react-hot-toast";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { api } from "../lib/api";
 import type { User } from "../types";
 
 type AuthStore = {
@@ -31,10 +32,12 @@ export const useAuthStore = create(
           user,
         }));
       },
-      logout: () =>
+      logout: () => {
+        api("auth/logout", { method: "POST" });
         set(() => ({
           user: null,
-        })),
+        }));
+      },
     }),
     {
       name: "auth_store",

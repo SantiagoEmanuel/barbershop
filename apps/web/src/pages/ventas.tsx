@@ -10,10 +10,16 @@ import { SectionHeader } from "../components/ui/sectionHeader";
 import { Spinner } from "../components/ui/spinner";
 import { api, post } from "../lib/api";
 import { useServicesStore } from "../store/useServicesStore";
-import type { ApiResponse, Barber, Order, Product, Service } from "../types";
+import {
+  type ApiResponse,
+  type Appointment,
+  type Barber,
+  type Order,
+  type Product,
+  type Service,
+} from "../types";
 import type { CartLine } from "../types/cartLine";
 import type { PickerTab } from "../types/picker";
-
 export default function Ventas() {
   const [products, setProducts] = useState<Product[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -25,42 +31,76 @@ export default function Ventas() {
   const [selectedBarber, setSelectedBarber] = useState("");
   const [selectedPayment, setSelectedPayment] = useState("");
   const [paymentMethods, setPaymentMethods] = useState<
-    { id: string; name: string }[]
+    {
+      id: string;
+      name: string;
+    }[]
   >([]);
+  const [selectedAppointment, setSelectedAppointment] = useState("");
+  const [todayShifts, setTodayShifts] = useState<Appointment[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
   useEffect(() => {
+    let barberId = "";
     Promise.all([
       api<ApiResponse<Product[]>>("product"),
       api<ApiResponse<Barber[]>>("barber"),
       api<ApiResponse<Order[]>>(`order?date=${todayISO()}`),
-      api<ApiResponse<{ id: string; name: string }[]>>("payment-methods"),
+      api<
+        ApiResponse<
+          {
+            id: string;
+            name: string;
+          }[]
+        >
+      >("payment-methods"),
     ])
       .then(([prodRes, barberRes, ordersRes, pmRes]) => {
         setProducts(prodRes?.data ?? []);
         setBarbers(barberRes?.data ?? []);
         setTodayOrders(ordersRes?.data ?? []);
         setPaymentMethods(pmRes?.data ?? []);
-        if (barberRes?.data?.[0]) setSelectedBarber(barberRes.data[0].id);
+        if (barberRes?.data?.[0]) {
+          setSelectedBarber(barberRes.data[0].id);
+          barberId = barberRes.data[0].id;
+        }
         if (pmRes?.data?.[0]) setSelectedPayment(pmRes.data[0].id);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        Promise.all([
+          api<ApiResponse<Appointment[]>>(
+            `appointments?date=${todayISO()}&barberId=${barberId}`,
+          ),
+        ])
+          .then(([apRes]) => {
+            setTodayShifts(apRes?.data ?? []);
+          })
+          .finally(() => setLoading(false));
+      });
     getServices();
   }, [getServices]);
-
   function addProduct(p: Product) {
     setCart((prev) => {
       const existing = prev.find(
         (l) => l.kind === "product" && l.id === p.id,
-      ) as Extract<CartLine, { kind: "product" }> | undefined;
+      ) as
+        | Extract<
+            CartLine,
+            {
+              kind: "product";
+            }
+          >
+        | undefined;
       if (existing) {
         return prev.map((l) =>
           l.kind === "product" && l.id === p.id
-            ? { ...l, quantity: Math.min(l.quantity + 1, p.stock) }
+            ? {
+                ...l,
+                quantity: Math.min(l.quantity + 1, p.stock),
+              }
             : l,
         );
       }
@@ -77,14 +117,16 @@ export default function Ventas() {
       ];
     });
   }
-
   function addService(s: Service) {
     setCart((prev) => {
       const existing = prev.find((l) => l.kind === "service" && l.id === s.id);
       if (existing) {
         return prev.map((l) =>
           l.kind === "service" && l.id === s.id
-            ? { ...l, quantity: l.quantity + 1 }
+            ? {
+                ...l,
+                quantity: l.quantity + 1,
+              }
             : l,
         );
       }
@@ -100,7 +142,6 @@ export default function Ventas() {
       ];
     });
   }
-
   function updateQty(line: CartLine, qty: number) {
     if (qty <= 0) {
       setCart((prev) =>
@@ -112,13 +153,18 @@ export default function Ventas() {
       prev.map((l) => {
         if (l.kind !== line.kind || l.id !== line.id) return l;
         if (l.kind === "product") {
-          return { ...l, quantity: Math.min(qty, l.stock) };
+          return {
+            ...l,
+            quantity: Math.min(qty, l.stock),
+          };
         }
-        return { ...l, quantity: qty };
+        return {
+          ...l,
+          quantity: qty,
+        };
       }),
     );
   }
-
   const totals = useMemo(() => {
     const productsTotal = cart
       .filter((l) => l.kind === "product")
@@ -133,21 +179,24 @@ export default function Ventas() {
       itemCount: cart.reduce((acc, l) => acc + l.quantity, 0),
     };
   }, [cart]);
-
   const dailyTotal = todayOrders
     .filter((o) => o.status === "paid")
     .reduce((acc, o) => acc + o.amount, 0);
-
   async function handleSell() {
     if (cart.length === 0 || !selectedBarber || !selectedPayment) return;
     setSubmitting(true);
     setError("");
     setSuccess("");
     try {
-      const res = await post<ApiResponse<Order>>("order/counter", {
+      const appointmentId =
+        selectedAppointment && selectedAppointment !== "null"
+          ? selectedAppointment
+          : undefined;
+      const res = await post<ApiResponse<Order>>("order/create", {
         paymentMethodId: selectedPayment,
         amount: totals.grandTotal,
         soldBy: selectedBarber,
+        appointmentId,
         items: cart.map((l) => ({
           kind: l.kind,
           id: l.id,
@@ -155,22 +204,24 @@ export default function Ventas() {
           priceSnapshot: l.price,
         })),
       });
-
       if (!res?.data) throw new Error("No se pudo registrar la venta");
-
       setProducts((prev) =>
         prev.map((p) => {
           const line = cart.find((l) => l.kind === "product" && l.id === p.id);
-          return line ? { ...p, stock: p.stock - line.quantity } : p;
+          return line
+            ? {
+                ...p,
+                stock: p.stock - line.quantity,
+              }
+            : p;
         }),
       );
-
       setTodayOrders((prev) => [res.data!, ...prev]);
-
       setSuccess(
         `Venta registrada: ${formatARS(totals.grandTotal)} · ${totals.itemCount} item${totals.itemCount > 1 ? "s" : ""}`,
       );
       setCart([]);
+      setSelectedAppointment("");
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "Error al registrar la venta",
@@ -179,15 +230,12 @@ export default function Ventas() {
       setSubmitting(false);
     }
   }
-
   const filteredProducts = products.filter(
     (p) => p.name.toLowerCase().includes(search.toLowerCase()) && p.stock > 0,
   );
-
   const filteredServices = (services ?? []).filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase()),
   );
-
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -195,7 +243,6 @@ export default function Ventas() {
       </div>
     );
   }
-
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
@@ -238,6 +285,38 @@ export default function Ventas() {
               ))}
             </select>
           </div>
+          {todayShifts.length === 0 ? (
+            <EmptyState
+              title="No tienes turnos para hoy"
+              icon="👌"
+              description="No hay turnos para vincularlos a ésta venta"
+            ></EmptyState>
+          ) : (
+            <div>
+              <label className="text-text-muted font-body mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+                Clientes de hoy
+              </label>
+              <select
+                value={selectedAppointment}
+                onChange={(e) => {
+                  updateQty(cart.filter((c) => c.kind === "service")[0], 0);
+                  setSelectedAppointment(e.target.value);
+                  todayShifts.map(
+                    (a) => a.id === e.target.value && addService(a.service),
+                  );
+                }}
+                className="bg-surface border-border text-text-primary font-body w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+              >
+                <option value="null">Seleccionar turno (opcional)</option>
+                {todayShifts.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.clientName} - {b.service.name} ({b.startTime}hs -{" "}
+                    {b.endTime}hs)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="border-border flex gap-1 self-start rounded-xl border bg-black/25 p-1">
             <PickerTabButton
@@ -345,7 +424,7 @@ export default function Ventas() {
                 ))}
               </ul>
 
-              {/* Método de pago */}
+              {}
               <div>
                 <label className="text-text-muted font-body mb-1.5 block text-xs font-semibold tracking-wide uppercase">
                   Método de pago *

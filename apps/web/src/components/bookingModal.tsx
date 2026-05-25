@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { api, post } from "../lib/api";
 import { cn } from "../lib/cn";
-import { timeToMinutes } from "../lib/timeTominutes";
+import { getTimeNow, timeToMinutes } from "../lib/timeTominutes";
+import { useAuthStore } from "../store/useAuthStore";
 import { useBookingStore } from "../store/useBookingStore";
-import type { ApiResponse, Barber, Service, Slot } from "../types";
+import {
+  type ApiResponse,
+  type Barber,
+  type Service,
+  type Slot,
+} from "../types";
 import { ModalBase } from "./modalBase";
 import { Field } from "./ui/field";
-import { formatARS, todayISO } from "./ui/formatters";
+import { formatARS, todayISO, todayISOArgentina } from "./ui/formatters";
 import { Spinner } from "./ui/spinner";
 
 // ── Helpers de tiempo ─────────────────────────────────────────
@@ -87,8 +93,15 @@ function StepBarber({ onNext }: { onNext: () => void }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (barberId) {
+      onNext();
+    }
     api<ApiResponse<Barber[]>>("barber").then((r) => {
       setBarbers(r?.data ?? []);
+      if (r?.data.length === 1) {
+        setBarber(r.data[0].id, r.data[0].name);
+        onNext();
+      }
       setLoading(false);
     });
   }, []);
@@ -165,6 +178,9 @@ function StepService({ onNext }: { onNext: () => void }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (serviceId) {
+      onNext();
+    }
     api<ApiResponse<Service[]>>("service").then((r) => {
       setServices(r?.data ?? []);
       setLoading(false);
@@ -237,6 +253,7 @@ function StepService({ onNext }: { onNext: () => void }) {
 function StepDateTime({ onNext }: { onNext: () => void }) {
   const { barberId, serviceDuration, date, startTime, setDate, setSlot } =
     useBookingStore();
+  const user = useAuthStore((u) => u.user);
   const [rawSlots, setRawSlots] = useState<Slot[]>([]);
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -307,7 +324,7 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
                   if (
                     timeToMinutes(s.startTime) <
                       new Date().getHours() * 60 + new Date().getMinutes() &&
-                    date === todayISO()
+                    date === todayISOArgentina()
                   ) {
                     return;
                   }
@@ -331,10 +348,23 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
                   );
                 })}
               </div>
-              <p className="text-text-muted font-body mt-2 text-center text-xs">
-                Mostrando turnos donde cabe tu servicio de{" "}
-                {Math.max(serviceDuration, 30)} min.
-              </p>
+              {user?.role === "admin" ? (
+                <div className="mt-4 flex w-full items-center">
+                  <button
+                    className="text-text-secondary btn-marca mx-auto text-center"
+                    onClick={() => {
+                      setSlot(getTimeNow());
+                      onNext();
+                    }}
+                  >
+                    Establecer turno improvisado
+                  </button>
+                </div>
+              ) : (
+                <p className="text-text-muted font-body mt-2 text-center text-xs">
+                  Mostrando turnos donde cabe tu servicio.
+                </p>
+              )}
             </>
           )}
         </div>
@@ -345,16 +375,16 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
 
 // ── Step 4: datos cliente ─────────────────────────────────────
 function StepClient({ onNext }: { onNext: () => void }) {
-  const { clientEmail, clientName, clientPhone, notes, setClient } =
-    useBookingStore();
-  const [email, setEmail] = useState(clientEmail);
-  const [name, setName] = useState(clientName);
-  const [phone, setPhone] = useState(clientPhone);
-  const [note, setNote] = useState(notes);
+  const user = useAuthStore((u) => u.user);
+  const { setClient } = useBookingStore();
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [name, setName] = useState(user?.name ?? "");
+  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [note, setNote] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
+    if (!name.trim() || !phone.trim() || !email.trim()) return;
     setClient(name.trim(), phone.trim(), note.trim(), email.trim());
     onNext();
   }
@@ -422,7 +452,65 @@ function StepClient({ onNext }: { onNext: () => void }) {
   );
 }
 
-// ── Step 5: confirmar ─────────────────────────────────────────
+// ── Step 5: método de pago ─────────────────────────────────────────
+// function StepPaymentMethod({ onNext }: { onNext: () => void }) {
+//   const { setPaymentMethod, paymentMethod } = useBookingStore();
+//   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+
+//   useEffect(() => {
+//     Promise.all([api<ApiResponse<PaymentMethod[]>>("payment-methods")]).then(
+//       ([pmRes]) => {
+//         setPaymentMethods(pmRes?.data ?? []);
+//       },
+//     );
+//   }, []);
+
+//   const handleSubmit = () => {
+//     if (paymentMethod === "online") {
+//       return;
+//     }
+//     onNext();
+//   };
+
+//   return (
+//     <div className="flex flex-col gap-4">
+//       <div>
+//         <p className="text-marca font-body mb-1 text-xs tracking-[0.15em] uppercase">
+//           Paso 5 de 5
+//         </p>
+//         <h3 className="font-display text-text-primary text-xl font-bold">
+//           Método de pago
+//         </h3>
+//         <p className="text-text-muted font-body mt-1 text-xs">
+//           Selecciona cuándo y cómo quieres pagar
+//         </p>
+//       </div>
+//       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+//         <select
+//           name="paymentMethod"
+//           onChange={(e) => {
+//             const [name, id] = e.target.value.split("-");
+//             setPaymentMethod(name, id);
+//           }}
+//         >
+//           {paymentMethods.map((pm) => (
+//             <option value={`${pm.type}-${pm.id}`} key={pm.id}>
+//               {pm.name}
+//             </option>
+//           ))}
+//         </select>
+//         <button
+//           type="submit"
+//           className="btn-marca mt-1 w-full rounded-xl py-3.5"
+//         >
+//           Seleccionar método de pago
+//         </button>
+//       </form>
+//     </div>
+//   );
+// }
+
+// ── Step 6: confirmar ─────────────────────────────────────────
 function StepConfirm({ onClose }: { onClose: () => void }) {
   const store = useBookingStore();
   const [loading, setLoading] = useState(false);
@@ -442,6 +530,7 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
         clientPhone: store.clientPhone,
         clientEmail: store.clientEmail,
         notes: store.notes,
+        paymentMethodId: store.paymentMethodId,
       });
       if (!res) throw new Error("Error al reservar el turno");
       setSuccess(true);
@@ -491,6 +580,7 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
     { label: "Barbero", value: store.barberName },
     { label: "Servicio", value: store.serviceName },
     { label: "Precio", value: formatARS(store.servicePrice) },
+    { label: "Forma de pago", value: store.paymentMethod },
     {
       label: "Fecha",
       value: new Date(store.date).toLocaleDateString("es-AR", {
@@ -578,8 +668,9 @@ export default function BookingModal() {
         {step === 1 && <StepBarber onNext={() => setStep(2)} />}
         {step === 2 && <StepService onNext={() => setStep(3)} />}
         {step === 3 && <StepDateTime onNext={() => setStep(4)} />}
-        {step === 4 && <StepClient onNext={() => setStep(5)} />}
-        {step === 5 && <StepConfirm onClose={handleClose} />}
+        {step === 4 && <StepClient onNext={() => setStep(6)} />}
+        {/* {step === 5 && <StepPaymentMethod onNext={() => setStep(6)} />} */}
+        {step === 6 && <StepConfirm onClose={handleClose} />}
       </div>
     </ModalBase>
   );

@@ -1,3 +1,7 @@
+import type { Barber } from "./barber";
+import type { Service } from "./service";
+import type { User } from "./user";
+
 export type AppointmentStatus =
   | "pending"
   | "confirmed"
@@ -20,18 +24,8 @@ export interface Appointment {
   status: AppointmentStatus;
   priceSnapshot: number;
   notes?: string;
-  service: {
-    id?: string;
-    name: string;
-    durationMinutes?: number;
-    price?: number;
-  };
-  barber: {
-    id?: string;
-    name: string;
-  };
-  client?: {
-    id: string;
-    name: string;
-  };
+  service: Service;
+  barber: Barber;
+  client?: User;
+  clientEmail: string | null;
 }

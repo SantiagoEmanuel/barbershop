@@ -6,9 +6,11 @@ import { RootLayout } from "../components/rootLayout";
 import AdminGuard from "../guard/adminGuard";
 import Barberos from "../pages/barberos";
 import CierreServicio from "../pages/closeService";
+import ConfirmUser from "../pages/confirm";
 import Dashboard from "../pages/dashboard";
 import Home from "../pages/home";
 import Movimientos from "../pages/movimientos";
+import PaymentVerification from "../pages/paymentVerification";
 import Perfil from "../pages/profile";
 import Reservas from "../pages/reservas";
 import Servicios from "../pages/servicios";
@@ -39,6 +41,8 @@ export const routes: RouteObject[] = [
           { path: "perfil", Component: Perfil },
           // Reutilizamos Perfil — ya tiene la sección de turnos
           { path: "mis-turnos", Component: Perfil },
+          { path: "confirm", Component: ConfirmUser },
+          { path: "payment-verification", Component: PaymentVerification },
         ],
       },
 

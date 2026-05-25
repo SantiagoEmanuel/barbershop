@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import BookingModal from "../components/bookingModal";
 import { StatusBadge } from "../components/statusBadge";
 import { EmptyState } from "../components/ui/emptyState";
 import { formatARS, formatDate, todayISO } from "../components/ui/formatters";
 import { SectionHeader } from "../components/ui/sectionHeader";
 import { Spinner } from "../components/ui/spinner";
 import { api } from "../lib/api";
+import { useBookingStore } from "../store/useBookingStore";
 import type { ApiResponse, Appointment, Barber } from "../types";
-
 export default function Reservas() {
   const navigate = useNavigate();
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -16,13 +17,12 @@ export default function Reservas() {
   const [dateFrom, setDateFrom] = useState(todayISO());
   const [selectedBarber, setSelectedBarber] = useState("all");
   const [search, setSearch] = useState("");
-
+  const openBooking = useBookingStore((s) => s.openModal);
   useEffect(() => {
     api<ApiResponse<Barber[]>>("barber?all=true").then((r) =>
       setBarbers(r?.data ?? []),
     );
   }, []);
-
   useEffect(() => {
     if (selectedBarber === "all") return;
     setLoading(true);
@@ -32,14 +32,12 @@ export default function Reservas() {
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
   }, [dateFrom, selectedBarber]);
-
   const filtered = appointments.filter((a) =>
     search.trim() === ""
       ? true
       : a.clientName.toLowerCase().includes(search.toLowerCase()) ||
         a.clientPhone.includes(search),
   );
-
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
@@ -48,7 +46,7 @@ export default function Reservas() {
         description="Consultá reservas por barbero y fecha."
         action={
           <button
-            onClick={() => navigate("/admin/turnos")}
+            onClick={openBooking}
             className="btn-marca rounded-xl px-4 py-2 text-sm"
           >
             + Nuevo turno
@@ -56,7 +54,6 @@ export default function Reservas() {
         }
       />
 
-      {/* Filtros */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           type="date"
@@ -67,9 +64,7 @@ export default function Reservas() {
         <select
           value={selectedBarber}
           onChange={(e) => setSelectedBarber(e.target.value)}
-          className={`bg-surface border-border font-body flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none ${
-            selectedBarber === "all" ? "text-text-muted" : "text-text-primary"
-          }`}
+          className={`bg-surface border-border font-body flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none ${selectedBarber === "all" ? "text-text-muted" : "text-text-primary"}`}
         >
           <option value="all">Todos los barberos</option>
           {barbers.map((b) => (
@@ -87,7 +82,7 @@ export default function Reservas() {
         />
       </div>
 
-      {/* Lista */}
+      {}
       {selectedBarber === "all" ? (
         <EmptyState
           icon="☝️"
@@ -160,6 +155,7 @@ export default function Reservas() {
           </div>
         </>
       )}
+      <BookingModal />
     </div>
   );
 }

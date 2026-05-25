@@ -8,28 +8,48 @@ import { SectionHeader } from "../components/ui/sectionHeader";
 import { Spinner } from "../components/ui/spinner";
 import { api } from "../lib/api";
 import type { ApiResponse, Appointment } from "../types";
-
 const QUICK_LINKS = [
-  { label: "Ver turnos del día", href: "/admin/turnos", icon: "📅" },
-  { label: "Nueva reserva", href: "/admin/reservas", icon: "➕" },
-  { label: "Registrar venta", href: "/admin/ventas", icon: "🛒" },
-  { label: "Ver movimientos", href: "/admin/movimientos", icon: "📈" },
-  { label: "Editar servicios", href: "/admin/servicios", icon: "✂️" },
-  { label: "Gestionar barberos", href: "/admin/barberos", icon: "👤" },
+  {
+    label: "Ver turnos del día",
+    href: "/admin/turnos",
+    icon: "📅",
+  },
+  {
+    label: "Nueva reserva",
+    href: "/admin/reservas",
+    icon: "➕",
+  },
+  {
+    label: "Registrar venta",
+    href: "/admin/ventas",
+    icon: "🛒",
+  },
+  {
+    label: "Ver movimientos",
+    href: "/admin/movimientos",
+    icon: "📈",
+  },
+  {
+    label: "Editar servicios",
+    href: "/admin/servicios",
+    icon: "✂️",
+  },
+  {
+    label: "Gestionar barberos",
+    href: "/admin/barberos",
+    icon: "👤",
+  },
 ];
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const today = todayISO();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     api<ApiResponse<Appointment[]>>(`appointments?date=${today}&barberId=all`)
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
   }, [today]);
-
   const stats = {
     total: appointments.length,
     pending: appointments.filter((a) => a.status === "pending").length,
@@ -39,12 +59,10 @@ export default function Dashboard() {
       .filter((a) => a.status === "completed")
       .reduce((acc, a) => acc + a.priceSnapshot, 0),
   };
-
   const upcoming = appointments
     .filter((a) => ["pending", "confirmed"].includes(a.status))
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
     .slice(0, 5);
-
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
@@ -53,7 +71,6 @@ export default function Dashboard() {
         description="Un vistazo rápido a cómo va la jornada."
       />
 
-      {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Turnos hoy" value={stats.total} icon="📋" />
         <StatCard label="Pendientes" value={stats.pending} icon="⏳" />
@@ -66,7 +83,6 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Accesos rápidos */}
       <div>
         <p className="text-text-muted font-body mb-3 text-xs font-bold tracking-widest uppercase">
           Accesos rápidos
@@ -85,9 +101,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Próximos turnos */}
       <div>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between">
           <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
             Próximos turnos
           </p>
@@ -110,7 +125,7 @@ export default function Dashboard() {
             description="Todos los turnos están completados"
           />
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex max-h-3/12 flex-col gap-4 overflow-y-scroll">
             {upcoming.map((a) => (
               <button
                 key={a.id}
@@ -135,49 +150,45 @@ export default function Dashboard() {
             ))}
           </div>
         )}
-        <div className="mb-3 flex items-center justify-between">
+        <div className="my-4 flex items-center justify-between">
           <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
             Todos los turnos de hoy
           </p>
-          <button
-            onClick={() => navigate("/admin/turnos")}
-            className="text-marca font-body text-xs font-semibold"
-          >
-            Ver todos →
-          </button>
         </div>
-        {appointments.length === 0 ? (
-          <EmptyState
-            icon="🎉"
-            title="No hay turnos para hoy"
-            description="Todo el día está libre"
-          />
-        ) : (
-          appointments
-            .sort((a, b) => a.startTime.localeCompare(b.startTime))
-            .slice(0, 5)
-            .map((a) => (
-              <button
-                key={a.id}
-                className="bg-surface border-border hover:border-border-strong flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition-all duration-150"
-              >
-                <div className="bg-marca/8 border-border flex size-10 shrink-0 flex-col items-center justify-center rounded-xl border">
-                  <span className="text-marca font-body text-xs leading-none font-bold">
-                    {a.startTime}
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-text-primary font-body text-sm font-semibold">
-                    {a.clientName}
-                  </p>
-                  <p className="text-text-muted font-body text-xs">
-                    {a.service?.name} · {a.barber?.name}
-                  </p>
-                </div>
-                <StatusBadge status={a.status} />
-              </button>
-            ))
-        )}
+        <div className="flex max-h-3/12 flex-col gap-4 overflow-y-scroll">
+          {appointments.length === 0 ? (
+            <EmptyState
+              icon="🎉"
+              title="No hay turnos para hoy"
+              description="Todo el día está libre"
+            />
+          ) : (
+            appointments
+              .sort((a, b) => a.startTime.localeCompare(b.startTime))
+              .slice(0, 5)
+              .map((a) => (
+                <button
+                  key={a.id}
+                  className="bg-surface border-border hover:border-border-strong flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition-all duration-150"
+                >
+                  <div className="bg-marca/8 border-border flex size-10 shrink-0 flex-col items-center justify-center rounded-xl border">
+                    <span className="text-marca font-body text-xs leading-none font-bold">
+                      {a.startTime}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-text-primary font-body text-sm font-semibold">
+                      {a.clientName}
+                    </p>
+                    <p className="text-text-muted font-body text-xs">
+                      {a.service?.name} · {a.barber?.name}
+                    </p>
+                  </div>
+                  <StatusBadge status={a.status} />
+                </button>
+              ))
+          )}
+        </div>
       </div>
     </div>
   );

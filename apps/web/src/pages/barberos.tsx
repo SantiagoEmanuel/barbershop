@@ -8,10 +8,7 @@ import { SectionHeader } from "../components/ui/sectionHeader";
 import { Spinner } from "../components/ui/spinner";
 import { api, post, put } from "../lib/api";
 import type { ApiResponse, Barber, Schedule } from "../types";
-
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-
-// ── Modal: editar/crear barbero ───────────────────────────────
 function BarberModal({
   open,
   onClose,
@@ -31,7 +28,6 @@ function BarberModal({
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   useEffect(() => {
     if (open) {
       setName(initial?.name ?? "");
@@ -41,7 +37,6 @@ function BarberModal({
       setError("");
     }
   }, [open, initial]);
-
   function handleNameChange(v: string) {
     setName(v);
     if (!initial) {
@@ -56,7 +51,6 @@ function BarberModal({
       );
     }
   }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -80,7 +74,6 @@ function BarberModal({
       setLoading(false);
     }
   }
-
   return (
     <ModalBase open={open} onClose={onClose} maxW="max-w-sm">
       <div className="px-6 py-5">
@@ -141,8 +134,6 @@ function BarberModal({
     </ModalBase>
   );
 }
-
-// ── Panel: horarios del barbero ───────────────────────────────
 function SchedulePanel({
   barber,
   onClose,
@@ -150,8 +141,9 @@ function SchedulePanel({
   barber: Barber;
   onClose: () => void;
 }) {
-  console.log({ barber });
-
+  console.log({
+    barber,
+  });
   const [schedules, setSchedules] = useState<Schedule[]>(
     DAYS.map((_, i) => {
       const existing = barber.schedules.find((s) => s.dayOfWeek === i);
@@ -170,7 +162,6 @@ function SchedulePanel({
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-
   async function handleSave() {
     setSaving(true);
     setSaved(false);
@@ -181,7 +172,10 @@ function SchedulePanel({
           .map((s) =>
             s.id
               ? put(`barber/schedule/${s.id}`, s)
-              : post(`barber/schedule`, { ...s, barberId: barber.id }),
+              : post(`barber/schedule`, {
+                  ...s,
+                  barberId: barber.id,
+                }),
           ),
       );
       setSaved(true);
@@ -190,7 +184,6 @@ function SchedulePanel({
       setSaving(false);
     }
   }
-
   return (
     <ModalBase open onClose={onClose} maxW="max-w-md">
       <div className="px-6 py-5">
@@ -210,25 +203,22 @@ function SchedulePanel({
           {schedules.map((s, i) => (
             <div
               key={s.dayOfWeek}
-              className={`flex items-center gap-3 rounded-xl border px-3 py-3 transition-all duration-150 ${
-                s.isActive
-                  ? "bg-marca/5 border-border-strong"
-                  : "border-border bg-black/15 opacity-50"
-              }`}
+              className={`flex items-center gap-3 rounded-xl border px-3 py-3 transition-all duration-150 ${s.isActive ? "bg-marca/5 border-border-strong" : "border-border bg-black/15 opacity-50"}`}
             >
               <button
                 onClick={() =>
                   setSchedules((prev) =>
                     prev.map((x) =>
-                      x.dayOfWeek === i ? { ...x, isActive: !x.isActive } : x,
+                      x.dayOfWeek === i
+                        ? {
+                            ...x,
+                            isActive: !x.isActive,
+                          }
+                        : x,
                     ),
                   )
                 }
-                className={`font-body size-8 shrink-0 rounded-lg border text-xs font-bold transition-all duration-150 ${
-                  s.isActive
-                    ? "bg-marca/15 text-marca border-border-strong"
-                    : "text-text-muted border-border bg-black/30"
-                }`}
+                className={`font-body size-8 shrink-0 rounded-lg border text-xs font-bold transition-all duration-150 ${s.isActive ? "bg-marca/15 text-marca border-border-strong" : "text-text-muted border-border bg-black/30"}`}
               >
                 {DAYS[i]}
               </button>
@@ -245,7 +235,10 @@ function SchedulePanel({
                         setSchedules((prev) =>
                           prev.map((x) =>
                             x.dayOfWeek === i
-                              ? { ...x, startTime: e.target.value }
+                              ? {
+                                  ...x,
+                                  startTime: e.target.value,
+                                }
                               : x,
                           ),
                         )
@@ -261,7 +254,10 @@ function SchedulePanel({
                         setSchedules((prev) =>
                           prev.map((x) =>
                             x.dayOfWeek === i
-                              ? { ...x, endTime: e.target.value }
+                              ? {
+                                  ...x,
+                                  endTime: e.target.value,
+                                }
                               : x,
                           ),
                         )
@@ -281,7 +277,10 @@ function SchedulePanel({
                         setSchedules((prev) =>
                           prev.map((x) =>
                             x.dayOfWeek === i
-                              ? { ...x, startBreak: e.target.value }
+                              ? {
+                                  ...x,
+                                  startBreak: e.target.value,
+                                }
                               : x,
                           ),
                         )
@@ -297,7 +296,10 @@ function SchedulePanel({
                         setSchedules((prev) =>
                           prev.map((x) =>
                             x.dayOfWeek === i
-                              ? { ...x, endBreak: e.target.value }
+                              ? {
+                                  ...x,
+                                  endBreak: e.target.value,
+                                }
                               : x,
                           ),
                         )
@@ -341,8 +343,6 @@ function SchedulePanel({
     </ModalBase>
   );
 }
-
-// ── Página ────────────────────────────────────────────────────
 export default function Barberos() {
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(true);
@@ -351,13 +351,11 @@ export default function Barberos() {
   const [schedulesFor, setSchedulesFor] = useState<Barber | null>(null);
   const [deactivating, setDeactivating] = useState<Barber | null>(null);
   const [deactivatingLoading, setDeactivatingLoading] = useState(false);
-
   useEffect(() => {
     api<ApiResponse<Barber[]>>("barber?all=true")
       .then((r) => setBarbers(r?.data ?? []))
       .finally(() => setLoading(false));
   }, []);
-
   async function softDelete(id: string) {
     setDeactivatingLoading(true);
     try {
@@ -366,24 +364,36 @@ export default function Barberos() {
       });
       if (res)
         setBarbers((prev) =>
-          prev.map((b) => (b.id === id ? { ...b, isActive: false } : b)),
+          prev.map((b) =>
+            b.id === id
+              ? {
+                  ...b,
+                  isActive: false,
+                }
+              : b,
+          ),
         );
       setDeactivating(null);
     } finally {
       setDeactivatingLoading(false);
     }
   }
-
   async function reactivate(id: string) {
     const res = await put<ApiResponse<Barber>>(`barber/${id}`, {
       isActive: true,
     });
     if (res)
       setBarbers((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, isActive: true } : b)),
+        prev.map((b) =>
+          b.id === id
+            ? {
+                ...b,
+                isActive: true,
+              }
+            : b,
+        ),
       );
   }
-
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -391,7 +401,6 @@ export default function Barberos() {
       </div>
     );
   }
-
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
