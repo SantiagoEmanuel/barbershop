@@ -22,7 +22,6 @@ type NewUser = {
   email: string;
   name: string;
   username: string;
-  role: "admin" | "client";
   phone: string;
   password: string;
 };
