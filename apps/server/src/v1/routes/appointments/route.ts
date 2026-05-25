@@ -5,7 +5,12 @@ import AppointmentController from "./controller/appointment";
 const appointmentRouter = Router();
 
 appointmentRouter.post("/", AppointmentController.create);
-appointmentRouter.get("/", AppointmentController.get);
+appointmentRouter.get(
+  "/",
+  verifyToken,
+  verifyRole("admin"),
+  AppointmentController.get,
+);
 appointmentRouter.get("/my", verifyToken, AppointmentController.my);
 appointmentRouter.get(
   "/:id",
