@@ -136,8 +136,11 @@ function weekdaySchedule(barberId: string) {
   return [1, 2, 3, 4, 5, 6].map((day) => ({
     barberId,
     dayOfWeek: day,
-    startTime: day === 6 ? "09:00" : "09:00",
+    startTime: "09:00",
     endTime: day === 6 ? "14:00" : "19:00", // sábados medio día
+    // Descanso de mediodía. Los sábados (cierre 14:00) es más corto.
+    startBreak: day === 6 ? "12:00" : "13:00",
+    endBreak: day === 6 ? "12:30" : "14:00",
     slotDurationMinutes: 30,
     isActive: true,
   }));
