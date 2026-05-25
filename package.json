@@ -13,7 +13,8 @@
     "update-version": "changeset",
     "check-version": "changeset version",
     "studio": "pnpm -r studio",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "lint-staged": "lint-staged"
   },
   "keywords": [],
   "author": "Santiago Mustafá",
