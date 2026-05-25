@@ -1,8 +1,18 @@
 import toast from "react-hot-toast";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { api } from "../lib/api";
 import type { User } from "../types";
+
+/**
+ * Storage seguro para prerender/SSR: durante el build no existe `window`,
+ * así que devolvemos un storage no-op en lugar de tocar `localStorage`.
+ */
+const noopStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+};
 
 type AuthStore = {
   user: User | null;
@@ -41,6 +51,9 @@ export const useAuthStore = create(
     }),
     {
       name: "auth_store",
+      storage: createJSONStorage(() =>
+        typeof window !== "undefined" ? window.localStorage : noopStorage,
+      ),
     },
   ),
 );

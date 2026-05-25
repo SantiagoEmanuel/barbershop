@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Rutas privadas / con sesión: no aportan a la búsqueda.
+Disallow: /admin
+Disallow: /perfil
+Disallow: /mis-turnos
+Disallow: /confirm
+Disallow: /payment-verification
+
+Sitemap: https://pekobarber.com.ar/sitemap.xml

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Peko Barber">
+  <rect width="32" height="32" rx="7" fill="#1e1d28" />
+  <g fill="none" stroke="#c8a96a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="22" r="3.2" />
+    <circle cx="9" cy="10" r="3.2" />
+    <line x1="11.4" y1="19.8" x2="25" y2="7" />
+    <line x1="11.4" y1="12.2" x2="25" y2="25" />
+  </g>
+</svg>

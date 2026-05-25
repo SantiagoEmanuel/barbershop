@@ -1,0 +1,24 @@
+{
+  "name": "Peko Barber",
+  "short_name": "Peko Barber",
+  "description": "Barbería en Quimilí. Reservá tu turno online en menos de un minuto.",
+  "lang": "es-AR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1e1d28",
+  "theme_color": "#1e1d28",
+  "icons": [
+    {
+      "src": "/scissors_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

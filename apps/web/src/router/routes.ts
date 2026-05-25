@@ -1,21 +1,8 @@
 import type { RouteObject } from "react-router";
-import AdminLayout from "../components/adminLayout";
 import { ErrorView } from "../components/errorView";
 import { PublicLayout } from "../components/publicLayout";
 import { RootLayout } from "../components/rootLayout";
-import AdminGuard from "../guard/adminGuard";
-import Barberos from "../pages/barberos";
-import CierreServicio from "../pages/closeService";
-import ConfirmUser from "../pages/confirm";
-import Dashboard from "../pages/dashboard";
 import Home from "../pages/home";
-import Movimientos from "../pages/movimientos";
-import PaymentVerification from "../pages/paymentVerification";
-import Perfil from "../pages/profile";
-import Reservas from "../pages/reservas";
-import Servicios from "../pages/servicios";
-import Turnos from "../pages/shift";
-import Ventas from "../pages/ventas";
 
 /**
  * Estructura de rutas:
@@ -26,7 +13,18 @@ import Ventas from "../pages/ventas";
  *     │     └── /mis-turnos
  *     └── AdminGuard → AdminLayout (Navbar, sin footer)
  *           └── /admin/...  Dashboard, Turnos, etc.
+ *
+ * Home se importa de forma estática porque es la ruta que se pre-renderiza
+ * para SEO. El resto (perfil, panel admin y la integración de pagos) se carga
+ * de forma diferida: reduce el bundle inicial y evita importar el SDK de
+ * MercadoPago durante el prerender en build.
  */
+
+/** Helper: convierte un import con `default` en una ruta lazy de react-router. */
+const lazy =
+  <T extends { default: React.ComponentType }>(load: () => Promise<T>) =>
+  async () => ({ Component: (await load()).default });
+
 export const routes: RouteObject[] = [
   {
     Component: RootLayout,
@@ -38,30 +36,48 @@ export const routes: RouteObject[] = [
         Component: PublicLayout,
         children: [
           { index: true, Component: Home },
-          { path: "perfil", Component: Perfil },
+          { path: "perfil", lazy: lazy(() => import("../pages/profile")) },
           // Reutilizamos Perfil — ya tiene la sección de turnos
-          { path: "mis-turnos", Component: Perfil },
-          { path: "confirm", Component: ConfirmUser },
-          { path: "payment-verification", Component: PaymentVerification },
+          { path: "mis-turnos", lazy: lazy(() => import("../pages/profile")) },
+          { path: "confirm", lazy: lazy(() => import("../pages/confirm")) },
+          {
+            path: "payment-verification",
+            lazy: lazy(() => import("../pages/paymentVerification")),
+          },
         ],
       },
 
       // ── Rutas de admin (protegidas) ───────────────────────
       {
         path: "/admin",
-        Component: AdminGuard,
+        lazy: lazy(() => import("../guard/adminGuard")),
         children: [
           {
-            Component: AdminLayout,
+            lazy: lazy(() => import("../components/adminLayout")),
             children: [
-              { index: true, Component: Dashboard },
-              { path: "turnos", Component: Turnos },
-              { path: "cierre/:appointmentId", Component: CierreServicio },
-              { path: "reservas", Component: Reservas },
-              { path: "ventas", Component: Ventas },
-              { path: "movimientos", Component: Movimientos },
-              { path: "servicios", Component: Servicios },
-              { path: "barberos", Component: Barberos },
+              { index: true, lazy: lazy(() => import("../pages/dashboard")) },
+              { path: "turnos", lazy: lazy(() => import("../pages/shift")) },
+              {
+                path: "cierre/:appointmentId",
+                lazy: lazy(() => import("../pages/closeService")),
+              },
+              {
+                path: "reservas",
+                lazy: lazy(() => import("../pages/reservas")),
+              },
+              { path: "ventas", lazy: lazy(() => import("../pages/ventas")) },
+              {
+                path: "movimientos",
+                lazy: lazy(() => import("../pages/movimientos")),
+              },
+              {
+                path: "servicios",
+                lazy: lazy(() => import("../pages/servicios")),
+              },
+              {
+                path: "barberos",
+                lazy: lazy(() => import("../pages/barberos")),
+              },
             ],
           },
         ],
