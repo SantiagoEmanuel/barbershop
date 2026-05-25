@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 describe("Prueba endpoint '/api/payment-methods'", () => {
   it("debe responder correctamente a GET /api/usuario", async () => {
-    const response = await request(app).get("/api/payment-methods");
+    const response = await request(app).get("/api/v1/payment-methods");
 
     // Esperamos una respuesta 200
     expect(response.status).toBe(200);
