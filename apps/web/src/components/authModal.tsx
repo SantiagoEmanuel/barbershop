@@ -1,11 +1,9 @@
+import { AuthField, AuthSubmit, ModalBase } from "@config/components";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { api } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 import type { ApiResponse, User } from "../types";
-import { AuthField } from "./authField";
-import { AuthSubmit } from "./authSubmit";
-import { ModalBase } from "./modalBase";
 
 export function AuthModal({
   open,

@@ -1,3 +1,4 @@
+import { Icon, UserAvatar } from "@config/components";
 import { LogIn, LogOut, Scissors, Settings, UserPlus } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
@@ -5,8 +6,6 @@ import { cn } from "../lib/cn";
 import { useAuthStore } from "../store/useAuthStore";
 import { NAV_ITEMS } from "./navItems";
 import { SideNavItem } from "./sideNavItem";
-import { UserAvatar } from "./ui/avatar";
-import { Icon } from "./ui/icon";
 
 /**
  * Drawer móvil del navbar. Tres modos:

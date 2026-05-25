@@ -1,10 +1,8 @@
+import { EmptyState, SectionHeader, Spinner } from "@config/components";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { StatusBadge } from "../components/statusBadge";
-import { EmptyState } from "../components/ui/emptyState";
 import { formatARS, todayISO } from "../components/ui/formatters";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api, put } from "../lib/api";
 import type {
   ApiResponse,

@@ -1,9 +1,11 @@
+import {
+  EmptyState,
+  SectionHeader,
+  Spinner,
+  StatCard,
+} from "@config/components";
 import { useEffect, useState } from "react";
-import { StatCard } from "../components/statCard";
-import { EmptyState } from "../components/ui/emptyState";
 import { formatARS } from "../components/ui/formatters";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api } from "../lib/api";
 import type { ApiResponse, Order } from "../types";
 

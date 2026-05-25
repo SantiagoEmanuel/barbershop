@@ -1,3 +1,4 @@
+import { BrandLogo, UserAvatar } from "@config/components";
 import { ChevronDown, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
@@ -6,8 +7,6 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useBookingStore } from "../store/useBookingStore";
 import { AdminNavDropdown } from "./adminNavDropdown";
 import { MobileDrawer } from "./mobileDrawer";
-import { UserAvatar } from "./ui/avatar";
-import { BrandLogo } from "./ui/logo";
 import { UserMenu } from "./userMenu";
 
 /**

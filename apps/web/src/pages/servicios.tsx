@@ -1,10 +1,12 @@
+import {
+  EmptyState,
+  FieldInput,
+  ModalBase,
+  SectionHeader,
+  Spinner,
+} from "@config/components";
 import { useEffect, useState } from "react";
-import { ModalBase } from "../components/modalBase";
-import { EmptyState } from "../components/ui/emptyState";
-import { FieldInput } from "../components/ui/fieldInput";
 import { formatARS } from "../components/ui/formatters";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api, post, put } from "../lib/api";
 import type { ApiResponse, Product, Service } from "../types";
 

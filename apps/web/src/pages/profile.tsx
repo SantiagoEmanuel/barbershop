@@ -1,13 +1,15 @@
+import {
+  EmptyState,
+  SectionHeader,
+  Spinner,
+  UserAvatar,
+} from "@config/components";
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router";
 import { AppointmentCard } from "../components/appointmentCard";
 import BookingModal from "../components/bookingModal";
 import { StatusBadge } from "../components/statusBadge";
-import { UserAvatar } from "../components/ui/avatar";
-import { EmptyState } from "../components/ui/emptyState";
 import { formatARS, formatDate } from "../components/ui/formatters";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { useBookingStore } from "../store/useBookingStore";

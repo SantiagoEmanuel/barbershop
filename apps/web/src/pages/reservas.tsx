@@ -1,11 +1,9 @@
+import { EmptyState, SectionHeader, Spinner } from "@config/components";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import BookingModal from "../components/bookingModal";
 import { StatusBadge } from "../components/statusBadge";
-import { EmptyState } from "../components/ui/emptyState";
 import { formatARS, formatDate, todayISO } from "../components/ui/formatters";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api } from "../lib/api";
 import { useBookingStore } from "../store/useBookingStore";
 import type { ApiResponse, Appointment, Barber } from "../types";

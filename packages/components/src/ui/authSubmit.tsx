@@ -1,4 +1,4 @@
-import { Spinner } from "./ui/spinner";
+import { Spinner } from "./spinner";
 
 export function AuthSubmit({
   loading,

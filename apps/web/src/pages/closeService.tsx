@@ -1,13 +1,15 @@
+import {
+  EmptyState,
+  ModalBase,
+  SectionHeader,
+  Spinner,
+} from "@config/components";
 import { initMercadoPago } from "@mercadopago/sdk-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ModalBase } from "../components/modalBase";
 import { StatusBadge } from "../components/statusBadge";
-import { EmptyState } from "../components/ui/emptyState";
 import { formatARS } from "../components/ui/formatters";
-import { SectionHeader } from "../components/ui/sectionHeader";
-import { Spinner } from "../components/ui/spinner";
 import { api, post, put } from "../lib/api";
 import type {
   ApiResponse,

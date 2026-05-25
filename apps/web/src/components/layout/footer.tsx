@@ -1,5 +1,5 @@
+import { BrandLogo } from "@config/components";
 import { FooterCol } from "../footerCol";
-import { BrandLogo } from "../ui/logo";
 
 export function Footer() {
   const year = new Date().getFullYear();

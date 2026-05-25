@@ -2,6 +2,10 @@
 /* Import Tailwind CSS */
 @import "tailwindcss";
 
+/* Tailwind v4 ignora node_modules: hay que escanear el source del paquete
+   de componentes compartidos para que sus clases del tema se generen. */
+@source "../../../../packages/components/src";
+
 /* Tailwind CSS configuration from packages/tailwindcss */
 @import "@config/tailwindcss";
 

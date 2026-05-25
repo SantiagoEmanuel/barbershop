@@ -1,8 +1,8 @@
+import { UserAvatar } from "@config/components";
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "../store/useAuthStore";
 import type { User } from "../types";
-import { UserAvatar } from "./ui/avatar";
 
 /**
  * Variante desktop del UserMenu — versión más rica con items navegables,

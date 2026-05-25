@@ -1,4 +1,4 @@
-import { ModalBase } from "../modalBase";
+import { ModalBase } from "./modalBase";
 import { Spinner } from "./spinner";
 
 /**
