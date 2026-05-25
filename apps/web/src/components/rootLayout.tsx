@@ -1,6 +1,7 @@
 import { Toaster } from "react-hot-toast";
 import { Outlet } from "react-router";
 import { AuthModalProvider } from "../provider/authModalProvider";
+import { UpdatePrompt } from "./updatePrompt";
 
 /**
  * Layout raíz absoluto.
@@ -15,6 +16,7 @@ export function RootLayout() {
     <AuthModalProvider>
       <Outlet />
       <Toaster />
+      <UpdatePrompt />
     </AuthModalProvider>
   );
 }
