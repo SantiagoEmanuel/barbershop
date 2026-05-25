@@ -112,7 +112,6 @@ export default class AppointmentController {
       });
     } catch (err: any) {
       const status = typeof err.status === "number" ? err.status : 500;
-      console.log({ err });
       return res
         .status(status)
         .json({ message: err.message ?? "Error interno", data: null });
