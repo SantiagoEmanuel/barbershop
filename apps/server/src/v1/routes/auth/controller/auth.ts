@@ -16,7 +16,11 @@ const authCookieOptions: CookieOptions = {
   httpOnly: true,
   maxAge: SESSION_TTL_SECONDS * 1000,
   secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
+  // Web y API viven bajo el mismo dominio raíz (p. ej. peko.santiagomustafa.com.ar
+  // y api.peko.santiagomustafa.com.ar) → son same-site, así que usamos Lax
+  // (mejor protección CSRF). Si alguna vez el front y la API quedan en dominios
+  // raíz distintos (cross-site), esto debe volver a "none".
+  sameSite: "lax",
 };
 
 export default class AuthController {
