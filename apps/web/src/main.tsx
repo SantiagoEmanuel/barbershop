@@ -14,11 +14,16 @@ const app = (
 
 const rootEl = document.getElementById("root")!;
 
-// Si el HTML viene pre-renderizado (build SSG) hidratamos; si no, montamos
-// como SPA normal. Permite que la home sea estática/indexable sin romper el
-// resto de rutas que se sirven como SPA.
-if (rootEl.firstChild) {
+// Solo la home ("/") se pre-renderiza. Hidratamos únicamente si el markup
+// servido corresponde a esa ruta. En el resto montamos como SPA: si llegó
+// contenido (p. ej. el service worker o un fallback sirvieron index.html para
+// una sub-ruta) lo limpiamos antes de montar para evitar desajustes de
+// hidratación. Así el cliente es robusto sea cual sea el shell servido.
+const isPrerenderedHome = rootEl.firstChild && window.location.pathname === "/";
+
+if (isPrerenderedHome) {
   hydrateRoot(rootEl, app);
 } else {
+  rootEl.replaceChildren();
   createRoot(rootEl).render(app);
 }
