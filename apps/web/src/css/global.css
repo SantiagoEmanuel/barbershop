@@ -16,3 +16,13 @@
   color: var(--color-text-primary);
   background: var(--color-background);
 }
+
+/* FIX: iOS Safari zoom automático al enfocar un input/select/textarea con
+   font-size < 16px */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
