@@ -35,6 +35,11 @@ app.use(checkToken);
 
 app.use("/api/v1", v1);
 
+// ── Health ────────────────────────────────────────────────────
+v1.get("/status", (_req, res) => {
+  return res.status(200).json({ message: "OK" });
+});
+
 app.use(errorHandler);
 
 export default app;

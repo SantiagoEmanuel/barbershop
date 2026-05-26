@@ -31,11 +31,6 @@ v1.use("/payment-methods", paymentMethodRouter);
 v1.use("/appointments", appointmentRouter);
 v1.use("/mercadopago", MPRouter);
 
-// ── Health ────────────────────────────────────────────────────
-v1.get("/status", (_req, res) => {
-  return res.status(200).json({ message: "OK" });
-});
-
 // ── 404 ───────────────────────────────────────────────────────
 v1.use((_req, res) => {
   return res.status(404).json({
