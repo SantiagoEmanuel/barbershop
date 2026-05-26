@@ -16,3 +16,18 @@
   color: var(--color-text-primary);
   background: var(--color-background);
 }
+
+/* iOS Safari hace zoom automático al enfocar un input/select/textarea con
+   font-size < 16px (p. ej. los modales de login y de reserva, que usan
+   text-sm = 14px). En dispositivos táctiles forzamos 16px en los controles
+   de formulario para eliminar ese zoom inesperado. No tocamos el viewport
+   (no usamos maximum-scale / user-scalable=no) para no romper el pinch-zoom
+   y mantener la accesibilidad. !important es necesario para ganarle a las
+   utilidades de Tailwind (text-sm) por especificidad. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
