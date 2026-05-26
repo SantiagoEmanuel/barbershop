@@ -1,9 +1,23 @@
 import { JWT_SECRET } from "@/constants/credentials.env";
 import AppError from "@/utils/AppError";
 import { confirmEmail } from "@/utils/sendMail";
-import { Request, Response } from "express";
+import { CookieOptions, Request, Response } from "express";
 import { sign, verify } from "jsonwebtoken";
 import AuthModel, { User } from "../model/auth";
+
+// Duración de la sesión. OJO con las unidades:
+//   · jsonwebtoken `expiresIn` (número) → SEGUNDOS
+//   · Express cookie `maxAge`           → MILISEGUNDOS
+// Confundirlas hacía que la cookie expirara a los ~3 min (86400*2 ms) aunque
+// el JWT durara 2 días, cortando la sesión enseguida.
+const SESSION_TTL_SECONDS = 86400 * 2; // 2 días
+
+const authCookieOptions: CookieOptions = {
+  httpOnly: true,
+  maxAge: SESSION_TTL_SECONDS * 1000,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
+};
 
 export default class AuthController {
   static async login(req: Request, res: Response) {
@@ -31,17 +45,12 @@ export default class AuthController {
         },
         JWT_SECRET,
         {
-          expiresIn: 86400 * 2,
+          expiresIn: SESSION_TTL_SECONDS,
         },
       );
 
       return res
-        .cookie("auth_token", token, {
-          httpOnly: true,
-          maxAge: 86400 * 2,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
-        })
+        .cookie("auth_token", token, authCookieOptions)
         .status(200)
         .json({
           message: "Inicio de sesión exitoso",
@@ -160,18 +169,13 @@ export default class AuthController {
         },
         JWT_SECRET,
         {
-          expiresIn: 84600 * 2,
+          expiresIn: SESSION_TTL_SECONDS,
         },
       );
 
       return res
         .clearCookie("auth_token")
-        .cookie("auth_token", newToken, {
-          httpOnly: true,
-          maxAge: 86400 * 2,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
-        })
+        .cookie("auth_token", newToken, authCookieOptions)
         .status(200)
         .json({
           message: "Ok",
