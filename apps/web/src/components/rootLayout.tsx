@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "react-hot-toast";
 import { Outlet } from "react-router";
 import { AuthModalProvider } from "../provider/authModalProvider";
@@ -17,6 +18,7 @@ export function RootLayout() {
       <Outlet />
       <Toaster />
       <UpdatePrompt />
+      <Analytics />
     </AuthModalProvider>
   );
 }
