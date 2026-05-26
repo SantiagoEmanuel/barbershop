@@ -4,7 +4,7 @@ export function ModalBase({
   open,
   onClose,
   children,
-  maxW = "max-w-sm",
+  maxW = "max-w-105",
 }: {
   open: boolean;
   onClose: () => void;
