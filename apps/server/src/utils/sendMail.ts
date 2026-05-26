@@ -1,4 +1,4 @@
-import { MAILERSEND_TOKEN } from "@/constants/credentials.env";
+import { MAILERSEND_TOKEN, PUBLIC_WEB_URL } from "@/constants/credentials.env";
 import { User } from "@/v1/routes/auth/model/auth";
 import { EmailParams, MailerSend, Recipient, Sender } from "mailersend";
 import { formatARS, translateStatus } from "./formatters";
@@ -51,7 +51,8 @@ export async function confirmShift(data: Appointment) {
     return;
   }
   const recipient = [new Recipient(data.clientEmail, data.clientName)];
-  const confirmUrl = `https://pekobarber.com/api/appointments/${data.id}/confirm`;
+  // Apunta al frontend; esa página confirma el turno vía API automáticamente.
+  const confirmUrl = `${PUBLIC_WEB_URL}/turno/confirmar/${data.id}`;
 
   const emailParams = new EmailParams()
     .setFrom(sentFrom)

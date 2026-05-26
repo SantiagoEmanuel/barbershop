@@ -16,6 +16,7 @@ dist
 dist-ssr
 .ssr
 *.production
+dev-dist/
 
 # Environments
 *.local

@@ -33,6 +33,11 @@ app.use(cookieParser());
 app.use(json());
 app.use(checkToken);
 
+// ── Health ────────────────────────────────────────────────────
+app.get("/status", (_req, res) => {
+  return res.status(200).json({ message: "OK" });
+});
+
 app.use("/api/v1", v1);
 
 app.use(errorHandler);

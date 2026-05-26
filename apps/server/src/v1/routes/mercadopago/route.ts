@@ -1,7 +1,11 @@
 import { db } from "@/db/db";
 import { appointments, orders, paymentMethods } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
-import { createPreference, getPayment } from "@/utils/mercadopago.client";
+import {
+  createPreference,
+  getPayment,
+  mapPaymentStatus,
+} from "@/utils/mercadopago.client";
 import { eq } from "drizzle-orm";
 import { Router } from "express";
 
@@ -87,12 +91,20 @@ MPRouter.get("/payment-status/:id", async (req, res) => {
       });
     }
 
+    // Normalizamos el pago crudo de MP a la forma que consume el frontend:
+    // status mapeado a OrderStatus, monto en centavos y nombres de campo de la app.
     return res.status(200).json({
       message: "Pago encontrado",
-      data: response,
+      data: {
+        paymentId: String(response.id),
+        status: mapPaymentStatus(response.status) ?? "pending",
+        amount: Math.round(response.transaction_amount * 100),
+        externalReference: response.external_reference ?? null,
+        paidAt: response.date_approved ?? null,
+      },
     });
   } catch (err: any) {
-    const status = err.status ?? "500";
+    const status = typeof err.status === "number" ? err.status : 500;
     const message = err.message ?? "SERVER ERROR";
     return res.status(status).json({
       message,

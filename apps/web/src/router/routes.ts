@@ -44,6 +44,7 @@ export const routes: RouteObject[] = [
             path: "payment-verification",
             lazy: lazy(() => import("../pages/paymentVerification")),
           },
+          { path: "turno/confirmar/:appointmentId", lazy: () => import("../pages/confirmTurno") },
         ],
       },
 

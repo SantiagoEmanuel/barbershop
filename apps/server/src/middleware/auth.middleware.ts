@@ -25,8 +25,12 @@ export function checkToken(req: Request, _res: Response, next: NextFunction) {
     return;
   }
 
-  const decoded = jwt.verify(token, JWT_SECRET as string) as JwtPayload;
-  req.user = decoded;
+  try {
+    req.user = jwt.verify(token, JWT_SECRET as string) as JwtPayload;
+  } catch {
+    // Token inválido o expirado: continuamos como usuario anónimo.
+    // No bloqueamos acá; las rutas protegidas usan verifyToken.
+  }
 
   next();
   return;
