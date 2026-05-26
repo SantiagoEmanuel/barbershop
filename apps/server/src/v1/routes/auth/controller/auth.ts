@@ -38,7 +38,7 @@ export default class AuthController {
       return res
         .cookie("auth_token", token, {
           httpOnly: true,
-          maxAge: 86400 * 2,
+          maxAge: 86400 * 2 * 1000,
           secure: process.env.NODE_ENV === "production",
           sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
         })
@@ -160,7 +160,7 @@ export default class AuthController {
         },
         JWT_SECRET,
         {
-          expiresIn: 84600 * 2,
+          expiresIn: 86400 * 2,
         },
       );
 
@@ -168,7 +168,7 @@ export default class AuthController {
         .clearCookie("auth_token")
         .cookie("auth_token", newToken, {
           httpOnly: true,
-          maxAge: 86400 * 2,
+          maxAge: 86400 * 2 * 1000,
           secure: process.env.NODE_ENV === "production",
           sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
         })
