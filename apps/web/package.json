@@ -19,6 +19,7 @@
     "@config/zod": "workspace:*",
     "@mercadopago/sdk-react": "^1.0.7",
     "@tailwindcss/vite": "^4.2.2",
+    "@vercel/analytics": "^2.0.1",
     "lucide-react": "^1.12.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.5",
