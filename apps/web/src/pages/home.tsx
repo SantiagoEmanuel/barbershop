@@ -199,9 +199,11 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {barbers.map((b) => (
-                <article
+                <button
                   key={b.id}
-                  className="bg-surface border-border hover:border-marca/30 flex flex-col gap-3 rounded-2xl border p-5 transition-colors duration-200"
+                  type="button"
+                  aria-label={`Reservar turno con ${b.name}`}
+                  className="bg-surface border-border hover:border-marca/30 focus-visible:border-marca flex flex-col gap-3 rounded-2xl border p-5 text-left transition-colors duration-200"
                   onClick={() => {
                     setBarber(b.id, b.name);
                     openBooking();
@@ -225,7 +227,7 @@ export default function Home() {
                       {b.bio}
                     </p>
                   )}
-                </article>
+                </button>
               ))}
             </div>
           )}

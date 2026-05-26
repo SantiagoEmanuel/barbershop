@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router";
 import { AppointmentCard } from "../components/appointmentCard";
 import BookingModal from "../components/bookingModal";
+import { Seo } from "../components/seo";
 import { StatusBadge } from "../components/statusBadge";
 import { formatARS, formatDate } from "../components/ui/formatters";
 import { api } from "../lib/api";
@@ -34,6 +35,7 @@ export default function Perfil() {
   );
   return (
     <>
+      <Seo title="Mi perfil" noindex />
       <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-8 sm:px-6">
         <div className="card bg-surface border-border-strong flex items-center gap-4 border">
           <UserAvatar name={user.name} size="lg" />

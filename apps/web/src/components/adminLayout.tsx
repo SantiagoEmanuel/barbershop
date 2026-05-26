@@ -1,6 +1,7 @@
 import { Outlet } from "react-router";
 import { useAuthModal } from "../hooks/useAuthModal";
 import { Navbar } from "./navbar";
+import { Seo } from "./seo";
 
 /**
  * Layout para rutas /admin/*.
@@ -14,6 +15,7 @@ export default function AdminLayout() {
 
   return (
     <div className="bg-background flex min-h-dvh flex-col">
+      <Seo title="Panel de administración" noindex />
       <Navbar onOpenAuth={openAuth} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-20 pb-8 sm:px-6 sm:pt-24 lg:px-8">
         <Outlet />
