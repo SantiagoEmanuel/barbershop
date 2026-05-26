@@ -1,6 +1,7 @@
 import { Toaster } from "react-hot-toast";
 import { Outlet } from "react-router";
 import { AuthModalProvider } from "../provider/authModalProvider";
+import { DemoNoindex } from "./demoNoindex";
 import { UpdatePrompt } from "./updatePrompt";
 
 /**
@@ -17,6 +18,7 @@ export function RootLayout() {
       <Outlet />
       <Toaster />
       <UpdatePrompt />
+      <DemoNoindex />
     </AuthModalProvider>
   );
 }
