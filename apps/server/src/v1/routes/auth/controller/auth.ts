@@ -40,7 +40,7 @@ export default class AuthController {
           httpOnly: true,
           maxAge: 86400 * 2 * 1000,
           secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
+          sameSite: process.env.NODE_ENV !== "production" ? "lax" : "lax",
         })
         .status(200)
         .json({
@@ -170,7 +170,7 @@ export default class AuthController {
           httpOnly: true,
           maxAge: 86400 * 2 * 1000,
           secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV !== "production" ? "lax" : "none",
+          sameSite: process.env.NODE_ENV !== "production" ? "lax" : "lax",
         })
         .status(200)
         .json({
