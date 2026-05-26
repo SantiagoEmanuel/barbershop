@@ -17,12 +17,18 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
       },
       registerType: "prompt",
-      includeAssets: ["barber-icon.png", "barber-icon.png", "barber-icon.png"],
+      includeAssets: ["favicon.svg", "barber-icon-192.png", "barber-icon.png"],
       manifest: {
-        name: "Gestor de turnos",
-        short_name: "Gestor",
-        description: "Aplicación para la gestión de turnos y pagos",
-        theme_color: "#0e0e0e",
+        name: "Peko Barber",
+        short_name: "Peko Barber",
+        description:
+          "Barbería en Quimilí. Reservá tu turno online en menos de un minuto.",
+        lang: "es-AR",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        background_color: "#1e1d28",
+        theme_color: "#1e1d28",
         icons: [
           {
             src: "barber-icon-192.png",
@@ -33,6 +39,7 @@ export default defineConfig({
             src: "barber-icon.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any maskable",
           },
         ],
       },
