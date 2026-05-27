@@ -7,10 +7,7 @@ const mailerSend = new MailerSend({
   apiKey: MAILERSEND_TOKEN,
 });
 
-const sentFrom = new Sender(
-  "santiago@test-dnvo4d9yr8xg5r86.mlsender.net",
-  "PEKO BARBER",
-);
+const sentFrom = new Sender("info@peko.santiagomustafa.com.ar", "BARBERSHOP");
 
 type AppointmentStatus =
   | "pending"
@@ -62,15 +59,21 @@ export async function confirmShift(data: Appointment) {
     .setHtml(confirmShiftHTML(data, confirmUrl))
     .setText(confirmShiftTEXT(data, confirmUrl));
 
-  await mailerSend.email.send(emailParams);
+  try {
+    await mailerSend.email.send(emailParams);
+    return true;
+  } catch (err: any) {
+    console.log(err);
+    return false;
+  }
 }
 
-export function confirmEmail(data: Partial<User>) {
+export async function confirmEmail(data: Partial<User>) {
   if (!data) {
     return;
   }
   const recipient = [new Recipient(data.email!, data.name)];
-  const confirmUrl = `https://pekobarber.com/api/auth/confirm?id=${data.id}`;
+  const confirmUrl = `${PUBLIC_WEB_URL}/confirm?id=${data.id}`;
 
   const emailParams = new EmailParams()
     .setFrom(sentFrom)
@@ -80,8 +83,16 @@ export function confirmEmail(data: Partial<User>) {
     .setHtml(confirmEmailHTML(data, confirmUrl))
     .setText(confirmEmailText(data, confirmUrl));
 
-  mailerSend.email.send(emailParams);
-  return;
+  try {
+    await mailerSend.email
+      .send(emailParams)
+      .then((s) => console.log({ s }))
+      .catch((e) => console.log({ e }));
+    return true;
+  } catch (err: any) {
+    console.log({ err });
+    return false;
+  }
 }
 
 function confirmShiftHTML(data: Appointment, confirmUrl: string) {

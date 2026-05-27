@@ -78,19 +78,23 @@ export function AuthModal({
       });
 
       if (!res?.data) throw new Error("Error al registrarse");
+      setLoginEmail(regEmail);
+      setLoginPass(regPass);
       setTab("login");
       setError("¡Cuenta creada! Ingresando.");
       toast.success("¡Cuenta creada!");
-      const log = await api<ApiResponse<User>>(`auth`, {
-        method: "POST",
-        body: JSON.stringify({ email: loginEmail, password: loginPass }),
-      });
-      if (!log) {
-        toast.error("No se pudo iniciar automáticamente tu sesión");
-        throw new Error("Error al iniciar sesión");
-      }
-      await setUser(log.data);
-      onClose();
+      setTimeout(async () => {
+        const log = await api<ApiResponse<User>>(`auth`, {
+          method: "POST",
+          body: JSON.stringify({ email: loginEmail, password: loginPass }),
+        });
+        if (!log) {
+          toast.error("No se pudo iniciar automáticamente tu sesión");
+          throw new Error("Error al iniciar sesión");
+        }
+        await setUser(log.data);
+        onClose();
+      }, 900);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {

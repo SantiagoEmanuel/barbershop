@@ -1,10 +1,8 @@
-import { JWT_SECRET } from "@/constants/credentials.env";
 import { minutesToTime, timeToMinutes } from "@/utils/availability";
 import { confirmShift } from "@/utils/sendMail";
 import AvailabilityModel from "@/v1/routes/availability/model/availability";
 import ServiceModel from "@/v1/routes/services/model/service";
 import { Request, Response } from "express";
-import { JwtPayload, verify } from "jsonwebtoken";
 import AppointmentModel, { Appointment } from "../model/appointment";
 
 export default class AppointmentController {
@@ -18,17 +16,9 @@ export default class AppointmentController {
       clientPhone,
       notes,
       status,
+      clientEmail,
     }: Appointment = req.body;
     const user = req.user;
-    let { clientEmail }: Appointment = req.body;
-    const token = req.cookies.auth_token;
-    let clientId = null;
-
-    if (token) {
-      const payload = verify(token, JWT_SECRET) as JwtPayload;
-      clientId = payload.id;
-      clientEmail = payload.email;
-    }
 
     if (
       !barberId ||
@@ -36,8 +26,7 @@ export default class AppointmentController {
       !serviceId ||
       !startTime ||
       !clientName ||
-      !clientPhone ||
-      !clientEmail
+      !clientPhone
     ) {
       return res.status(400).json({
         message:
@@ -87,8 +76,8 @@ export default class AppointmentController {
         startTime,
         clientName,
         clientPhone,
-        clientEmail,
-        clientId,
+        clientEmail: clientEmail ?? user?.email,
+        clientId: user?.id,
         notes,
         endTime: minutesToTime(newEndTime),
         priceSnapshot: service.price,
@@ -104,7 +93,10 @@ export default class AppointmentController {
 
       const appointment = await AppointmentModel.getById(newAppointment.id);
 
+      console.log("Hasta acá funciona todo ok -7");
+
       await confirmShift(appointment);
+      console.log("Hasta acá funciona todo ok - 8");
 
       return res.status(201).json({
         message: "Turno agendado correctamente",
@@ -112,6 +104,7 @@ export default class AppointmentController {
       });
     } catch (err: any) {
       const status = typeof err.status === "number" ? err.status : 500;
+      console.log(err);
       return res
         .status(status)
         .json({ message: err.message ?? "Error interno", data: null });
