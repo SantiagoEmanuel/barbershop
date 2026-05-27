@@ -87,7 +87,7 @@ export default class AuthModel {
     return user;
   }
   static async confirm(id: string) {
-    const user = await db
+    const [user] = await db
       .update(users)
       .set({
         verify: true,
@@ -96,10 +96,10 @@ export default class AuthModel {
       .returning();
 
     if (!user) {
-      return false;
+      return null;
     }
 
-    return true;
+    return user;
   }
   static async hashPassword(password: string) {
     return hashSync(password, HASH_SALT);

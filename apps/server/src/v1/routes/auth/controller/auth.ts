@@ -94,8 +94,9 @@ export default class AuthController {
   }
   static async confirm(req: Request, res: Response) {
     const id = req.query.id as string;
+    const token = req.query.token as string;
 
-    if (!id) {
+    if (!id || !token) {
       return res.status(403).json({
         message: "Datos inválidos",
         data: null,
@@ -103,24 +104,56 @@ export default class AuthController {
     }
 
     try {
+      const payload = verify(token, JWT_SECRET) as any;
+
       const userExist = await AuthModel.getById(id);
       if (!userExist) {
         throw new AppError("Usuario inexistente", 404);
       }
 
-      const check = await AuthModel.confirm(id);
+      const user = await AuthModel.confirm(id);
 
-      if (!check) {
+      if (!user) {
         return res.status(400).json({
           message: "No se pudo verificar tu usuario",
           data: null,
         });
       }
 
-      return res.status(200).json({
-        message: "Usuario verificado correctamente",
-        data: check,
-      });
+      if (payload.email !== user.email) {
+        return res
+          .status(400)
+          .json({ message: "No se pudo verificar tu usuario", data: null });
+      }
+
+      const newToken = sign(
+        {
+          id: user.id,
+          role: user.role,
+          email: user.email,
+        },
+        JWT_SECRET,
+        {
+          expiresIn: 86400 * 2,
+        },
+      );
+
+      return res
+        .clearCookie("auth_token")
+        .cookie("auth_token", newToken, {
+          httpOnly: true,
+          maxAge: 86400 * 2 * 1000,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV !== "production" ? "lax" : "lax",
+        })
+        .status(200)
+        .json({
+          message: "Inicio de sesión exitoso",
+          data: {
+            ...user,
+            password: "queti",
+          },
+        });
     } catch (err: any) {
       const status = err.status ?? 500;
       const message = err.message ?? "Server Error";

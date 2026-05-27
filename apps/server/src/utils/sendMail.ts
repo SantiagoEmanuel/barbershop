@@ -1,5 +1,10 @@
-import { MAILERSEND_TOKEN, PUBLIC_WEB_URL } from "@/constants/credentials.env";
+import {
+  JWT_SECRET,
+  MAILERSEND_TOKEN,
+  PUBLIC_WEB_URL,
+} from "@/constants/credentials.env";
 import { User } from "@/v1/routes/auth/model/auth";
+import { sign } from "jsonwebtoken";
 import { EmailParams, MailerSend, Recipient, Sender } from "mailersend";
 import { formatARS, translateStatus } from "./formatters";
 
@@ -50,7 +55,7 @@ export async function confirmShift(data: Appointment) {
   const recipient = [new Recipient(data.clientEmail, data.clientName)];
 
   const recipient2 = [
-    new Recipient("pekojimenez1996@gmail.com", "José Jimenez"),
+    new Recipient("santiagomustafa3@gmail.com", "Santiago Mustafá"),
   ];
 
   // Apunta al frontend; esa página confirma el turno vía API automáticamente.
@@ -85,8 +90,17 @@ export async function confirmEmail(data: Partial<User>) {
   if (!data) {
     return;
   }
+
+  const token = sign(
+    {
+      email: data.email,
+      password: data.password,
+    },
+    JWT_SECRET,
+  );
+
   const recipient = [new Recipient(data.email!, data.name)];
-  const confirmUrl = `${PUBLIC_WEB_URL}/confirm?id=${data.id}`;
+  const confirmUrl = `${PUBLIC_WEB_URL}/confirm?id=${data.id}&token=${token}`;
 
   const emailParams = new EmailParams()
     .setFrom(sentFrom)
