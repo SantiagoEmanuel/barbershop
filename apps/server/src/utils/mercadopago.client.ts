@@ -68,8 +68,6 @@ export async function createPreference(
     },
   });
 
-  console.log({ response });
-
   if (!response) {
     throw new Error("Error al generar la preferencia en MP");
   }

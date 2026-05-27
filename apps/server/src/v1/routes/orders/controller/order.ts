@@ -93,8 +93,6 @@ export default class OrderController {
         .status(201)
         .json({ message: "Orden generada con éxito", data });
     } catch (err: any) {
-      console.log({ err });
-
       const status = typeof err.status === "number" ? err.status : 500;
       return res
         .status(status)

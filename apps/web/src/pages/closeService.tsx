@@ -167,7 +167,6 @@ export default function CierreServicio() {
           setError("No se pudo generar los datos de la venta");
           return;
         }
-        console.log(response);
         setPreference(response.data.sandbox_init_point);
       });
       return;
@@ -453,9 +452,12 @@ export default function CierreServicio() {
                         key={pm.id}
                         onClick={() => handlePaymentMethod(pm.type, pm.id)}
                         className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left text-sm font-semibold capitalize transition-all duration-150 ${selected ? "bg-marca/10 border-border-strong text-marca" : "border-border text-text-secondary bg-black/20"}`}
+                        disabled={pm.name === "mercado pago"}
                       >
                         <PaymentIcon type={pm.type} />
-                        {pm.name === "mercado pago" ? "Pagar con QR" : pm.name}
+                        {pm.name === "mercado pago"
+                          ? "Pagar con QR - PRÓXIMAMENTE"
+                          : pm.name}
                       </button>
                     );
                   })}

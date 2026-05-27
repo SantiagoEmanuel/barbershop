@@ -93,10 +93,7 @@ export default class AppointmentController {
 
       const appointment = await AppointmentModel.getById(newAppointment.id);
 
-      console.log("Hasta acá funciona todo ok -7");
-
       await confirmShift(appointment);
-      console.log("Hasta acá funciona todo ok - 8");
 
       return res.status(201).json({
         message: "Turno agendado correctamente",
@@ -104,7 +101,6 @@ export default class AppointmentController {
       });
     } catch (err: any) {
       const status = typeof err.status === "number" ? err.status : 500;
-      console.log(err);
       return res
         .status(status)
         .json({ message: err.message ?? "Error interno", data: null });

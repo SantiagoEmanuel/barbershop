@@ -53,8 +53,6 @@ MPRouter.post("/create-preference", async (req, res, next) => {
       }
     });
 
-    console.log({ result });
-
     if (!result) {
       return res.status(400).json({
         message: "Error al crear la preferencia",

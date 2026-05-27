@@ -143,9 +143,6 @@ function SchedulePanel({
   barber: Barber;
   onClose: () => void;
 }) {
-  console.log({
-    barber,
-  });
   const [schedules, setSchedules] = useState<Schedule[]>(
     DAYS.map((_, i) => {
       const existing = barber.schedules.find((s) => s.dayOfWeek === i);
