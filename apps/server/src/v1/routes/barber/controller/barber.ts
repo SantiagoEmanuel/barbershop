@@ -142,8 +142,7 @@ export default class BarberController {
       !endTime ||
       !startTime ||
       !endBreak ||
-      !startBreak ||
-      isActive !== undefined
+      !startBreak
     ) {
       return res.status(400).json({
         message: "Datos inválidos",
