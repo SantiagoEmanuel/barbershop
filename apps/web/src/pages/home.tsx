@@ -8,7 +8,7 @@ import { useServicesStore } from "../store/useServicesStore";
 import type { ApiResponse, Barber } from "../types";
 const STATS = [
   {
-    num: "5+",
+    num: "6+",
     label: "Años de experiencia",
   },
   {
@@ -74,8 +74,8 @@ export default function Home() {
           </h1>
 
           <p className="text-text-muted font-body max-w-sm text-sm leading-relaxed sm:text-base">
-            Más de cinco años dando forma al estilo de los hombres de Quimilí.
-            Sin vueltas, sin esperas, sin sorpresas.
+            Desde el 2020 dando forma al estilo de los hombres de Quimilí. Sin
+            vueltas, sin esperas, sin sorpresas.
           </p>
 
           <div className="mt-2 flex flex-wrap items-center gap-3">

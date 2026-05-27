@@ -10,7 +10,7 @@ export function Footer() {
           <div className="flex max-w-xs flex-col gap-3">
             <BrandLogo size={18} />
             <p className="text-text-muted font-body text-sm leading-relaxed">
-              Tu barbero de confianza en Quimilí. Más de diez años cuidando tu
+              Tu barbero de confianza en Quimilí. Desde el 2020 cuidando tu
               estilo sin vueltas ni demoras.
             </p>
           </div>
