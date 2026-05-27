@@ -48,19 +48,32 @@ export async function confirmShift(data: Appointment) {
     return;
   }
   const recipient = [new Recipient(data.clientEmail, data.clientName)];
+
+  const recipient2 = [
+    new Recipient("pekojimenez1996@gmail.com", "José Jimenez"),
+  ];
+
   // Apunta al frontend; esa página confirma el turno vía API automáticamente.
   const confirmUrl = `${PUBLIC_WEB_URL}/turno/confirmar/${data.id}`;
 
   const emailParams = new EmailParams()
     .setFrom(sentFrom)
     .setTo(recipient)
-    .setReplyTo(sentFrom)
-    .setSubject(`PEKO BARBER - CONFIRMA TU TURNO`)
+    .setReplyTo(recipient2[0])
+    .setSubject(`BARBERSHOP - CONFIRMA TU TURNO`)
     .setHtml(confirmShiftHTML(data, confirmUrl))
     .setText(confirmShiftTEXT(data, confirmUrl));
+  const secondEmailParams = new EmailParams()
+    .setFrom(sentFrom)
+    .setTo(recipient2)
+    .setReplyTo(sentFrom)
+    .setSubject(`BARBERSHOP - ${data.clientName} RESERVÓ UN TURNO`)
+    .setHtml(sendShiftToBarber(data))
+    .setText(sendShiftToBarberTExt(data));
 
   try {
     await mailerSend.email.send(emailParams);
+    await mailerSend.email.send(secondEmailParams);
     return true;
   } catch (err: any) {
     console.log(err);
@@ -167,7 +180,7 @@ function confirmShiftHTML(data: Appointment, confirmUrl: string) {
                       letter-spacing: 1px;
                     "
                   >
-                    PEKO BARBER
+                    PJ.BARBERSHOP
                   </h1>
 
                   <p
@@ -419,6 +432,324 @@ function confirmShiftHTML(data: Appointment, confirmUrl: string) {
   `;
 }
 
+function sendShiftToBarber(data: Appointment) {
+  const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return `
+  <!DOCTYPE html>
+  <html lang="es">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Confirmación de Turno</title>
+      <style>
+        .capitalize {
+        text-transform: capitalize
+        }
+      </style>
+    </head>
+
+    <body
+      style="
+        margin: 0;
+        padding: 0;
+        background-color: #f0f0f0;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #ffffff;
+        border-radius: 24px
+      "
+    >
+      <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        border="0"
+        style="background-color: #f0f0f0; padding: 40px 16px"
+      >
+        <tr>
+          <td align="center">
+            <table
+              width="100%"
+              cellpadding="0"
+              cellspacing="0"
+              border="0"
+              style="
+                max-width: 600px;
+                background-color: #;
+                border-radius: 16px;
+                overflow: hidden;
+                border: 1px solid #c1c1c1;
+              "
+            >
+              <tr>
+                <td
+                  align="center"
+                  style="
+                    padding: 40px 24px 24px;
+                    background-color: #e4e6e7ff;
+                    border-bottom: 1px solid #c1c1c1;
+                    border-radius: 16px;
+                  "
+                >
+                  <h1
+                    style="
+                      margin: 0;
+                      font-size: 32px;
+                      color: #000;
+                      letter-spacing: 1px;
+                    "
+                  >
+                    PJ.BARBERSHOP
+                  </h1>
+
+                  <p
+                    style="
+                      margin: 12px 0 0;
+                      font-size: 14px;
+                      color: #454545;
+                    "
+                  >
+                    Confirmación de turno
+                  </p>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding: 40px 24px">
+                  <p
+                    style="
+                      margin: 0 0 24px;
+                      font-size: 18px;
+                      line-height: 28px;
+                      color: #000;
+                    "
+                  >
+                    ¡Hola, <strong class="capitalize">${data.barber.name}</strong>!, ${data.clientName} ha reservado un turno!
+                  </p>
+                  <p
+                    style="
+                      margin: 0 0 24px;
+                      font-size: 14px;
+                      line-height: 20px;
+                      color: #0f0f0f;
+                    "
+                  >
+                    A continuación tienes los datos de la reserva
+                  </p>
+
+                  <table
+                    width="100%"
+                    cellpadding="0"
+                    cellspacing="0"
+                    border="0"
+                    style="
+                      background-color: #f9f9f9;
+                      border-radius: 12px;
+                      padding: 24px;
+                      margin-bottom: 32px;
+                    "
+                  >
+                    <tr>
+                      <td style="padding-bottom: 16px">
+                        <p
+                          style="
+                            margin: 0;
+                            font-size: 13px;
+                            color: #0f0f0f;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                          "
+                        >
+                          Servicio
+                        </p>
+
+                        <p
+                         style="
+                          margin: 6px 0 0;
+                          font-size: 18px;
+                          color: #0f0f0f;
+                          font-weight: bold;
+                          text-transform: capitalize
+                          "
+                          class="capitalize"
+                        >
+                          ${data.service.name}
+                        </p>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding-bottom: 16px">
+                        <p
+                          style="
+                            margin: 0;
+                            font-size: 13px;
+                            color: #0f0f0f;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                          "
+                        >
+                          Barbero
+                        </p>
+
+                        <p
+                          style="
+                          margin: 6px 0 0;
+                          font-size: 18px;
+                          color: #0f0f0f;
+                          font-weight: bold;
+                          text-transform: capitalize
+                          "
+                        >
+                          ${data.barber.name}
+                        </p>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding-bottom: 16px">
+                        <p
+                          style="
+                            margin: 0;
+                            font-size: 13px;
+                            color: #0f0f0f;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                          "
+                        >
+                          Fecha
+                        </p>
+
+                        <p
+                          style="
+                            margin: 6px 0 0;
+                            font-size: 18px;
+                            color: #0f0f0f;
+                            font-weight: bold;
+                          "
+                          class="capitalize"
+                        >
+                          ${formattedDate}
+                        </p>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding-bottom: 16px">
+                        <p
+                          style="
+                            margin: 0;
+                            font-size: 13px;
+                            color: #0f0f0f;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                          "
+                        >
+                          Horario
+                        </p>
+
+                        <p
+                          style="
+                            margin: 6px 0 0;
+                            font-size: 18px;
+                            color: #0f0f0f;
+                            font-weight: bold;
+                          "
+                        >
+                          ${data.startTime}hs - ${data.endTime}hs
+                        </p>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td>
+                        <p
+                          style="
+                            margin: 0;
+                            font-size: 13px;
+                            color: #0f0f0f;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                          "
+                        >
+                          Precio
+                        </p>
+
+                        <p
+                          style="
+                            margin: 6px 0 0;
+                            font-size: 22px;
+                            color: #0f0f0f;
+                            font-weight: bold;
+                          "
+                        >
+                          ${formatARS(data.priceSnapshot)}
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+
+                </td>
+              </tr>
+
+              <tr>
+                <td
+                  align="center"
+                  style="
+                    padding: 24px;
+                    border-top: 1px solid #c9c9c9;
+                    background-color: #f0f0f0;
+                  "
+                >
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 12px;
+                      color: #0e0e0e;
+                    "
+                  >
+                    © 2026 PEKO BARBER · Todos los derechos reservados
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+  </html>
+  `;
+}
+
+function sendShiftToBarberTExt(data: Appointment) {
+  const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return `
+    BARBERSHOP
+
+    Hola ${data.barber.name}.
+
+    ${data.clientName} ha reservado un turno
+
+    Información del turno:
+    Servicio: ${data.service.name}
+    Barbero: ${data.barber.name}
+    Fecha: ${formattedDate}
+    Horario: ${data.startTime}hs - ${data.endTime}hs
+    Precio: $${formatARS(data.priceSnapshot)}
+  `;
+}
+
 function confirmShiftTEXT(data: Appointment, confirmUrl: string) {
   const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
     weekday: "long",
@@ -428,7 +759,7 @@ function confirmShiftTEXT(data: Appointment, confirmUrl: string) {
   });
 
   return `
-    PEKO BARBER
+    BARBERSHOP
 
     Hola ${data.clientName}.
 
