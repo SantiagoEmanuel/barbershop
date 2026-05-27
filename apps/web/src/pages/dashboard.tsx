@@ -1,4 +1,5 @@
 import {
+  cn,
   EmptyState,
   SectionHeader,
   Spinner,
@@ -7,9 +8,18 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { StatusBadge } from "../components/statusBadge";
-import { formatARS, formatDate, todayISO } from "../components/ui/formatters";
+import {
+  formatARS,
+  formatDate,
+  todayISO,
+  todayISOArgentina,
+} from "../components/ui/formatters";
 import { api } from "../lib/api";
-import type { ApiResponse, Appointment } from "../types";
+import { filterValidSlots } from "../lib/filterValidSlots";
+import { timeToMinutes } from "../lib/timeTominutes";
+import { useAuthStore } from "../store/useAuthStore";
+import { useBookingStore } from "../store/useBookingStore";
+import type { ApiResponse, Appointment, Slot } from "../types";
 const QUICK_LINKS = [
   {
     label: "Ver turnos del día",
@@ -43,14 +53,28 @@ const QUICK_LINKS = [
   },
 ];
 export default function Dashboard() {
+  const { serviceDuration, startTime, date } = useBookingStore();
+  const user = useAuthStore((u) => u.user);
   const navigate = useNavigate();
   const today = todayISO();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rawSlots, setRawSlots] = useState<Slot[]>([]);
+  const [validSlots, setValidSlots] = useState<Slot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(true);
   useEffect(() => {
     api<ApiResponse<Appointment[]>>(`appointments?date=${today}&barberId=all`)
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
+    api<ApiResponse<{ slots: Slot[] }>>(
+      `availability?barberId=${user?.id}&date=${todayISO()}`,
+    )
+      .then((r) => {
+        const slots = r?.data?.slots ?? [];
+        setRawSlots(slots);
+        setValidSlots(filterValidSlots(slots, serviceDuration));
+      })
+      .finally(() => setLoadingSlots(false));
   }, [today]);
   const stats = {
     total: appointments.length,
@@ -65,6 +89,12 @@ export default function Dashboard() {
     .filter((a) => ["pending", "confirmed"].includes(a.status))
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
     .slice(0, 5);
+
+  useEffect(() => {
+    if (rawSlots.length > 0) {
+      setValidSlots(filterValidSlots(rawSlots, serviceDuration));
+    }
+  }, [serviceDuration, rawSlots]);
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
@@ -72,6 +102,58 @@ export default function Dashboard() {
         title="Resumen del día"
         description="Un vistazo rápido a cómo va la jornada."
       />
+
+      <div>
+        {validSlots && (
+          <div>
+            <label className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
+              Horario disponible
+            </label>
+
+            {loadingSlots ? (
+              <div className="flex justify-center py-6">
+                <Spinner size={20} />
+              </div>
+            ) : validSlots.length === 0 ? (
+              <div className="border-border text-text-muted font-body rounded-xl border bg-black/20 px-4 py-5 text-center text-sm">
+                ¡No quedan más horarios disponibles!
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-2">
+                  {validSlots.map((s) => {
+                    if (
+                      timeToMinutes(s.startTime) <
+                        new Date().getHours() * 60 + new Date().getMinutes() &&
+                      date === todayISOArgentina()
+                    ) {
+                      return;
+                    }
+                    const selected = startTime === s.startTime;
+                    return (
+                      <button
+                        key={s.startTime}
+                        onClick={() => {}}
+                        className={cn(
+                          "font-body rounded-xl border py-2.5 text-sm font-semibold transition-all duration-150",
+                          selected
+                            ? "bg-marca/15 border-border-strong text-marca"
+                            : "border-border text-text-secondary bg-black/20",
+                        )}
+                      >
+                        {s.startTime}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-text-muted font-body mt-2 text-center text-xs">
+                  Mostrando turnos disponibles
+                </p>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Turnos hoy" value={stats.total} icon="📋" />
