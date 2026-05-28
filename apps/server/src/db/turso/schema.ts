@@ -76,11 +76,13 @@ export const barbers = table(
     experienceYears: integer("experience_years"),
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     createdAt: createdAt(),
+    userId: text("user_id").references(() => users.id),
   },
   (t) => [
     // Filtro habitual: solo mostrar barberos activos
     index("idx_barbers_is_active").on(t.isActive),
     index("idx_barbers_slug").on(t.slug),
+    index("idx_barbers_user_id").on(t.userId),
   ],
 );
 
