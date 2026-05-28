@@ -1,6 +1,7 @@
 import { db } from "@/db/db";
 import {
   appointments,
+  barbers,
   barberScheduleOverrides,
   barberSchedules,
 } from "@/db/turso/schema";
@@ -9,7 +10,7 @@ import {
   generateSlots,
   type Slot,
 } from "@/utils/availability";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 
 export default class AvailabilityModel {
   static async getSlots(barberId: string, date: string): Promise<Slot[]> {
@@ -17,10 +18,17 @@ export default class AvailabilityModel {
     // Usamos T12:00:00 para evitar desfasajes de timezone
     const dayOfWeek = new Date(`${date}T12:00:00`).getDay();
 
+    const barber = await db.query.barbers.findFirst({
+      where: eq(barbers.userId, barberId),
+    });
+
     // 1. Horario base semanal del barbero para ese día
     const schedule = await db.query.barberSchedules.findFirst({
       where: and(
-        eq(barberSchedules.barberId, barberId),
+        or(
+          eq(barberSchedules.barberId, barber?.id ?? ""),
+          eq(barberSchedules.barberId, barberId),
+        ),
         eq(barberSchedules.dayOfWeek, dayOfWeek),
         eq(barberSchedules.isActive, true),
       ),
