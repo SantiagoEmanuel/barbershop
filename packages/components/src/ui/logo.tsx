@@ -5,7 +5,7 @@
  */
 export function BrandLogo({
   size = 22,
-  text = "PEKO BARBER",
+  text = "PJBARBERSHOP",
   textVariant = "marca",
 }: {
   size?: number;

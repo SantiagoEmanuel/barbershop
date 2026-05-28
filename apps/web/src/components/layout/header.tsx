@@ -8,7 +8,7 @@ export default function Header() {
   return (
     <header className="bg-surface flex items-center justify-between gap-8 px-4 py-2">
       <p className="font-display text-text-primary text-xl font-bold">
-        Barbería Peko
+        PJBARBERSHOP
       </p>
       <div className="flex items-center gap-4">
         <button className="bg-marca text-background hover:bg-marca-deep rounded-md px-2 py-1 font-semibold transition-colors">
