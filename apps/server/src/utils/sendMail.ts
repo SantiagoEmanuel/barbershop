@@ -12,7 +12,7 @@ const mailerSend = new MailerSend({
   apiKey: MAILERSEND_TOKEN,
 });
 
-const sentFrom = new Sender("info@peko.santiagomustafa.com.ar", "BARBERSHOP");
+const sentFrom = new Sender("info@pjbarbershop.com.ar", "BARBERSHOP");
 
 type AppointmentStatus =
   | "pending"
@@ -55,7 +55,7 @@ export async function confirmShift(data: Appointment) {
   const recipient = [new Recipient(data.clientEmail, data.clientName)];
 
   const recipient2 = [
-    new Recipient("santiagomustafa3@gmail.com", "Santiago Mustafá"),
+    new Recipient("pekojimenez1996@gmail.com", "José Jimenez"),
   ];
 
   // Apunta al frontend; esa página confirma el turno vía API automáticamente.
@@ -65,14 +65,14 @@ export async function confirmShift(data: Appointment) {
     .setFrom(sentFrom)
     .setTo(recipient)
     .setReplyTo(recipient2[0])
-    .setSubject(`BARBERSHOP - CONFIRMA TU TURNO`)
+    .setSubject(`PJBARBERSHOP - CONFIRMA TU TURNO`)
     .setHtml(confirmShiftHTML(data, confirmUrl))
     .setText(confirmShiftTEXT(data, confirmUrl));
   const secondEmailParams = new EmailParams()
     .setFrom(sentFrom)
     .setTo(recipient2)
     .setReplyTo(sentFrom)
-    .setSubject(`BARBERSHOP - ${data.clientName} RESERVÓ UN TURNO`)
+    .setSubject(`PJBARBERSHOP - ${data.clientName} RESERVÓ UN TURNO`)
     .setHtml(sendShiftToBarber(data))
     .setText(sendShiftToBarberTExt(data));
 
@@ -106,7 +106,7 @@ export async function confirmEmail(data: Partial<User>) {
     .setFrom(sentFrom)
     .setTo(recipient)
     .setReplyTo(sentFrom)
-    .setSubject(`PEKO BARBER - CONFIRMA TU CORREO`)
+    .setSubject(`PJBARBERSHOP - CONFIRMA TU CORREO`)
     .setHtml(confirmEmailHTML(data, confirmUrl))
     .setText(confirmEmailText(data, confirmUrl));
 
@@ -194,7 +194,7 @@ function confirmShiftHTML(data: Appointment, confirmUrl: string) {
                       letter-spacing: 1px;
                     "
                   >
-                    PJ.BARBERSHOP
+                    PJBARBERSHOP
                   </h1>
 
                   <p
@@ -518,7 +518,7 @@ function sendShiftToBarber(data: Appointment) {
                       letter-spacing: 1px;
                     "
                   >
-                    PJ.BARBERSHOP
+                    PJBARBERSHOP
                   </h1>
 
                   <p
@@ -749,7 +749,7 @@ function sendShiftToBarberTExt(data: Appointment) {
   });
 
   return `
-    BARBERSHOP
+    PJBARBERSHOP
 
     Hola ${data.barber.name}.
 
@@ -773,7 +773,7 @@ function confirmShiftTEXT(data: Appointment, confirmUrl: string) {
   });
 
   return `
-    BARBERSHOP
+    PJBARBERSHOP
 
     Hola ${data.clientName}.
 
@@ -853,7 +853,7 @@ function confirmEmailHTML(data: Partial<User>, confirmUrl: string) {
                       letter-spacing: 1px;
                     "
                   >
-                    PEKO BARBER
+                    PJBARBERSHOP
                   </h1>
 
                   <p
@@ -927,7 +927,7 @@ function confirmEmailHTML(data: Partial<User>, confirmUrl: string) {
                       text-align: center;
                     "
                   >
-                    Si no creaste tu cuenta en <a href="https://pekobarber.com.ar" style="text-decoration: none; color: #4a4a4a">pekobarber</a> desestima este correo.
+                    Si no creaste tu cuenta en <a href="https://pjbarbershop.com.ar" style="text-decoration: none; color: #4a4a4a">pjbarbershop</a> desestima este correo.
                   </p>
                 </td>
               </tr>
@@ -948,7 +948,7 @@ function confirmEmailHTML(data: Partial<User>, confirmUrl: string) {
                       color: #0e0e0e;
                     "
                   >
-                    © 2026 PEKO BARBER · Todos los derechos reservados
+                    © 2026 PJBARBERSHOP · Todos los derechos reservados
                   </p>
                 </td>
               </tr>
