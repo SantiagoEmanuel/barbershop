@@ -18,4 +18,5 @@ export interface Barber {
   experienceYears?: number | null;
   isActive?: boolean;
   schedules: Schedule[];
+  userId: string | null;
 }
