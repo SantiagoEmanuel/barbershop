@@ -223,4 +223,30 @@ export default class AuthController {
       });
     }
   }
+  static async getAdminUsers(req: Request, res: Response) {
+    const role = req.user?.role;
+
+    if (role !== "admin") {
+      return res.status(409).json({
+        message: "No estás autorizado a hacer eso",
+      });
+    }
+
+    try {
+      const data = await AuthModel.getAdmins();
+
+      return res.status(200).json({
+        message: "Usuarios encontrados",
+        data,
+      });
+    } catch (err: any) {
+      const status = err.status ?? 500;
+      const message = err.message ?? "Server Error";
+
+      return res.status(status).json({
+        message,
+        data: null,
+      });
+    }
+  }
 }

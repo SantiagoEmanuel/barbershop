@@ -101,6 +101,23 @@ export default class AuthModel {
 
     return user;
   }
+  static async getAdmins() {
+    const data = await db.query.users
+      .findMany({
+        where: eq(users.role, "admin"),
+      })
+      .then((r) => {
+        return r.map((c) => {
+          return { ...c, password: "" };
+        });
+      });
+
+    if (!data) {
+      throw new AppError("No se pueden obtener los datos", 500);
+    }
+
+    return data;
+  }
   static async hashPassword(password: string) {
     return hashSync(password, HASH_SALT);
   }
