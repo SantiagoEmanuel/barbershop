@@ -215,18 +215,6 @@ function ClientLinks({ onClose }: { onClose: () => void }) {
         onClick={onClose}
       />
       <SideNavItem
-        key="profile"
-        item={{
-          href: "/perfil",
-          label: "Mi perfil",
-          icon: (
-            <Icon d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-          ),
-          end: true,
-        }}
-        onClick={onClose}
-      />
-      <SideNavItem
         key="mis-turnos"
         item={{
           href: "/mis-turnos",
