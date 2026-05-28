@@ -11,7 +11,12 @@ import {
   type Service,
   type Slot,
 } from "../types";
-import { formatARS, todayISO, todayISOArgentina } from "./ui/formatters";
+import {
+  formatARS,
+  formatDate,
+  todayISO,
+  todayISOArgentina,
+} from "./ui/formatters";
 
 // ── Helpers de tiempo ─────────────────────────────────────────
 function toMin(time: string): number {
@@ -91,9 +96,6 @@ function StepBarber({ onNext }: { onNext: () => void }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (barberId) {
-      onNext();
-    }
     api<ApiResponse<Barber[]>>("barber").then((r) => {
       setBarbers(r?.data ?? []);
       if (r?.data.length === 1) {
@@ -176,9 +178,6 @@ function StepService({ onNext }: { onNext: () => void }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (serviceId) {
-      onNext();
-    }
     api<ApiResponse<Service[]>>("service").then((r) => {
       setServices(r?.data ?? []);
       setLoading(false);
@@ -284,11 +283,11 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
           Paso 3 de 4
         </p>
         <h3 className="font-display text-text-primary text-xl font-bold">
-          ¿Cuándo venís?
+          ¿Cuándo quieres tu turno?
         </h3>
       </div>
 
-      <div>
+      <div className="flex w-full flex-col">
         <label className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
           Fecha
         </label>
@@ -304,7 +303,7 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
       {date && (
         <div>
           <label className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
-            Horario disponible
+            Horarios disponibles
           </label>
 
           {loadingSlots ? (
@@ -313,7 +312,8 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
             </div>
           ) : validSlots.length === 0 ? (
             <div className="border-border text-text-muted font-body rounded-xl border bg-black/20 px-4 py-5 text-center text-sm">
-              No hay turnos disponibles para ese día. Probá con otra fecha.
+              No hay turnos disponibles para el día {formatDate(date)}. Intenta
+              con otra fecha.
             </div>
           ) : (
             <>
@@ -662,7 +662,7 @@ export default function BookingModal() {
         </button>
       </div>
 
-      <div className="max-h-[75dvh] overflow-y-auto px-5 py-5">
+      <div className="max-h-[75dvh] overflow-y-hidden px-5 py-5">
         {step === 1 && <StepBarber onNext={() => setStep(2)} />}
         {step === 2 && <StepService onNext={() => setStep(3)} />}
         {step === 3 && <StepDateTime onNext={() => setStep(4)} />}
