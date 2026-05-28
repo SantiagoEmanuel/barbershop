@@ -28,17 +28,38 @@ function BarberModal({
   const [expYears, setExpYears] = useState(
     String(initial?.experienceYears ?? ""),
   );
+  const [userReference, setUserReference] = useState(initial?.userId ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loadData, setLoadData] = useState(false);
+  const [barbers, setBarbers] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
+    catchBarbers();
     if (open) {
       setName(initial?.name ?? "");
       setSlug(initial?.slug ?? "");
       setBio(initial?.bio ?? "");
       setExpYears(String(initial?.experienceYears ?? ""));
       setError("");
+      setUserReference(initial?.userId ?? "");
     }
   }, [open, initial]);
+
+  async function catchBarbers() {
+    if (loadData) return;
+    const res = await api<ApiResponse<{ id: string; name: string }[]>>(
+      "auth/get-admins",
+      {
+        method: "GET",
+      },
+    );
+
+    if (!res?.data) {
+      setError(res?.message ?? "");
+    }
+    setLoadData(true);
+    setBarbers(res?.data ?? []);
+  }
   function handleNameChange(v: string) {
     setName(v);
     if (!initial) {
@@ -63,6 +84,7 @@ function BarberModal({
         slug,
         bio: bio || undefined,
         experienceYears: expYears ? Number(expYears) : undefined,
+        userId: userReference,
       };
       const res = initial
         ? await put<ApiResponse<Barber>>(`barber/${initial.id}`, body)
@@ -109,6 +131,23 @@ function BarberModal({
             onChange={setExpYears}
             type="number"
           />
+
+          <select
+            className="rounded-xl bg-black/30 p-2"
+            onChange={(e) => {
+              setUserReference(e.target.value);
+            }}
+            value={userReference}
+          >
+            <option value="null" className="">
+              Elige un usuario
+            </option>
+            {barbers.map((b) => (
+              <option value={b.id} key={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
 
           {error && (
             <p className="bg-error/10 text-error font-body rounded-lg px-3 py-2 text-xs">
