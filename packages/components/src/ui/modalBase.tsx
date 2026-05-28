@@ -4,7 +4,7 @@ export function ModalBase({
   open,
   onClose,
   children,
-  maxW = "max-w-105",
+  maxW = "max-w-120",
 }: {
   open: boolean;
   onClose: () => void;
@@ -46,7 +46,7 @@ export function ModalBase({
       className={`fixed inset-0 z-200 flex items-end justify-center bg-[rgba(20,20,28,0.82)] p-0 backdrop-blur-sm transition-opacity duration-200 sm:items-center sm:p-4 ${mounted ? "opacity-100" : "opacity-0"}`}
     >
       <div
-        className={`bg-surface border-marca/12 relative w-full ${maxW} overflow-hidden rounded-t-2xl border shadow-[0_24px_60px_rgba(0,0,0,0.5)] transition-all duration-250 sm:rounded-2xl ${mounted ? "translate-y-0 scale-100 opacity-100" : "translate-y-6 scale-[0.98] opacity-0"}`}
+        className={`bg-surface border-marca/12 relative w-full ${maxW} overflow-hidden rounded-t-2xl border shadow-[0_24px_60px_rgba(0,0,0,0.5)] transition-all duration-250 sm:rounded-2xl ${mounted ? "translate-y-0 pb-12 sm:pb-0 scale-100 opacity-100" : "translate-y-6 scale-[0.5] opacity-0"}`}
       >
         {children}
       </div>
