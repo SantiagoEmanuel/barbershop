@@ -246,7 +246,6 @@ export default function CierreServicio() {
         <SectionHeader eyebrow="Admin" title="Cerrar servicio" />
       </div>
 
-      {}
       <div className="card flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -303,7 +302,6 @@ export default function CierreServicio() {
         )}
       </div>
 
-      {}
       {!isCompleted && (
         <div className="card flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -398,7 +396,6 @@ export default function CierreServicio() {
         </div>
       )}
 
-      {}
       {!isCompleted && (
         <div className="card flex flex-col gap-4">
           <div className="font-body flex flex-col gap-2">
