@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { coerce, object, string } from "zod";
 
-config();
+config({ path: [".env", ".env.local"] });
 
 const Env = object({
   PORT: coerce.string(),
@@ -16,6 +16,7 @@ const Env = object({
   PUBLIC_API_URL: string(),
   PUBLIC_WEB_URL: string(),
   LOCALHOST_IP: string(),
+  NODE_ENV: string(),
 });
 
 export const {
@@ -31,4 +32,5 @@ export const {
   PUBLIC_API_URL,
   PUBLIC_WEB_URL,
   LOCALHOST_IP,
+  NODE_ENV,
 } = Env.parse(process.env);
