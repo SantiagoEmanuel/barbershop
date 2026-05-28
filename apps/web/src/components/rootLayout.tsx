@@ -1,4 +1,5 @@
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Toaster } from "react-hot-toast";
 import { Outlet } from "react-router";
 import { AuthModalProvider } from "../provider/authModalProvider";
@@ -19,6 +20,7 @@ export function RootLayout() {
       <Toaster />
       <UpdatePrompt />
       <Analytics />
+      <SpeedInsights />
     </AuthModalProvider>
   );
 }
