@@ -8,6 +8,7 @@ interface CreateBarberData {
   bio?: string;
   avatarUrl?: string;
   experienceYears?: number;
+  userId?: string;
 }
 
 interface UpdateBarberData {
@@ -17,6 +18,7 @@ interface UpdateBarberData {
   avatarUrl?: string;
   experienceYears?: number;
   isActive?: boolean;
+  userId?: string;
 }
 
 interface UpdateBarberSchedule {

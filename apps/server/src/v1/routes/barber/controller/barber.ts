@@ -32,13 +32,15 @@ export default class BarberController {
   }
 
   static async create(req: Request, res: Response) {
-    const { name, slug, bio, avatarUrl, experienceYears } = req.body as {
-      name?: string;
-      slug?: string;
-      bio?: string;
-      avatarUrl?: string;
-      experienceYears?: number;
-    };
+    const { name, slug, bio, avatarUrl, experienceYears, userId } =
+      req.body as {
+        name?: string;
+        slug?: string;
+        bio?: string;
+        avatarUrl?: string;
+        experienceYears?: number;
+        userId: string;
+      };
 
     if (!name || !slug) {
       return res.status(400).json({
@@ -63,6 +65,7 @@ export default class BarberController {
         bio,
         avatarUrl,
         experienceYears,
+        userId,
       });
       return res
         .status(201)
@@ -81,7 +84,7 @@ export default class BarberController {
 
   static async update(req: Request, res: Response) {
     const { id } = req.params;
-    const { name, slug, bio, avatarUrl, experienceYears, isActive } =
+    const { name, slug, bio, avatarUrl, experienceYears, isActive, userId } =
       req.body as {
         name?: string;
         slug?: string;
@@ -89,6 +92,7 @@ export default class BarberController {
         avatarUrl?: string;
         experienceYears?: number;
         isActive?: boolean;
+        userId?: string;
       };
 
     const patch: Record<string, unknown> = {};
@@ -98,6 +102,7 @@ export default class BarberController {
     if (avatarUrl !== undefined) patch.avatarUrl = avatarUrl;
     if (experienceYears !== undefined) patch.experienceYears = experienceYears;
     if (isActive !== undefined) patch.isActive = isActive;
+    if (userId !== undefined) patch.userId = userId;
 
     if (Object.keys(patch).length === 0) {
       return res.status(400).json({
