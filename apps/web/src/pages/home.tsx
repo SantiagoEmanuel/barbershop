@@ -6,24 +6,26 @@ import { api } from "../lib/api";
 import { useBookingStore } from "../store/useBookingStore";
 import { useServicesStore } from "../store/useServicesStore";
 import type { ApiResponse, Barber } from "../types";
-const STATS = [
-  {
-    num: "6+",
-    label: "Años de experiencia",
-  },
-  {
-    num: "1",
-    label: "Barberos especializados",
-  },
-  {
-    num: "5k+",
-    label: "Clientes atendidos",
-  },
-  {
-    num: "5★",
-    label: "Valoración promedio",
-  },
-];
+
+// const STATS = [
+//   {
+//     num: "6+",
+//     label: "Años de experiencia",
+//   },
+//   {
+//     num: "1",
+//     label: "Barberos especializados",
+//   },
+//   {
+//     num: "5k+",
+//     label: "Clientes atendidos",
+//   },
+//   {
+//     num: "5★",
+//     label: "Valoración promedio",
+//   },
+// ];
+
 export default function Home() {
   const openBooking = useBookingStore((s) => s.openModal);
   const setService = useBookingStore((s) => s.setService);
@@ -66,11 +68,10 @@ export default function Home() {
               fontSize: "clamp(2.25rem, 7vw, 4.5rem)",
             }}
           >
-            Siéntate, saca tu turno y{" "}
+            Sentate, saca tu turno y{" "}
             <span className="text-marca font-normal italic">
-              déjanos el resto
-            </span>{" "}
-            a nosotros.
+              déjame el resto a mí
+            </span>
           </h1>
 
           <p className="text-text-muted font-body max-w-sm text-sm leading-relaxed sm:text-base">
@@ -94,7 +95,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bg-border relative z-10 mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl sm:mt-16 sm:grid-cols-4">
+        {/* <div className="bg-border relative z-10 mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl sm:mt-16 sm:grid-cols-4">
           {STATS.map((s) => (
             <div
               key={s.num}
@@ -108,7 +109,7 @@ export default function Home() {
               </span>
             </div>
           ))}
-        </div>
+        </div> */}
       </section>
 
       <section
@@ -117,9 +118,9 @@ export default function Home() {
       >
         <div className="mb-8 sm:mb-10">
           <SectionHeader
-            eyebrow="Nuestros servicios"
-            title="¿Qué necesitás hoy?"
-            description="Tocá un servicio para reservar tu turno en menos de un minuto."
+            eyebrow="Servicios"
+            title="¿Qué servicio quieres?"
+            description="Elegí uno y reserva tu turno en menos de 1 minuto."
             align="center"
           />
         </div>
@@ -182,8 +183,8 @@ export default function Home() {
           <div className="mb-8 sm:mb-10">
             <SectionHeader
               eyebrow="El equipo"
-              title="Nuestros barberos"
-              description="Los que se encargan de que salgas a la calle como nuevo."
+              title="Personal disponible"
+              description="Encargados de que salgas fachero."
               align="center"
             />
           </div>

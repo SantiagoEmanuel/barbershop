@@ -15,8 +15,9 @@ export function UpdatePrompt() {
 
   return (
     <ModalBase onClose={() => setOpen(false)} open={open}>
-      <div className="flex flex-col gap-8 p-4">
+      <div className="flex w-full flex-col gap-8 p-4">
         <SectionHeader
+          align="center"
           title="Actualización disponible"
           description="Puedes actualizar a la última versión del sistema"
         />
@@ -28,14 +29,17 @@ export function UpdatePrompt() {
 
 function Action({ action, cancel }: { action: () => any; cancel: () => void }) {
   return (
-    <div className="flex gap-4">
+    <div className="flex items-center justify-center gap-4">
       <Button
         className="bg-marca text-background cursor-pointer rounded-md px-4 py-2 font-bold"
         onClick={action}
       >
         Actualizar
       </Button>
-      <Button className="cursor-pointer px-4 py-2 font-bold" onClick={cancel}>
+      <Button
+        className="cursor-pointer rounded-md border px-4 py-2 font-bold"
+        onClick={cancel}
+      >
         Más Tarde
       </Button>
     </div>

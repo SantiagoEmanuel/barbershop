@@ -21,8 +21,7 @@ export function Footer() {
               links={[
                 { href: "/", label: "Inicio" },
                 { href: "#servicios", label: "Servicios" },
-                { href: "/barberos", label: "Barberos" },
-                { href: "/nosotros", label: "Nosotros" },
+                { href: "#barberos", label: "Barberos" },
               ]}
             />
             <FooterCol
@@ -38,11 +37,19 @@ export function Footer() {
         <div className="border-marca/6 border-t pt-6">
           <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
             <p className="text-text-muted font-body text-xs">
-              © {year} Peko Barber · Quimilí, Argentina
+              © {year} PJBARBERSHOP · Quimilí, Argentina
             </p>
             <p className="text-text-muted/50 font-body text-xs">
               Hecho con ♥ por{" "}
-              <span className="text-marca/50">tu barbero amigo</span>
+              <span className="text-marca/50">
+                <a
+                  href="http://linkedin.com/in/santiagoemanuelmustafafont"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Santiago Mustafá
+                </a>
+              </span>
             </p>
           </div>
         </div>
