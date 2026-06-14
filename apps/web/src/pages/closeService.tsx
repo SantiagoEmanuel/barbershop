@@ -108,17 +108,37 @@ export default function CierreServicio() {
     setSubmitting(true);
     setError("");
     try {
+      // El servicio + los productos del carrito se envían como items para que
+      // el backend registre cada venta de producto (descontando stock) y la
+      // orden quede asociada a sus productos. Así los reportes de ingresos
+      // distinguen correctamente la facturación por servicios y por productos.
+      const items = [
+        {
+          kind: "service" as const,
+          id: appointment.service.id,
+          quantity: 1,
+          priceSnapshot: serviceTotal,
+        },
+        ...cart.map((i) => ({
+          kind: "product" as const,
+          id: i.product.id,
+          quantity: i.quantity,
+          priceSnapshot: i.product.price,
+        })),
+      ].filter((it) => it.priceSnapshot > 0);
+
       const orderRes = await post<
         ApiResponse<{
           id: string;
         }>
-      >("order", {
+      >("order/create", {
         appointmentId: appointment.id,
         paymentMethodId: selectedPayment,
         amount: grandTotal,
-        status: "paid",
+        soldBy: appointment.barber.id,
+        items,
       });
-      if (!orderRes) throw new Error("No se pudo crear la orden de pago");
+      if (!orderRes?.data) throw new Error("No se pudo crear la orden de pago");
       await put(`appointments/${appointment.id}/status`, {
         status: "completed",
       });

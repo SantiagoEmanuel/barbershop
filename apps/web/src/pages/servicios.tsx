@@ -6,6 +6,7 @@ import {
   Spinner,
 } from "@config/components";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { formatARS } from "../components/ui/formatters";
 import { api, post, put } from "../lib/api";
 import type { ApiResponse, Product, Service } from "../types";
@@ -276,20 +277,28 @@ export default function Servicios() {
     const res = await put<ApiResponse<Service>>(`service/${s.id}`, {
       isActive: !s.isActive,
     });
-    if (res)
+    if (res) {
       setServices((prev) =>
         prev.map((x) => (x.id === s.id ? { ...x, isActive: !s.isActive } : x)),
       );
+      toast.success(s.isActive ? "Servicio desactivado" : "Servicio activado");
+    } else {
+      toast.error("No se pudo actualizar el servicio");
+    }
   }
 
   async function toggleProduct(p: Product) {
     const res = await put<ApiResponse<Product>>(`product/${p.id}`, {
       isActive: !p.isActive,
     });
-    if (res)
+    if (res) {
       setProducts((prev) =>
         prev.map((x) => (x.id === p.id ? { ...x, isActive: !p.isActive } : x)),
       );
+      toast.success(p.isActive ? "Producto desactivado" : "Producto activado");
+    } else {
+      toast.error("No se pudo actualizar el producto");
+    }
   }
 
   if (loading) {

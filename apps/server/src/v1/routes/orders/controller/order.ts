@@ -158,11 +158,16 @@ export default class OrderController {
     }
 
     try {
-      // 4. Crear la orden
+      // 4. Crear la orden. Una venta de mostrador / cierre de servicio se
+      //    cobra en el acto, así que queda registrada como pagada: de lo
+      //    contrario no se reflejaría en los reportes de ingresos (que solo
+      //    consideran órdenes con status "paid").
       const order = await OrderModel.create({
         appointmentId,
         paymentMethodId,
         amount,
+        status: "paid",
+        paidAt: new Date(),
       });
 
       // 5. Registrar venta de cada producto del carrito.

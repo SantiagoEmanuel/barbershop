@@ -7,6 +7,7 @@ import {
   StatCard,
 } from "@config/components";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 import { BarsCard, DonutCard } from "../components/charts";
 import {
@@ -173,6 +174,7 @@ function RecurringModal({
   const [amount, setAmount] = useState("");
   const [dayOfMonth, setDayOfMonth] = useState("1");
   const [loading, setLoading] = useState(false);
+  const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -208,13 +210,30 @@ function RecurringModal({
   }
 
   async function deactivate(id: string) {
-    await api(`expenses/recurring/${id}`, { method: "DELETE" });
-    onChanged();
+    try {
+      await api(`expenses/recurring/${id}`, { method: "DELETE" });
+      onChanged();
+      toast.success("Gasto fijo quitado");
+    } catch {
+      toast.error("No se pudo quitar el gasto fijo");
+    }
   }
 
   async function runMonth() {
-    await post("expenses/recurring/run", {});
-    onChanged();
+    setRunning(true);
+    try {
+      await post("expenses/recurring/run", {});
+      onChanged();
+      toast.success("Gastos fijos del mes cargados");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "No se pudieron cargar los gastos fijos",
+      );
+    } finally {
+      setRunning(false);
+    }
   }
 
   return (
@@ -226,10 +245,12 @@ function RecurringModal({
           </h3>
           <button
             onClick={runMonth}
-            className="btn-ghost rounded-lg px-3 py-1.5 text-xs"
+            disabled={running}
+            className="btn-ghost flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs disabled:opacity-60"
             title="Registrar los gastos fijos de este mes"
           >
-            Cargar mes
+            {running && <Spinner size={12} />}
+            {running ? "Cargando…" : "Cargar mes"}
           </button>
         </div>
 

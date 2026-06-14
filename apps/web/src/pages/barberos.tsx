@@ -8,6 +8,7 @@ import {
   UserAvatar,
 } from "@config/components";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { api, post, put } from "../lib/api";
 import type { ApiResponse, Barber, Schedule } from "../types";
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -134,20 +135,25 @@ function BarberModal({
             type="number"
           />
 
-          <select
-            className="rounded-xl bg-black/30 p-2"
-            onChange={(e) => {
-              setUserReference(e.target.value);
-            }}
-            value={userReference}
-          >
-            <option value="">Sin vincular</option>
-            {barbers.map((b) => (
-              <option value={b.id} key={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-text-muted font-body text-xs font-semibold tracking-wide uppercase">
+              Usuario vinculado
+            </span>
+            <select
+              className="bg-surface border-border text-text-primary font-body w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+              onChange={(e) => {
+                setUserReference(e.target.value);
+              }}
+              value={userReference}
+            >
+              <option value="">Sin vincular</option>
+              {barbers.map((b) => (
+                <option value={b.id} key={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
           {error && (
             <p className="bg-error/10 text-error font-body rounded-lg px-3 py-2 text-xs">
@@ -217,7 +223,14 @@ function SchedulePanel({
           ),
       );
       setSaved(true);
+      toast.success("Horarios guardados");
       setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "No se pudieron guardar los horarios",
+      );
     } finally {
       setSaving(false);
     }

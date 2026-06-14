@@ -28,6 +28,10 @@ orderRouter.get(
 // Crear orden simple (flujo histórico, ligada o no a un turno)
 orderRouter.post("/", verifyToken, OrderController.create);
 
+// Venta de mostrador / cierre de servicio: crea la orden (paga) y registra
+// las ventas de producto del carrito, descontando stock.
+orderRouter.post("/create", verifyToken, OrderController.createByBarber);
+
 orderRouter.put(
   "/:id/update",
   verifyToken,
