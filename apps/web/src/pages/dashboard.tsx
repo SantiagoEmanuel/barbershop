@@ -22,6 +22,7 @@ import type {
   ApiResponse,
   Appointment,
   Barber,
+  Order,
   ReportSummary,
   Slot,
 } from "../types";
@@ -126,6 +127,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const today = todayISO();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [todayOrders, setTodayOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [rawSlots, setRawSlots] = useState<Slot[]>([]);
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
@@ -135,6 +137,11 @@ export default function Dashboard() {
   useEffect(() => {
     api<ApiResponse<ReportSummary>>("reports/summary").then((r) =>
       setSummary(r?.data ?? null),
+    );
+    // Órdenes del día: incluyen servicios cobrados y ventas de productos,
+    // así "Facturado hoy" refleja la facturación real (no solo servicios).
+    api<ApiResponse<Order[]>>(`order?date=${today}`).then((r) =>
+      setTodayOrders(r?.data ?? []),
     );
     api<ApiResponse<Appointment[]>>(`appointments?date=${today}&barberId=all`)
       .then((r) => setAppointments(r?.data ?? []))
@@ -166,9 +173,10 @@ export default function Dashboard() {
     pending: appointments.filter((a) => a.status === "pending").length,
     confirmed: appointments.filter((a) => a.status === "confirmed").length,
     completed: appointments.filter((a) => a.status === "completed").length,
-    revenue: appointments
-      .filter((a) => a.status === "completed")
-      .reduce((acc, a) => acc + a.priceSnapshot, 0),
+    // Facturado real del día: suma de órdenes pagas (servicios + productos).
+    revenue: todayOrders
+      .filter((o) => o.status === "paid")
+      .reduce((acc, o) => acc + o.amount, 0),
   };
   const upcoming = appointments
     .filter((a) => ["pending", "confirmed"].includes(a.status))
@@ -253,18 +261,17 @@ export default function Dashboard() {
                     }
                     const selected = startTime === s.startTime;
                     return (
-                      <button
+                      <div
                         key={s.startTime}
-                        onClick={() => {}}
                         className={cn(
-                          "font-body rounded-xl border py-2.5 text-sm font-semibold transition-all duration-150",
+                          "font-body rounded-xl border py-2.5 text-center text-sm font-semibold",
                           selected
                             ? "bg-marca/15 border-border-strong text-marca"
                             : "border-border text-text-secondary bg-black/20",
                         )}
                       >
                         {s.startTime}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -331,7 +338,7 @@ export default function Dashboard() {
             description="Todos los turnos están completados"
           />
         ) : (
-          <div className="flex max-h-3/12 flex-col gap-4 overflow-y-scroll">
+          <div className="flex max-h-80 flex-col gap-3 overflow-y-auto pr-1">
             {upcoming.map((a) => (
               <button
                 key={a.id}
@@ -361,7 +368,7 @@ export default function Dashboard() {
             Todos los turnos de hoy
           </p>
         </div>
-        <div className="flex max-h-3/12 flex-col gap-4 overflow-y-scroll">
+        <div className="flex max-h-80 flex-col gap-3 overflow-y-auto pr-1">
           {appointments.length === 0 ? (
             <EmptyState
               icon="🎉"
@@ -369,12 +376,13 @@ export default function Dashboard() {
               description="Todo el día está libre"
             />
           ) : (
-            appointments
+            [...appointments]
               .sort((a, b) => a.startTime.localeCompare(b.startTime))
               .slice(0, 5)
               .map((a) => (
                 <button
                   key={a.id}
+                  onClick={() => navigate(`/admin/cierre/${a.id}`)}
                   className="bg-surface border-border hover:border-border-strong flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition-all duration-150"
                 >
                   <div className="bg-marca/8 border-border flex size-10 shrink-0 flex-col items-center justify-center rounded-xl border">

@@ -80,19 +80,24 @@ export default function Ingresos() {
         <StatCard
           label="Total ingresos"
           value={formatARS(income?.total ?? 0)}
+          sub={`${income?.count ?? 0} órdenes pagas`}
           icon="💰"
           accent
-        />
-        <StatCard label="Órdenes pagas" value={income?.count ?? 0} icon="✅" />
-        <StatCard
-          label="Ticket promedio"
-          value={formatARS(income?.averageTicket ?? 0)}
-          icon="🎫"
         />
         <StatCard
           label="En servicios"
           value={formatARS(summary?.incomeBreakdown.services ?? 0)}
           icon="✂️"
+        />
+        <StatCard
+          label="En productos"
+          value={formatARS(summary?.incomeBreakdown.products ?? 0)}
+          icon="🧴"
+        />
+        <StatCard
+          label="Ticket promedio"
+          value={formatARS(income?.averageTicket ?? 0)}
+          icon="🎫"
         />
       </div>
 

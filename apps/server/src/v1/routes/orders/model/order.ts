@@ -8,6 +8,8 @@ interface CreateOrderData {
   appointmentId?: string;
   paymentMethodId: string;
   amount: number;
+  status?: "pending" | "paid" | "refunded" | "failed";
+  paidAt?: Date;
 }
 
 interface CreateOrderDataOnline {
