@@ -18,6 +18,14 @@ barberRouter.post(
   verifyRole("admin"),
   BarberController.create,
 );
+// Reemplaza la grilla horaria completa de un barbero (semana entera).
+barberRouter.put(
+  "/:id/schedules",
+  verifyToken,
+  verifyRole("admin"),
+  BarberController.replaceSchedules,
+);
+
 barberRouter.post(
   "/schedule",
   verifyToken,

@@ -184,13 +184,16 @@ function BarberModal({
 function SchedulePanel({
   barber,
   onClose,
+  onSaved,
 }: {
   barber: Barber;
   onClose: () => void;
+  onSaved: (schedules: Schedule[]) => void;
 }) {
   const [schedules, setSchedules] = useState<Schedule[]>(
     DAYS.map((_, i) => {
-      const existing = barber.schedules.find((s) => s.dayOfWeek === i);
+      // El barbero recién creado puede no traer la relación de horarios.
+      const existing = (barber.schedules ?? []).find((s) => s.dayOfWeek === i);
       return (
         existing ?? {
           dayOfWeek: i,
@@ -210,18 +213,25 @@ function SchedulePanel({
     setSaving(true);
     setSaved(false);
     try {
-      await Promise.all(
-        schedules
-          .filter((s) => s.isActive)
-          .map((s) =>
-            s.id
-              ? put(`barber/schedule/${s.id}`, s)
-              : post(`barber/schedule`, {
-                  ...s,
-                  barberId: barber.id,
-                }),
-          ),
+      // Mandamos la semana entera y el backend reemplaza la grilla de una vez:
+      // sin duplicados, persistiendo también los días que se desactivan.
+      const res = await put<ApiResponse<Schedule[]>>(
+        `barber/${barber.id}/schedules`,
+        { schedules },
       );
+      if (!res?.data) throw new Error("No se pudieron guardar los horarios");
+
+      // Re-sincronizamos el estado local (y el del padre) con lo persistido,
+      // para que reabrir el panel muestre lo guardado y no los valores por
+      // defecto.
+      const persisted = res.data;
+      const merged = schedules.map((current) => {
+        const row = persisted.find((p) => p.dayOfWeek === current.dayOfWeek);
+        return row ?? { ...current, isActive: false };
+      });
+      setSchedules(merged);
+      onSaved(persisted);
+
       setSaved(true);
       toast.success("Horarios guardados");
       setTimeout(() => setSaved(false), 2500);
@@ -556,8 +566,9 @@ export default function Barberos() {
         onSave={(b) =>
           setBarbers((prev) =>
             editingBarber
-              ? prev.map((x) => (x.id === b.id ? b : x))
-              : [...prev, b],
+              ? prev.map((x) => (x.id === b.id ? { ...x, ...b } : x))
+              : // El alta de barbero no devuelve la relación de horarios.
+                [...prev, { ...b, schedules: b.schedules ?? [] }],
           )
         }
       />
@@ -566,6 +577,15 @@ export default function Barberos() {
         <SchedulePanel
           barber={schedulesFor}
           onClose={() => setSchedulesFor(null)}
+          onSaved={(schedules) => {
+            // Mantenemos el listado y el panel abierto en sync con lo guardado.
+            setBarbers((prev) =>
+              prev.map((b) =>
+                b.id === schedulesFor.id ? { ...b, schedules } : b,
+              ),
+            );
+            setSchedulesFor((prev) => (prev ? { ...prev, schedules } : prev));
+          }}
         />
       )}
 

@@ -155,6 +155,73 @@ export default class BarberController {
         .json({ message: err.message ?? "Error interno", data: null });
     }
   }
+  /**
+   * Reemplaza la grilla horaria completa de un barbero. El front manda la
+   * semana entera (7 días con su flag isActive) y acá se valida y persiste de
+   * una sola vez. Sustituye al flujo create/update por día, que dejaba
+   * duplicados y no permitía guardar la desactivación de un día.
+   */
+  static async replaceSchedules(req: Request, res: Response) {
+    const { id } = req.params;
+    const { schedules } = req.body as {
+      schedules?: {
+        dayOfWeek?: number;
+        startTime?: string;
+        endTime?: string;
+        startBreak?: string;
+        endBreak?: string;
+        isActive?: boolean;
+        slotDurationMinutes?: number;
+      }[];
+    };
+
+    if (!Array.isArray(schedules)) {
+      return res.status(400).json({
+        message: "Se requiere un arreglo 'schedules'",
+        data: null,
+      });
+    }
+
+    // Solo validamos los días activos: son los únicos que se persisten.
+    for (const s of schedules) {
+      if (!s?.isActive) continue;
+      if (
+        typeof s.dayOfWeek !== "number" ||
+        s.dayOfWeek < 0 ||
+        s.dayOfWeek > 6 ||
+        !s.startTime ||
+        !s.endTime ||
+        !s.startBreak ||
+        !s.endBreak
+      ) {
+        return res.status(400).json({
+          message:
+            "Horario inválido: revisá el día (0-6) y los horarios de trabajo y descanso",
+          data: null,
+        });
+      }
+    }
+
+    try {
+      const barber = await BarberModel.getById(id as string);
+      if (!barber) {
+        return res
+          .status(404)
+          .json({ message: "Barbero no encontrado", data: null });
+      }
+
+      const data = await BarberModel.replaceSchedules(
+        id as string,
+        schedules as Parameters<typeof BarberModel.replaceSchedules>[1],
+      );
+      return res.json({ message: "Horarios guardados", data });
+    } catch (err: any) {
+      return res
+        .status(500)
+        .json({ message: err.message ?? "Error interno", data: null });
+    }
+  }
+
   static async createSchedule(req: Request, res: Response) {
     const {
       barberId,

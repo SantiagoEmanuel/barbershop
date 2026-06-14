@@ -31,6 +31,16 @@ interface UpdateBarberSchedule {
   endBreak: string;
 }
 
+interface ScheduleInput {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  startBreak: string;
+  endBreak: string;
+  isActive?: boolean;
+  slotDurationMinutes?: number;
+}
+
 export default class BarberModel {
   static async getAll({ includeInactive = false } = {}) {
     return db.query.barbers.findMany({
@@ -110,11 +120,47 @@ export default class BarberModel {
       throw new Error("No se pudo guardar el horario");
     }
 
-    const update = await db
+    const [created] = await db
       .insert(barberSchedules)
-      .values({ ...data, slotDurationMinutes: 30 });
+      .values({ ...data, slotDurationMinutes: 30 })
+      .returning();
 
-    return update ?? null;
+    return created ?? null;
+  }
+
+  /**
+   * Reemplaza por completo la grilla horaria de un barbero: borra la anterior
+   * e inserta solo los días activos. Es idempotente — el front manda la semana
+   * entera y esto evita duplicados, deja persistida la desactivación de un día
+   * y mantiene la disponibilidad siempre en sincronía con lo que se ve en el
+   * panel. No hay FKs hacia barber_schedules, así que el borrado es seguro.
+   */
+  static async replaceSchedules(barberId: string, schedules: ScheduleInput[]) {
+    const activos = schedules.filter((s) => s.isActive);
+
+    return db.transaction(async (tx) => {
+      await tx
+        .delete(barberSchedules)
+        .where(eq(barberSchedules.barberId, barberId));
+
+      if (activos.length === 0) return [];
+
+      return tx
+        .insert(barberSchedules)
+        .values(
+          activos.map((s) => ({
+            barberId,
+            dayOfWeek: s.dayOfWeek,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            startBreak: s.startBreak,
+            endBreak: s.endBreak,
+            slotDurationMinutes: s.slotDurationMinutes ?? 30,
+            isActive: true,
+          })),
+        )
+        .returning();
+    });
   }
 
   /** Soft-delete — nunca borrar un barbero con historial de turnos */
