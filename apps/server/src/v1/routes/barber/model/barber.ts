@@ -61,6 +61,19 @@ export default class BarberModel {
     return barber ?? null;
   }
 
+  /** Perfil de barbero vinculado a una cuenta de usuario (por userId). */
+  static async getByUserId(userId: string) {
+    const barber = await db.query.barbers.findFirst({
+      where: eq(barbers.userId, userId),
+      with: {
+        schedules: {
+          where: (s, { eq }) => eq(s.isActive, true),
+        },
+      },
+    });
+    return barber ?? null;
+  }
+
   static async create(data: CreateBarberData) {
     const [created] = await db.insert(barbers).values(data).returning();
     if (!created) throw new Error("No se pudo crear el barbero");

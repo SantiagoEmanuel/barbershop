@@ -3,14 +3,14 @@ import { db } from "@/db/db";
 import { users } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
 import { compareSync, hashSync } from "bcrypt";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export type User = {
   id: string;
   email: string;
   name: string;
   username: string;
-  role: "admin" | "client";
+  role: "admin" | "client" | "barber";
   phone: string;
   isActive: boolean;
   createdAt: Date;
@@ -118,6 +118,36 @@ export default class AuthModel {
 
     return data;
   }
+  /**
+   * Usuarios activos que el admin puede vincular a un perfil de barbero.
+   * Incluye a todos (un admin/dueño también puede cortar pelo), sin exponer
+   * el hash de contraseña.
+   */
+  static async getLinkableUsers() {
+    return db.query.users.findMany({
+      where: eq(users.isActive, true),
+      columns: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        role: true,
+      },
+      orderBy: (u, { asc }) => [asc(u.name)],
+    });
+  }
+
+  /**
+   * Promueve un usuario a 'barber'. Solo afecta cuentas 'client': nunca
+   * degrada a un admin (perdería el acceso al panel).
+   */
+  static async promoteToBarber(userId: string) {
+    await db
+      .update(users)
+      .set({ role: "barber" })
+      .where(and(eq(users.id, userId), eq(users.role, "client")));
+  }
+
   static async hashPassword(password: string) {
     return hashSync(password, HASH_SALT);
   }

@@ -17,9 +17,14 @@ import {
 import { api } from "../lib/api";
 import { filterValidSlots } from "../lib/filterValidSlots";
 import { timeToMinutes } from "../lib/timeTominutes";
-import { useAuthStore } from "../store/useAuthStore";
 import { useBookingStore } from "../store/useBookingStore";
-import type { ApiResponse, Appointment, ReportSummary, Slot } from "../types";
+import type {
+  ApiResponse,
+  Appointment,
+  Barber,
+  ReportSummary,
+  Slot,
+} from "../types";
 const QUICK_LINKS = [
   {
     label: "Ver turnos del día",
@@ -118,7 +123,6 @@ function BalanceCard({
 }
 export default function Dashboard() {
   const { serviceDuration, startTime, date } = useBookingStore();
-  const user = useAuthStore((u) => u.user);
   const navigate = useNavigate();
   const today = todayISO();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -126,6 +130,7 @@ export default function Dashboard() {
   const [rawSlots, setRawSlots] = useState<Slot[]>([]);
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
+  const [linkedBarberId, setLinkedBarberId] = useState<string | null>(null);
   const [summary, setSummary] = useState<ReportSummary | null>(null);
   useEffect(() => {
     api<ApiResponse<ReportSummary>>("reports/summary").then((r) =>
@@ -134,15 +139,27 @@ export default function Dashboard() {
     api<ApiResponse<Appointment[]>>(`appointments?date=${today}&barberId=all`)
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
-    api<ApiResponse<{ slots: Slot[] }>>(
-      `availability?barberId=${user?.id}&date=${todayISO()}`,
-    )
+    // El usuario logueado puede o no tener un perfil de barbero vinculado.
+    // El id del barbero NO es el id del usuario: lo resolvemos por el vínculo.
+    api<ApiResponse<Barber | null>>("barber/me")
       .then((r) => {
-        const slots = r?.data?.slots ?? [];
-        setRawSlots(slots);
-        setValidSlots(filterValidSlots(slots, serviceDuration));
+        const barberId = r?.data?.id ?? null;
+        setLinkedBarberId(barberId);
+        if (!barberId) {
+          setLoadingSlots(false);
+          return;
+        }
+        return api<ApiResponse<{ slots: Slot[] }>>(
+          `availability?barberId=${barberId}&date=${todayISO()}`,
+        )
+          .then((res) => {
+            const slots = res?.data?.slots ?? [];
+            setRawSlots(slots);
+            setValidSlots(filterValidSlots(slots, serviceDuration));
+          })
+          .finally(() => setLoadingSlots(false));
       })
-      .finally(() => setLoadingSlots(false));
+      .catch(() => setLoadingSlots(false));
   }, [today]);
   const stats = {
     total: appointments.length,
@@ -209,10 +226,10 @@ export default function Dashboard() {
       </div>
 
       <div>
-        {validSlots && (
+        {linkedBarberId && (
           <div>
             <label className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
-              Horario disponible
+              Tu horario disponible hoy
             </label>
 
             {loadingSlots ? (

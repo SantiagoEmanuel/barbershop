@@ -249,4 +249,17 @@ export default class AuthController {
       });
     }
   }
+
+  /** Usuarios activos para vincular a un perfil de barbero. */
+  static async getUsers(_req: Request, res: Response) {
+    try {
+      const data = await AuthModel.getLinkableUsers();
+      return res.status(200).json({ message: "Usuarios encontrados", data });
+    } catch (err: any) {
+      const status = err.status ?? 500;
+      return res
+        .status(status)
+        .json({ message: err.message ?? "Server Error", data: null });
+    }
+  }
 }

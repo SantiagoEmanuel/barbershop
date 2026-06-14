@@ -36,10 +36,11 @@ export const users = table(
     username: text("username").notNull().unique(),
     password: text("password").notNull(),
     /**
-     * 'admin' puede gestionar barberos, servicios y ver todas las órdenes.
+     * 'admin'  puede gestionar barberos, servicios y ver todas las órdenes.
+     * 'barber' es un usuario vinculado a un perfil de barbero (corta pelo).
      * 'client' solo puede crear y ver sus propios turnos.
      */
-    role: text("role", { enum: ["admin", "client"] })
+    role: text("role", { enum: ["admin", "client", "barber"] })
       .notNull()
       .default("client"),
     /** Útil para recordatorios por WhatsApp o SMS. */
