@@ -4,6 +4,9 @@ import BarberController from "./controller/barber";
 
 const barberRouter = Router();
 
+// Barbero del usuario logueado — debe ir antes de "/:slug"
+barberRouter.get("/me", verifyToken, BarberController.me);
+
 // Públicos — el cliente necesita ver barberos y sus horarios
 barberRouter.get("/", BarberController.getAll);
 barberRouter.get("/:slug", BarberController.getBySlug);

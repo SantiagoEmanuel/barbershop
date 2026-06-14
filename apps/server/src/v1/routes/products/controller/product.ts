@@ -33,10 +33,11 @@ export default class ProductController {
   }
 
   static async create(req: Request, res: Response) {
-    const { name, description, price, stock } = req.body as {
+    const { name, description, price, cost, stock } = req.body as {
       name?: string;
       description?: string;
       price?: number;
+      cost?: number;
       stock?: number;
     };
 
@@ -54,6 +55,13 @@ export default class ProductController {
       });
     }
 
+    if (cost != null && (typeof cost !== "number" || cost < 0)) {
+      return res.status(400).json({
+        message: "El costo no puede ser negativo",
+        data: null,
+      });
+    }
+
     if (typeof stock !== "number" || stock < 0) {
       return res.status(400).json({
         message: "El stock no puede ser negativo",
@@ -66,6 +74,7 @@ export default class ProductController {
         name,
         description,
         price,
+        cost,
         stock,
       });
       return res
@@ -80,10 +89,11 @@ export default class ProductController {
 
   static async update(req: Request, res: Response) {
     const { id } = req.params;
-    const { name, description, price, stock, isActive } = req.body as {
+    const { name, description, price, cost, stock, isActive } = req.body as {
       name?: string;
       description?: string;
       price?: number;
+      cost?: number;
       stock?: number;
       isActive?: boolean;
     };
@@ -92,6 +102,7 @@ export default class ProductController {
     if (name !== undefined) patch.name = name;
     if (description !== undefined) patch.description = description;
     if (price !== undefined) patch.price = price;
+    if (cost !== undefined) patch.cost = cost;
     if (stock !== undefined) patch.stock = stock;
     if (isActive !== undefined) patch.isActive = isActive;
 

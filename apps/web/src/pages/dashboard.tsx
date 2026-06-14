@@ -17,9 +17,14 @@ import {
 import { api } from "../lib/api";
 import { filterValidSlots } from "../lib/filterValidSlots";
 import { timeToMinutes } from "../lib/timeTominutes";
-import { useAuthStore } from "../store/useAuthStore";
 import { useBookingStore } from "../store/useBookingStore";
-import type { ApiResponse, Appointment, Slot } from "../types";
+import type {
+  ApiResponse,
+  Appointment,
+  Barber,
+  ReportSummary,
+  Slot,
+} from "../types";
 const QUICK_LINKS = [
   {
     label: "Ver turnos del día",
@@ -37,9 +42,19 @@ const QUICK_LINKS = [
     icon: "🛒",
   },
   {
-    label: "Ver movimientos",
-    href: "/admin/movimientos",
-    icon: "📈",
+    label: "Inventario",
+    href: "/admin/inventario",
+    icon: "📦",
+  },
+  {
+    label: "Rendimientos",
+    href: "/admin/rendimientos",
+    icon: "🏆",
+  },
+  {
+    label: "Registrar gasto",
+    href: "/admin/egresos",
+    icon: "🧾",
   },
   {
     label: "Editar servicios",
@@ -52,9 +67,62 @@ const QUICK_LINKS = [
     icon: "👤",
   },
 ];
+
+/** Tarjeta de balance clickeable que navega al detalle (ingresos/egresos). */
+function BalanceCard({
+  label,
+  value,
+  icon,
+  tone,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  icon: string;
+  tone: "income" | "expense" | "balance";
+  onClick?: () => void;
+}) {
+  const toneClass =
+    tone === "income"
+      ? "text-success"
+      : tone === "expense"
+        ? "text-error"
+        : "text-marca";
+  const Wrapper = onClick ? "button" : "div";
+  return (
+    <Wrapper
+      onClick={onClick}
+      className={cn(
+        "border-border bg-surface group relative flex flex-col gap-1.5 rounded-2xl border p-4 text-left transition-colors duration-200 sm:p-5",
+        onClick && "hover:border-border-strong cursor-pointer",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-text-muted font-body truncate text-[10px] font-bold tracking-[0.12em] uppercase sm:text-xs">
+          {label}
+        </p>
+        <span aria-hidden className="text-base opacity-70 sm:text-lg">
+          {icon}
+        </span>
+      </div>
+      <p
+        className={cn(
+          "font-display truncate text-2xl leading-none font-bold tabular-nums sm:text-3xl",
+          toneClass,
+        )}
+      >
+        {value}
+      </p>
+      {onClick && (
+        <p className="text-text-muted font-body group-hover:text-marca text-xs transition-colors">
+          Ver detalle →
+        </p>
+      )}
+    </Wrapper>
+  );
+}
 export default function Dashboard() {
   const { serviceDuration, startTime, date } = useBookingStore();
-  const user = useAuthStore((u) => u.user);
   const navigate = useNavigate();
   const today = todayISO();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -62,19 +130,36 @@ export default function Dashboard() {
   const [rawSlots, setRawSlots] = useState<Slot[]>([]);
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
+  const [linkedBarberId, setLinkedBarberId] = useState<string | null>(null);
+  const [summary, setSummary] = useState<ReportSummary | null>(null);
   useEffect(() => {
+    api<ApiResponse<ReportSummary>>("reports/summary").then((r) =>
+      setSummary(r?.data ?? null),
+    );
     api<ApiResponse<Appointment[]>>(`appointments?date=${today}&barberId=all`)
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
-    api<ApiResponse<{ slots: Slot[] }>>(
-      `availability?barberId=${user?.id}&date=${todayISO()}`,
-    )
+    // El usuario logueado puede o no tener un perfil de barbero vinculado.
+    // El id del barbero NO es el id del usuario: lo resolvemos por el vínculo.
+    api<ApiResponse<Barber | null>>("barber/me")
       .then((r) => {
-        const slots = r?.data?.slots ?? [];
-        setRawSlots(slots);
-        setValidSlots(filterValidSlots(slots, serviceDuration));
+        const barberId = r?.data?.id ?? null;
+        setLinkedBarberId(barberId);
+        if (!barberId) {
+          setLoadingSlots(false);
+          return;
+        }
+        return api<ApiResponse<{ slots: Slot[] }>>(
+          `availability?barberId=${barberId}&date=${todayISO()}`,
+        )
+          .then((res) => {
+            const slots = res?.data?.slots ?? [];
+            setRawSlots(slots);
+            setValidSlots(filterValidSlots(slots, serviceDuration));
+          })
+          .finally(() => setLoadingSlots(false));
       })
-      .finally(() => setLoadingSlots(false));
+      .catch(() => setLoadingSlots(false));
   }, [today]);
   const stats = {
     total: appointments.length,
@@ -103,11 +188,48 @@ export default function Dashboard() {
         description="Un vistazo rápido a cómo va la jornada."
       />
 
+      {/* Balance del mes — ingresos, egresos y resultado */}
       <div>
-        {validSlots && (
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
+            Balance del mes
+          </p>
+          <button
+            onClick={() => navigate("/admin/rendimientos")}
+            className="text-marca font-body text-xs font-semibold"
+          >
+            Ver rendimientos →
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <BalanceCard
+            label="Balance"
+            tone="balance"
+            icon="⚖️"
+            value={formatARS(summary?.balance ?? 0)}
+          />
+          <BalanceCard
+            label="Ingresos"
+            tone="income"
+            icon="📈"
+            value={formatARS(summary?.income ?? 0)}
+            onClick={() => navigate("/admin/ingresos")}
+          />
+          <BalanceCard
+            label="Egresos"
+            tone="expense"
+            icon="📉"
+            value={formatARS(summary?.expenses ?? 0)}
+            onClick={() => navigate("/admin/egresos")}
+          />
+        </div>
+      </div>
+
+      <div>
+        {linkedBarberId && (
           <div>
             <label className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
-              Horario disponible
+              Tu horario disponible hoy
             </label>
 
             {loadingSlots ? (

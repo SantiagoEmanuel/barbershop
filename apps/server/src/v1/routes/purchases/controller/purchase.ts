@@ -1,0 +1,92 @@
+import type { Request, Response } from "express";
+import PurchaseModel from "../model/purchase";
+
+export default class PurchaseController {
+  static async getAll(req: Request, res: Response) {
+    const fromRaw = req.query.from as string | undefined;
+    const toRaw = req.query.to as string | undefined;
+    const itemType = req.query.itemType as "product" | "supply" | undefined;
+
+    try {
+      const data = await PurchaseModel.getAll({
+        from: fromRaw ? new Date(fromRaw) : undefined,
+        to: toRaw ? new Date(`${toRaw}T23:59:59.999Z`) : undefined,
+        itemType,
+      });
+      return res.json({ message: "OK", data });
+    } catch (err: any) {
+      return res
+        .status(500)
+        .json({ message: err.message ?? "Error interno", data: null });
+    }
+  }
+
+  static async create(req: Request, res: Response) {
+    const {
+      itemType,
+      productId,
+      supplyId,
+      quantity,
+      unitCost,
+      supplier,
+      purchasedAt,
+      paymentMethodId,
+    } = req.body as {
+      itemType?: "product" | "supply";
+      productId?: string;
+      supplyId?: string;
+      quantity?: number;
+      unitCost?: number;
+      supplier?: string;
+      purchasedAt?: string;
+      paymentMethodId?: string;
+    };
+
+    if (
+      (itemType !== "product" && itemType !== "supply") ||
+      quantity == null ||
+      unitCost == null
+    ) {
+      return res.status(400).json({
+        message:
+          "Campos requeridos: itemType ('product'|'supply'), quantity, unitCost",
+        data: null,
+      });
+    }
+    if (typeof quantity !== "number" || quantity <= 0) {
+      return res
+        .status(400)
+        .json({
+          message: "La cantidad debe ser un entero positivo",
+          data: null,
+        });
+    }
+    if (typeof unitCost !== "number" || unitCost < 0) {
+      return res.status(400).json({
+        message: "El costo unitario no puede ser negativo",
+        data: null,
+      });
+    }
+
+    try {
+      const data = await PurchaseModel.create({
+        itemType,
+        productId,
+        supplyId,
+        quantity,
+        unitCost,
+        supplier,
+        purchasedAt: purchasedAt ? new Date(purchasedAt) : undefined,
+        paymentMethodId,
+      });
+      return res
+        .status(201)
+        .json({ message: "Compra registrada con éxito", data });
+    } catch (err: any) {
+      const status = typeof err.status === "number" ? err.status : 500;
+      return res
+        .status(status)
+        .json({ message: err.message ?? "Error interno", data: null });
+    }
+  }
+}

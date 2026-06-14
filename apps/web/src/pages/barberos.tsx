@@ -47,8 +47,10 @@ function BarberModal({
 
   async function catchBarbers() {
     if (loadData) return;
+    // Usuarios que se pueden vincular a un perfil de barbero. Al vincular,
+    // el backend promueve la cuenta a rol 'barber'.
     const res = await api<ApiResponse<{ id: string; name: string }[]>>(
-      "auth/get-admins",
+      "auth/users",
       {
         method: "GET",
       },
@@ -139,9 +141,7 @@ function BarberModal({
             }}
             value={userReference}
           >
-            <option value="null" className="">
-              Elige un usuario
-            </option>
+            <option value="">Sin vincular</option>
             {barbers.map((b) => (
               <option value={b.id} key={b.id}>
                 {b.name}

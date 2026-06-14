@@ -36,10 +36,11 @@ export const users = table(
     username: text("username").notNull().unique(),
     password: text("password").notNull(),
     /**
-     * 'admin' puede gestionar barberos, servicios y ver todas las órdenes.
+     * 'admin'  puede gestionar barberos, servicios y ver todas las órdenes.
+     * 'barber' es un usuario vinculado a un perfil de barbero (corta pelo).
      * 'client' solo puede crear y ver sus propios turnos.
      */
-    role: text("role", { enum: ["admin", "client"] })
+    role: text("role", { enum: ["admin", "client", "barber"] })
       .notNull()
       .default("client"),
     /** Útil para recordatorios por WhatsApp o SMS. */
@@ -346,6 +347,12 @@ export const products = table(
     name: text("name").notNull(),
     description: text("description"),
     price: integer("price").notNull(),
+    /**
+     * Costo unitario de compra en centavos. Se usa para calcular la
+     * rentabilidad (price - cost) de cada producto. Default 0 para no
+     * romper filas existentes en el push; se carga desde inventario.
+     */
+    cost: integer("cost").notNull().default(0),
     /** Stock actual. Se descuenta en cada product_sale. */
     stock: integer("stock").notNull().default(0),
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
@@ -378,6 +385,12 @@ export const productSales = table(
     quantity: integer("quantity").notNull(),
     /** Precio unitario al momento de la venta, en centavos. */
     priceSnapshot: integer("price_snapshot").notNull(),
+    /**
+     * Costo unitario capturado al momento de la venta, en centavos.
+     * Permite calcular la ganancia histórica (priceSnapshot - costSnapshot)
+     * aunque después cambie products.cost. Default 0 para el push.
+     */
+    costSnapshot: integer("cost_snapshot").notNull().default(0),
     soldAt: integer("sold_at", { mode: "timestamp_ms" })
       .notNull()
       .$default(() => new Date()),
@@ -388,6 +401,133 @@ export const productSales = table(
     index("idx_product_sales_sold_by").on(t.soldBy),
     // Reportes de ventas por período
     index("idx_product_sales_sold_at").on(t.soldAt),
+  ],
+);
+
+// ─────────────────────────────────────────────
+// SUPPLIES (insumos — se consumen, no se venden)
+// ─────────────────────────────────────────────
+
+export const supplies = table(
+  "supplies",
+  {
+    id: id(),
+    name: text("name").notNull(),
+    description: text("description"),
+    /** Unidad de medida: 'ml', 'unidad', 'gr', etc. (solo informativo). */
+    unit: text("unit").notNull().default("unidad"),
+    /** Último costo unitario de compra, en centavos. */
+    cost: integer("cost").notNull().default(0),
+    /** Stock actual. Sube con compras, baja con ajuste manual de consumo. */
+    stock: integer("stock").notNull().default(0),
+    /** Umbral para alertar bajo stock (nullable = sin alerta). */
+    lowStockThreshold: integer("low_stock_threshold"),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [index("idx_supplies_is_active").on(t.isActive)],
+);
+
+// ─────────────────────────────────────────────
+// EXPENSE CATEGORIES (rubros de gasto)
+// ─────────────────────────────────────────────
+
+export const expenseCategories = table("expense_categories", {
+  id: id(),
+  name: text("name").notNull().unique(),
+  /**
+   * 'fixed'    → gasto fijo recurrente (alquiler, luz, sueldos)
+   * 'variable' → gasto variable (compra de productos/insumos)
+   */
+  kind: text("kind", { enum: ["fixed", "variable"] }).notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: createdAt(),
+});
+
+// ─────────────────────────────────────────────
+// PURCHASES (ingreso de stock — origen de un egreso variable)
+// ─────────────────────────────────────────────
+
+export const purchases = table(
+  "purchases",
+  {
+    id: id(),
+    /** Discriminador: la compra ingresa un producto o un insumo. */
+    itemType: text("item_type", { enum: ["product", "supply"] }).notNull(),
+    productId: text("product_id").references(() => products.id),
+    supplyId: text("supply_id").references(() => supplies.id),
+    quantity: integer("quantity").notNull(),
+    /** Costo unitario de esta compra, en centavos. Actualiza el cost del ítem. */
+    unitCost: integer("unit_cost").notNull(),
+    /** quantity * unitCost (denormalizado para reportes). */
+    totalCost: integer("total_cost").notNull(),
+    supplier: text("supplier"),
+    purchasedAt: integer("purchased_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$default(() => new Date()),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("idx_purchases_product_id").on(t.productId),
+    index("idx_purchases_supply_id").on(t.supplyId),
+    index("idx_purchases_purchased_at").on(t.purchasedAt),
+  ],
+);
+
+// ─────────────────────────────────────────────
+// RECURRING EXPENSES (gastos fijos mensuales — plantillas)
+// ─────────────────────────────────────────────
+
+export const recurringExpenses = table(
+  "recurring_expenses",
+  {
+    id: id(),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => expenseCategories.id),
+    description: text("description").notNull(),
+    /** Monto mensual, en centavos. */
+    amount: integer("amount").notNull(),
+    /** Día del mes en que se factura (1-28 recomendado). */
+    dayOfMonth: integer("day_of_month").notNull().default(1),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [index("idx_recurring_expenses_is_active").on(t.isActive)],
+);
+
+// ─────────────────────────────────────────────
+// EXPENSES (egresos — libro de salidas de dinero)
+// ─────────────────────────────────────────────
+
+export const expenses = table(
+  "expenses",
+  {
+    id: id(),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => expenseCategories.id),
+    description: text("description").notNull(),
+    /** Monto del egreso, en centavos. */
+    amount: integer("amount").notNull(),
+    /** Fecha en que aplica el gasto. */
+    incurredAt: integer("incurred_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$default(() => new Date()),
+    paymentMethodId: text("payment_method_id").references(
+      () => paymentMethods.id,
+    ),
+    /** Seteado cuando el egreso proviene de una compra de stock. */
+    purchaseId: text("purchase_id").references(() => purchases.id),
+    /** Seteado cuando el egreso fue materializado desde un gasto fijo. */
+    recurringExpenseId: text("recurring_expense_id").references(
+      () => recurringExpenses.id,
+    ),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("idx_expenses_category_id").on(t.categoryId),
+    index("idx_expenses_incurred_at").on(t.incurredAt),
   ],
 );
 
@@ -414,6 +554,7 @@ export const paymentMethodsRelations = relations(
   paymentMethods,
   ({ many }) => ({
     orders: many(orders),
+    expenses: many(expenses),
   }),
 );
 
@@ -470,6 +611,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
 
 export const productsRelations = relations(products, ({ many }) => ({
   sales: many(productSales),
+  purchases: many(purchases),
 }));
 
 export const productSalesRelations = relations(productSales, ({ one }) => ({
@@ -484,5 +626,58 @@ export const productSalesRelations = relations(productSales, ({ one }) => ({
   barber: one(barbers, {
     fields: [productSales.soldBy],
     references: [barbers.id],
+  }),
+}));
+
+export const suppliesRelations = relations(supplies, ({ many }) => ({
+  purchases: many(purchases),
+}));
+
+export const expenseCategoriesRelations = relations(
+  expenseCategories,
+  ({ many }) => ({
+    expenses: many(expenses),
+    recurringExpenses: many(recurringExpenses),
+  }),
+);
+
+export const purchasesRelations = relations(purchases, ({ one }) => ({
+  product: one(products, {
+    fields: [purchases.productId],
+    references: [products.id],
+  }),
+  supply: one(supplies, {
+    fields: [purchases.supplyId],
+    references: [supplies.id],
+  }),
+}));
+
+export const recurringExpensesRelations = relations(
+  recurringExpenses,
+  ({ one, many }) => ({
+    category: one(expenseCategories, {
+      fields: [recurringExpenses.categoryId],
+      references: [expenseCategories.id],
+    }),
+    expenses: many(expenses),
+  }),
+);
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  category: one(expenseCategories, {
+    fields: [expenses.categoryId],
+    references: [expenseCategories.id],
+  }),
+  paymentMethod: one(paymentMethods, {
+    fields: [expenses.paymentMethodId],
+    references: [paymentMethods.id],
+  }),
+  purchase: one(purchases, {
+    fields: [expenses.purchaseId],
+    references: [purchases.id],
+  }),
+  recurringExpense: one(recurringExpenses, {
+    fields: [expenses.recurringExpenseId],
+    references: [recurringExpenses.id],
   }),
 }));

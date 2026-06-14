@@ -1,7 +1,25 @@
 import type { Request, Response } from "express";
+import AuthModel from "../../auth/model/auth";
 import BarberModel from "../model/barber";
 
+/** Normaliza el userId que manda el front ("" o "null" => sin vínculo). */
+function cleanUserId(userId?: string): string | undefined {
+  return userId && userId !== "null" ? userId : undefined;
+}
+
 export default class BarberController {
+  /** Perfil de barbero del usuario logueado (o null si no está vinculado). */
+  static async me(req: Request, res: Response) {
+    try {
+      const data = await BarberModel.getByUserId(req.user!.id);
+      return res.json({ message: "OK", data });
+    } catch (err: any) {
+      return res
+        .status(500)
+        .json({ message: err.message ?? "Error interno", data: null });
+    }
+  }
+
   static async getAll(req: Request, res: Response) {
     const includeInactive =
       req.query.all === "true" && req.user?.role === "admin";
@@ -58,6 +76,8 @@ export default class BarberController {
       });
     }
 
+    const linkedUserId = cleanUserId(userId);
+
     try {
       const data = await BarberModel.create({
         name,
@@ -65,8 +85,10 @@ export default class BarberController {
         bio,
         avatarUrl,
         experienceYears,
-        userId,
+        userId: linkedUserId,
       });
+      // Vincular una cuenta a un barbero la promueve a rol 'barber'.
+      if (linkedUserId) await AuthModel.promoteToBarber(linkedUserId);
       return res
         .status(201)
         .json({ message: "Barbero creado con éxito", data });
@@ -102,7 +124,8 @@ export default class BarberController {
     if (avatarUrl !== undefined) patch.avatarUrl = avatarUrl;
     if (experienceYears !== undefined) patch.experienceYears = experienceYears;
     if (isActive !== undefined) patch.isActive = isActive;
-    if (userId !== undefined) patch.userId = userId;
+    const linkedUserId = cleanUserId(userId);
+    if (userId !== undefined) patch.userId = linkedUserId ?? null;
 
     if (Object.keys(patch).length === 0) {
       return res.status(400).json({
@@ -118,6 +141,8 @@ export default class BarberController {
           .status(404)
           .json({ message: "Barbero no encontrado", data: null });
       }
+      // Vincular una cuenta a un barbero la promueve a rol 'barber'.
+      if (linkedUserId) await AuthModel.promoteToBarber(linkedUserId);
       return res.json({ message: "Barbero actualizado con éxito", data });
     } catch (err: any) {
       if (err.message?.includes("UNIQUE")) {

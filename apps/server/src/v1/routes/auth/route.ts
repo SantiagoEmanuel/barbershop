@@ -15,5 +15,11 @@ authRouter.get(
   verifyRole("admin"),
   AuthController.getAdminUsers,
 );
+authRouter.get(
+  "/users",
+  verifyToken,
+  verifyRole("admin"),
+  AuthController.getUsers,
+);
 
 export default authRouter;

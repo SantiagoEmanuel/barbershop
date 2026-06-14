@@ -2,9 +2,11 @@ import { JWT_SECRET } from "@/constants/credentials.env";
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
+export type Role = "admin" | "client" | "barber";
+
 export interface JwtPayload {
   id: string;
-  role: "admin" | "client";
+  role: Role;
   email: string;
 }
 
@@ -62,7 +64,7 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
  * Factory que retorna un middleware que verifica el rol del usuario.
  * Debe usarse después de verifyToken.
  */
-export function verifyRole(...roles: Array<"admin" | "client">) {
+export function verifyRole(...roles: Role[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ message: "No autenticado", data: null });
