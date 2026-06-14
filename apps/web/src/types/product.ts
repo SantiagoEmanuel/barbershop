@@ -3,6 +3,8 @@ export interface Product {
   name: string;
   description?: string | null;
   price: number;
+  /** Costo unitario de compra, en centavos. */
+  cost?: number;
   stock: number;
   isActive?: boolean;
 }

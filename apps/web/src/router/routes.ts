@@ -71,6 +71,22 @@ export const routes: RouteObject[] = [
               },
               { path: "ventas", lazy: lazy(() => import("../pages/ventas")) },
               {
+                path: "inventario",
+                lazy: lazy(() => import("../pages/inventario")),
+              },
+              {
+                path: "ingresos",
+                lazy: lazy(() => import("../pages/ingresos")),
+              },
+              {
+                path: "egresos",
+                lazy: lazy(() => import("../pages/egresos")),
+              },
+              {
+                path: "rendimientos",
+                lazy: lazy(() => import("../pages/rendimientos")),
+              },
+              {
                 path: "movimientos",
                 lazy: lazy(() => import("../pages/movimientos")),
               },

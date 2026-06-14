@@ -1,4 +1,4 @@
-import { db } from "@/db/db";
+import { db, type DbOrTx } from "@/db/db";
 import { orders, products, productSales } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
 import { eq, sql } from "drizzle-orm";
@@ -7,6 +7,7 @@ interface CreateProductData {
   name: string;
   description?: string;
   price: number;
+  cost?: number;
   stock: number;
 }
 
@@ -14,6 +15,7 @@ interface UpdateProductData {
   name?: string;
   description?: string;
   price?: number;
+  cost?: number;
   stock?: number;
   isActive?: boolean;
 }
@@ -63,6 +65,32 @@ export default class ProductModel {
       .returning();
 
     return updated ?? null;
+  }
+
+  /**
+   * Aumenta el stock de un producto y, opcionalmente, actualiza su costo
+   * unitario. Pensado para el ingreso de stock por compras. Si se pasa `tx`
+   * corre dentro de una transacción existente.
+   */
+  static async incrementStock(
+    id: string,
+    quantity: number,
+    newCost?: number,
+    tx: DbOrTx = db,
+  ) {
+    const set: Record<string, unknown> = {
+      stock: sql`${products.stock} + ${quantity}`,
+    };
+    if (newCost !== undefined) set.cost = newCost;
+
+    const [updated] = await tx
+      .update(products)
+      .set(set)
+      .where(eq(products.id, id))
+      .returning();
+
+    if (!updated) throw new AppError("Producto no encontrado", 404);
+    return updated;
   }
 
   static async decrementStock(id: string, quantity: number) {
@@ -126,6 +154,7 @@ export default class ProductModel {
           soldBy: data.soldBy,
           quantity: data.quantity,
           priceSnapshot: data.priceSnapshot,
+          costSnapshot: product.cost,
         })
         .returning();
 

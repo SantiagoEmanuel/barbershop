@@ -19,7 +19,7 @@ import { filterValidSlots } from "../lib/filterValidSlots";
 import { timeToMinutes } from "../lib/timeTominutes";
 import { useAuthStore } from "../store/useAuthStore";
 import { useBookingStore } from "../store/useBookingStore";
-import type { ApiResponse, Appointment, Slot } from "../types";
+import type { ApiResponse, Appointment, ReportSummary, Slot } from "../types";
 const QUICK_LINKS = [
   {
     label: "Ver turnos del día",
@@ -37,9 +37,19 @@ const QUICK_LINKS = [
     icon: "🛒",
   },
   {
-    label: "Ver movimientos",
-    href: "/admin/movimientos",
-    icon: "📈",
+    label: "Inventario",
+    href: "/admin/inventario",
+    icon: "📦",
+  },
+  {
+    label: "Rendimientos",
+    href: "/admin/rendimientos",
+    icon: "🏆",
+  },
+  {
+    label: "Registrar gasto",
+    href: "/admin/egresos",
+    icon: "🧾",
   },
   {
     label: "Editar servicios",
@@ -52,6 +62,60 @@ const QUICK_LINKS = [
     icon: "👤",
   },
 ];
+
+/** Tarjeta de balance clickeable que navega al detalle (ingresos/egresos). */
+function BalanceCard({
+  label,
+  value,
+  icon,
+  tone,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  icon: string;
+  tone: "income" | "expense" | "balance";
+  onClick?: () => void;
+}) {
+  const toneClass =
+    tone === "income"
+      ? "text-success"
+      : tone === "expense"
+        ? "text-error"
+        : "text-marca";
+  const Wrapper = onClick ? "button" : "div";
+  return (
+    <Wrapper
+      onClick={onClick}
+      className={cn(
+        "border-border bg-surface group relative flex flex-col gap-1.5 rounded-2xl border p-4 text-left transition-colors duration-200 sm:p-5",
+        onClick && "hover:border-border-strong cursor-pointer",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-text-muted font-body truncate text-[10px] font-bold tracking-[0.12em] uppercase sm:text-xs">
+          {label}
+        </p>
+        <span aria-hidden className="text-base opacity-70 sm:text-lg">
+          {icon}
+        </span>
+      </div>
+      <p
+        className={cn(
+          "font-display truncate text-2xl leading-none font-bold tabular-nums sm:text-3xl",
+          toneClass,
+        )}
+      >
+        {value}
+      </p>
+      {onClick && (
+        <p className="text-text-muted font-body group-hover:text-marca text-xs transition-colors">
+          Ver detalle →
+        </p>
+      )}
+    </Wrapper>
+  );
+}
 export default function Dashboard() {
   const { serviceDuration, startTime, date } = useBookingStore();
   const user = useAuthStore((u) => u.user);
@@ -62,7 +126,11 @@ export default function Dashboard() {
   const [rawSlots, setRawSlots] = useState<Slot[]>([]);
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
+  const [summary, setSummary] = useState<ReportSummary | null>(null);
   useEffect(() => {
+    api<ApiResponse<ReportSummary>>("reports/summary").then((r) =>
+      setSummary(r?.data ?? null),
+    );
     api<ApiResponse<Appointment[]>>(`appointments?date=${today}&barberId=all`)
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
@@ -102,6 +170,43 @@ export default function Dashboard() {
         title="Resumen del día"
         description="Un vistazo rápido a cómo va la jornada."
       />
+
+      {/* Balance del mes — ingresos, egresos y resultado */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-text-muted font-body text-xs font-bold tracking-widest uppercase">
+            Balance del mes
+          </p>
+          <button
+            onClick={() => navigate("/admin/rendimientos")}
+            className="text-marca font-body text-xs font-semibold"
+          >
+            Ver rendimientos →
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <BalanceCard
+            label="Balance"
+            tone="balance"
+            icon="⚖️"
+            value={formatARS(summary?.balance ?? 0)}
+          />
+          <BalanceCard
+            label="Ingresos"
+            tone="income"
+            icon="📈"
+            value={formatARS(summary?.income ?? 0)}
+            onClick={() => navigate("/admin/ingresos")}
+          />
+          <BalanceCard
+            label="Egresos"
+            tone="expense"
+            icon="📉"
+            value={formatARS(summary?.expenses ?? 0)}
+            onClick={() => navigate("/admin/egresos")}
+          />
+        </div>
+      </div>
 
       <div>
         {validSlots && (
