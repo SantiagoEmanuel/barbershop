@@ -74,7 +74,7 @@ export function PurchaseModal({
   useEffect(() => {
     if (open) {
       setItemType(initialType);
-      setItemId((initialType === "product" ? products : supplies)[0]?.id ?? "");
+      setItemId("");
       setQuantity("");
       setUnitCost("");
       setSupplier("");
@@ -147,9 +147,18 @@ export function PurchaseModal({
           <FieldSelect
             label={itemType === "product" ? "Producto *" : "Insumo *"}
             value={itemId}
-            onChange={setItemId}
+            onChange={(e) => {
+              setItemId(e);
+              setUnitCost(
+                products.filter((p) => p.id === e)[0]?.cost.toString() ?? "",
+              );
+            }}
           >
-            {items.length === 0 && <option value="">No hay ítems</option>}
+            {items.length === 0 ? (
+              <option value="">No hay ítems</option>
+            ) : (
+              <option value="">Selecciona un ítem</option>
+            )}
             {items.map((it) => (
               <option key={it.id} value={it.id}>
                 {it.name}

@@ -4,7 +4,7 @@ export interface Product {
   description?: string | null;
   price: number;
   /** Costo unitario de compra, en centavos. */
-  cost?: number;
+  cost: number;
   stock: number;
   isActive?: boolean;
 }

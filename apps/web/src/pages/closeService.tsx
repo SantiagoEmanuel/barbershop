@@ -102,6 +102,16 @@ export default function CierreServicio() {
     (acc, i) => acc + i.product.price * i.quantity,
     0,
   );
+  const grandCost = cart.map((i) => {
+    return {
+      id: i.product.id,
+      name: i.product.name,
+      quantity: i.quantity,
+      unit_price: i.product.price,
+      unit_cost: i.product.cost,
+      currency_id: "ARS",
+    };
+  });
   const grandTotal = serviceTotal + productsTotal;
   async function handleConfirm() {
     if (!appointment || !selectedPayment) return;
@@ -112,6 +122,7 @@ export default function CierreServicio() {
       // el backend registre cada venta de producto (descontando stock) y la
       // orden quede asociada a sus productos. Así los reportes de ingresos
       // distinguen correctamente la facturación por servicios y por productos.
+      console.log({ cart, grandCost });
       const items = [
         {
           kind: "service" as const,
@@ -124,6 +135,7 @@ export default function CierreServicio() {
           id: i.product.id,
           quantity: i.quantity,
           priceSnapshot: i.product.price,
+          costSnapshot: i.product.cost,
         })),
       ].filter((it) => it.priceSnapshot > 0);
 
@@ -265,7 +277,7 @@ export default function CierreServicio() {
         </button>
         <SectionHeader eyebrow="Admin" title="Cerrar servicio" />
       </div>
-
+      {JSON.stringify(grandCost)}
       <div className="card flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>

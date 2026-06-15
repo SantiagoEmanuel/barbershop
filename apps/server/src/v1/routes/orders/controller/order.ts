@@ -10,6 +10,7 @@ interface CounterSaleItem {
   id: string;
   quantity: number;
   priceSnapshot: number;
+  costSnapshot: number;
 }
 
 export default class OrderController {
@@ -182,6 +183,7 @@ export default class OrderController {
             soldBy,
             quantity: item.quantity,
             priceSnapshot: item.priceSnapshot, // precio por unidad, NO el total
+            costSnapshot: item.costSnapshot ?? 0,
           }),
         ),
       );

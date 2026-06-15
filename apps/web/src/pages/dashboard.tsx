@@ -305,7 +305,7 @@ export default function Dashboard() {
             <button
               key={item.href}
               onClick={() => navigate(item.href)}
-              className="bg-surface border-border text-text-secondary hover:border-border-strong hover:text-marca font-body flex items-center gap-2.5 rounded-xl border p-3.5 text-left text-sm font-semibold transition-all duration-150"
+              className="bg-surface border-border text-text-secondary hover:border-border-strong hover:text-marca font-body flex items-center gap-2.5 rounded-2xl border p-3.5 text-left text-sm font-semibold transition-all duration-150"
             >
               <span className="text-lg">{item.icon}</span>
               {item.label}
@@ -383,7 +383,7 @@ export default function Dashboard() {
                 <button
                   key={a.id}
                   onClick={() => navigate(`/admin/cierre/${a.id}`)}
-                  className="bg-surface border-border hover:border-border-strong flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition-all duration-150"
+                  className="bg-surface border-border hover:border-border-strong flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all duration-150"
                 >
                   <div className="bg-marca/8 border-border flex size-10 shrink-0 flex-col items-center justify-center rounded-xl border">
                     <span className="text-marca font-body text-xs leading-none font-bold">

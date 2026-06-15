@@ -10,6 +10,7 @@ export function FieldInput({
   type = "text",
   placeholder,
   required,
+  disabled,
 }: {
   label: string;
   value: string | number;
@@ -17,6 +18,7 @@ export function FieldInput({
   type?: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-1">
@@ -26,10 +28,11 @@ export function FieldInput({
       <input
         type={type}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
-        className="border-border focus:border-border-strong text-text-primary font-body w-full rounded-xl border bg-black/30 px-3.5 py-2.5 text-sm transition-all duration-200 outline-none"
+        className="border-border focus:border-border-strong text-text-primary font-body w-full rounded-xl border bg-black/30 px-3.5 py-2.5 text-sm transition-all duration-200 outline-none disabled:cursor-not-allowed disabled:opacity-50 focus:ring-2 focus:ring-primary/50 focus:ring-offset-0 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0"
       />
     </div>
   );

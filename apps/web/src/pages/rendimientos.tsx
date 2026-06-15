@@ -102,20 +102,13 @@ export default function Rendimientos() {
               <StatCard label="Unidades vendidas" value={unitsSold} icon="📦" />
               <StatCard
                 label="Más vendido"
-                value={mostSoldProduct?.name ?? "—"}
+                value={mostSoldProduct?.name ?? "-"}
                 sub={
                   mostSoldProduct ? `${mostSoldProduct.qtySold} u.` : undefined
                 }
                 icon="🏆"
               />
             </div>
-
-            <BarsCard
-              title="Ganancia por producto"
-              data={products
-                .slice(0, 8)
-                .map((p) => ({ label: p.name, value: p.profit }))}
-            />
 
             <div className="bg-surface border-border overflow-x-auto rounded-2xl border p-5">
               <p className="text-text-muted font-body mb-3 text-xs font-semibold tracking-wide uppercase">
@@ -184,7 +177,7 @@ export default function Rendimientos() {
               />
               <StatCard
                 label="Más pedido"
-                value={mostRequested?.name ?? "—"}
+                value={mostRequested?.name ?? "-"}
                 sub={mostRequested ? `${mostRequested.qty} turnos` : undefined}
                 icon="🏆"
               />
@@ -246,6 +239,12 @@ export default function Rendimientos() {
             </div>
           </>
         ))}
+      <BarsCard
+        title="Ganancia por producto"
+        data={products
+          .slice(0, 8)
+          .map((p) => ({ label: p.name, value: p.profit }))}
+      />
     </div>
   );
 }

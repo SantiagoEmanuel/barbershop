@@ -103,12 +103,22 @@ function ProductModal({
               type="number"
             />
           </div>
-          <FieldInput
-            label="Stock"
-            value={stock}
-            onChange={setStock}
-            type="number"
-          />
+          {initial ? (
+            <FieldInput
+              label={`Stock`}
+              value={stock}
+              onChange={setStock}
+              type="number"
+            />
+          ) : (
+            <FieldInput
+              label={`Stock ${initial ? "" : "(el stock para nuevos productos se ajusta con compras)"}`}
+              value={0}
+              onChange={() => {}}
+              disabled={true}
+              type="number"
+            />
+          )}
           <p className="text-text-muted font-body text-xs">
             El costo se usa para calcular la rentabilidad. También se actualiza
             al registrar una compra.

@@ -25,14 +25,16 @@ interface CreateSaleData {
   soldBy: string;
   quantity: number;
   priceSnapshot: number;
+  costSnapshot: number;
 }
 
 export default class ProductModel {
   static async getAll({ includeInactive = false } = {}) {
-    return db.query.products.findMany({
+    const data = await db.query.products.findMany({
       where: includeInactive ? undefined : eq(products.isActive, true),
       orderBy: (p, { asc }) => [asc(p.name)],
     });
+    return data;
   }
 
   static async getById(id: string) {
@@ -154,7 +156,7 @@ export default class ProductModel {
           soldBy: data.soldBy,
           quantity: data.quantity,
           priceSnapshot: data.priceSnapshot,
-          costSnapshot: product.cost,
+          costSnapshot: data.costSnapshot,
         })
         .returning();
 
