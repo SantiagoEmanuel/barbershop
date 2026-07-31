@@ -1,3 +1,5 @@
+import { useGSAP } from "@gsap/react";
+import { gsap } from "gsap";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router";
@@ -17,10 +19,26 @@ export function AdminNavDropdown() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Encontrar el item activo para mostrar su label como trigger.
   // /admin → "Resumen" (end: true). /admin/turnos → "Turnos del día". Etc.
   const current = findActiveItem(location.pathname);
+
+  useGSAP(
+    () => {
+      if (!open || !dropdownRef.current) return;
+      gsap.from(dropdownRef.current, {
+        y: -8,
+        opacity: 0,
+        scale: 0.95,
+        duration: 0.25,
+        ease: "power3.out",
+        transformOrigin: "top center",
+      });
+    },
+    { dependencies: [open] },
+  );
 
   // Cerrar al click afuera.
   useEffect(() => {
@@ -67,6 +85,7 @@ export function AdminNavDropdown() {
 
       {open && (
         <div
+          ref={dropdownRef}
           role="menu"
           className="bg-surface-2 border-marca/15 absolute top-full left-1/2 z-50 mt-2 w-64 -translate-x-1/2 overflow-hidden rounded-xl border shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
         >
