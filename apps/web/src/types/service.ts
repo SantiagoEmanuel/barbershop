@@ -4,6 +4,7 @@ export interface Service {
   description?: string | null;
   price: number;
   durationMinutes: number;
+  icon?: string;
   isActive?: boolean;
   /** Solo se usa en algunos contextos (ordenamiento estable). */
   key?: number;
