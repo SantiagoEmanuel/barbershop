@@ -209,12 +209,12 @@ function Sheet({
       if (open) {
         gsap.fromTo(
           sheetRef.current,
-          { y: position === "top" ? "-100%" : "100%" },
-          { y: "0%", duration: 0.35, ease: "power3.out" },
+          { translate: `0 ${position === "top" ? "-100%" : "100%"}` },
+          { translate: "0 0", duration: 0.35, ease: "power3.out" },
         );
       } else {
         gsap.to(sheetRef.current, {
-          y: position === "top" ? "-110%" : "110%",
+          translate: `0 ${position === "top" ? "-110%" : "110%"}`,
           duration: 0.25,
           ease: "power3.in",
         });
@@ -226,11 +226,13 @@ function Sheet({
   const base =
     "bg-surface border-border fixed right-0 left-0 z-160 border shadow-[0_-16px_40px_rgba(0,0,0,0.4)] lg:hidden";
   const pos =
-    position === "top"
-      ? "top-0 rounded-b-2xl pt-2 -translate-y-[110%]"
-      : "bottom-0 rounded-t-2xl translate-y-[110%]";
+    position === "top" ? "top-0 rounded-b-2xl pt-2" : "bottom-0 rounded-t-2xl";
   return (
-    <div ref={sheetRef} className={cn(base, pos)}>
+    <div
+      ref={sheetRef}
+      style={{ translate: `0 ${position === "top" ? "-110%" : "110%"}` }}
+      className={cn(base, pos)}
+    >
       {children}
     </div>
   );
