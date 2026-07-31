@@ -6,6 +6,7 @@ import {
 } from "@config/components";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { BackTo } from "../components/backTo";
 import { BarsCard, DonutCard } from "../components/charts";
 import { formatARS } from "../components/ui/formatters";
 import { api } from "../lib/api";
@@ -62,6 +63,7 @@ export default function Ingresos() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackTo />
       <SectionHeader
         eyebrow="Finanzas · Mes actual"
         title="Ingresos"

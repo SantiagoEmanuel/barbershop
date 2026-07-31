@@ -1,5 +1,6 @@
 import { Outlet } from "react-router";
 import { useAuthModal } from "../hooks/useAuthModal";
+import { AdminFooter } from "./layout/adminFooter";
 import { Navbar } from "./navbar";
 import { Seo } from "./seo";
 
@@ -20,6 +21,7 @@ export default function AdminLayout() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-20 pb-8 sm:px-6 sm:pt-24 lg:px-8">
         <Outlet />
       </main>
+      <AdminFooter />
     </div>
   );
 }

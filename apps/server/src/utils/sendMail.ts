@@ -3,7 +3,7 @@ import {
   MAILERSEND_TOKEN,
   PUBLIC_WEB_URL,
 } from "@/constants/credentials.env";
-import { User } from "@/v1/routes/auth/model/auth";
+import { User } from "@/v1/auth/model/auth";
 import { sign } from "jsonwebtoken";
 import { EmailParams, MailerSend, Recipient, Sender } from "mailersend";
 import { formatARS, translateStatus } from "./formatters";

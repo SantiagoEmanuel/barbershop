@@ -1,9 +1,9 @@
 import { db } from "@/db/db";
 import { purchases } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
-import ExpenseModel from "@/v1/routes/expenses/model/expense";
-import ProductModel from "@/v1/routes/products/model/product";
-import SupplyModel from "@/v1/routes/supplies/model/supply";
+import ExpenseModel from "@/v1/expenses/model/expense";
+import ProductModel from "@/v1/products/model/product";
+import SupplyModel from "@/v1/supplies/model/supply";
 import { and, eq, gte, lte } from "drizzle-orm";
 
 interface CreatePurchaseData {

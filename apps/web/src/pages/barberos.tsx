@@ -9,6 +9,7 @@ import {
 } from "@config/components";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { BackTo } from "../components/backTo";
 import { api, post, put } from "../lib/api";
 import type { ApiResponse, Barber, Schedule } from "../types";
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -464,6 +465,7 @@ export default function Barberos() {
   }
   return (
     <div className="flex flex-col gap-6">
+      <BackTo />
       <SectionHeader
         eyebrow="Admin"
         title="Barberos"

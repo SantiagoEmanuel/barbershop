@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { todayISO } from "../components/ui/formatters";
+import { todayISOArgentina } from "../components/ui/formatters";
 import type { BookingStep } from "../types";
 
 interface BookingState {
@@ -57,7 +57,7 @@ const defaultState = {
   serviceName: "",
   servicePrice: 0,
   serviceDuration: 0,
-  date: todayISO(),
+  date: todayISOArgentina(),
   startTime: "",
   clientName: "",
   clientPhone: "",

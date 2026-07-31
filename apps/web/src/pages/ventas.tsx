@@ -8,6 +8,7 @@ import {
 } from "@config/components";
 import { Package, Scissors } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { BackTo } from "../components/backTo";
 import { CartLineRow } from "../components/cartLineRow";
 import { formatARS, todayISO } from "../components/ui/formatters";
 import { api, post } from "../lib/api";
@@ -247,6 +248,7 @@ export default function Ventas() {
   }
   return (
     <div className="flex flex-col gap-6">
+      <BackTo />
       <SectionHeader
         eyebrow="Admin"
         title="Ventas"

@@ -8,15 +8,10 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { StatusBadge } from "../components/statusBadge";
-import {
-  formatARS,
-  formatDate,
-  todayISO,
-  todayISOArgentina,
-} from "../components/ui/formatters";
+import { formatARS, formatDate } from "../components/ui/formatters";
 import { api } from "../lib/api";
+import { checkHourIsValid } from "../lib/checkValidSlotHour";
 import { filterValidSlots } from "../lib/filterValidSlots";
-import { timeToMinutes } from "../lib/timeTominutes";
 import { useBookingStore } from "../store/useBookingStore";
 import type {
   ApiResponse,
@@ -26,48 +21,38 @@ import type {
   ReportSummary,
   Slot,
 } from "../types";
-const QUICK_LINKS = [
-  {
-    label: "Ver turnos del día",
-    href: "/admin/turnos",
-    icon: "📅",
-  },
-  {
-    label: "Nueva reserva",
-    href: "/admin/reservas",
-    icon: "➕",
-  },
-  {
-    label: "Registrar venta",
-    href: "/admin/ventas",
-    icon: "🛒",
-  },
-  {
-    label: "Inventario",
-    href: "/admin/inventario",
-    icon: "📦",
-  },
-  {
-    label: "Rendimientos",
-    href: "/admin/rendimientos",
-    icon: "🏆",
-  },
-  {
-    label: "Registrar gasto",
-    href: "/admin/egresos",
-    icon: "🧾",
-  },
-  {
-    label: "Editar servicios",
-    href: "/admin/servicios",
-    icon: "✂️",
-  },
-  {
-    label: "Gestionar barberos",
-    href: "/admin/barberos",
-    icon: "👤",
-  },
-];
+// const QUICK_LINKS = [
+//   {
+//     label: "Registrar venta",
+//     href: "/admin/ventas",
+//     icon: "🛒",
+//   },
+//   {
+//     label: "Registrar gasto",
+//     href: "/admin/egresos",
+//     icon: "🧾",
+//   },
+//   {
+//     label: "Inventario",
+//     href: "/admin/inventario",
+//     icon: "📦",
+//   },
+//   {
+//     label: "Rendimientos",
+//     href: "/admin/rendimientos",
+//     icon: "🏆",
+//   },
+//   {
+//     label: "Gestionar servicios",
+//     href: "/admin/servicios",
+//     icon: "✂️",
+//   },
+//   {
+//     label: "Gestionar barberos",
+//     href: "/admin/barberos",
+//     icon: "👤",
+//   },
+// ];
 
 /** Tarjeta de balance clickeable que navega al detalle (ingresos/egresos). */
 function BalanceCard({
@@ -125,11 +110,9 @@ function BalanceCard({
 export default function Dashboard() {
   const { serviceDuration, startTime, date } = useBookingStore();
   const navigate = useNavigate();
-  const today = todayISO();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [todayOrders, setTodayOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [rawSlots, setRawSlots] = useState<Slot[]>([]);
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [linkedBarberId, setLinkedBarberId] = useState<string | null>(null);
@@ -140,10 +123,10 @@ export default function Dashboard() {
     );
     // Órdenes del día: incluyen servicios cobrados y ventas de productos,
     // así "Facturado hoy" refleja la facturación real (no solo servicios).
-    api<ApiResponse<Order[]>>(`order?date=${today}`).then((r) =>
+    api<ApiResponse<Order[]>>(`order?date=${date}`).then((r) =>
       setTodayOrders(r?.data ?? []),
     );
-    api<ApiResponse<Appointment[]>>(`appointments?date=${today}&barberId=all`)
+    api<ApiResponse<Appointment[]>>(`appointments?date=${date}&barberId=all`)
       .then((r) => setAppointments(r?.data ?? []))
       .finally(() => setLoading(false));
     // El usuario logueado puede o no tener un perfil de barbero vinculado.
@@ -157,17 +140,19 @@ export default function Dashboard() {
           return;
         }
         return api<ApiResponse<{ slots: Slot[] }>>(
-          `availability?barberId=${barberId}&date=${todayISO()}`,
+          `availability?barberId=${barberId}&date=${date}`,
         )
           .then((res) => {
             const slots = res?.data?.slots ?? [];
-            setRawSlots(slots);
-            setValidSlots(filterValidSlots(slots, serviceDuration));
+            setValidSlots(
+              checkHourIsValid(filterValidSlots(slots, serviceDuration), date),
+            );
           })
           .finally(() => setLoadingSlots(false));
       })
       .catch(() => setLoadingSlots(false));
-  }, [today]);
+  }, [date]);
+
   const stats = {
     total: appointments.length,
     pending: appointments.filter((a) => a.status === "pending").length,
@@ -178,22 +163,18 @@ export default function Dashboard() {
       .filter((o) => o.status === "paid")
       .reduce((acc, o) => acc + o.amount, 0),
   };
+
   const upcoming = appointments
     .filter((a) => ["pending", "confirmed"].includes(a.status))
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
     .slice(0, 5);
 
-  useEffect(() => {
-    if (rawSlots.length > 0) {
-      setValidSlots(filterValidSlots(rawSlots, serviceDuration));
-    }
-  }, [serviceDuration, rawSlots]);
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
-        eyebrow={`Hoy · ${formatDate(today)}`}
-        title="Resumen del día"
-        description="Un vistazo rápido a cómo va la jornada."
+        eyebrow={`Hoy · ${formatDate(date)}`}
+        title="Resumen de movimientos"
+        description="Un vistazo rápido a la jornada."
       />
 
       {/* Balance del mes — ingresos, egresos y resultado */}
@@ -204,7 +185,7 @@ export default function Dashboard() {
           </p>
           <button
             onClick={() => navigate("/admin/rendimientos")}
-            className="text-marca font-body text-xs font-semibold"
+            className="text-marca font-body cursor-pointer text-xs font-semibold"
           >
             Ver rendimientos →
           </button>
@@ -233,35 +214,32 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div>
+      <div className={cn(linkedBarberId ? "min-h-0" : "min-h-22")}>
         {linkedBarberId && (
           <div>
-            <label className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
-              Tu horario disponible hoy
-            </label>
+            <p className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
+              Tu horario disponible
+            </p>
 
-            {loadingSlots ? (
-              <div className="flex justify-center py-6">
-                <Spinner size={20} />
-              </div>
-            ) : validSlots.length === 0 ? (
-              <div className="border-border text-text-muted font-body rounded-xl border bg-black/20 px-4 py-5 text-center text-sm">
-                ¡No quedan más horarios disponibles!
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-3 gap-2">
+            <div className="flex w-full">
+              {loadingSlots ? (
+                <div
+                  className="flex w-full items-center justify-center py-6"
+                  key={1}
+                >
+                  <Spinner size={20} />
+                </div>
+              ) : validSlots.length === 0 ? (
+                <p className="border-border text-text-muted font-body w-full rounded-xl border bg-black/20 px-4 py-5 text-center text-sm">
+                  ¡No quedan más horarios disponibles!
+                </p>
+              ) : (
+                <div className="grid w-full grid-cols-3 gap-2">
                   {validSlots.map((s) => {
-                    if (
-                      timeToMinutes(s.startTime) <
-                        new Date().getHours() * 60 + new Date().getMinutes() &&
-                      date === todayISOArgentina()
-                    ) {
-                      return;
-                    }
                     const selected = startTime === s.startTime;
+
                     return (
-                      <div
+                      <span
                         key={s.startTime}
                         className={cn(
                           "font-body rounded-xl border py-2.5 text-center text-sm font-semibold",
@@ -271,15 +249,12 @@ export default function Dashboard() {
                         )}
                       >
                         {s.startTime}
-                      </div>
+                      </span>
                     );
                   })}
                 </div>
-                <p className="text-text-muted font-body mt-2 text-center text-xs">
-                  Mostrando turnos disponibles
-                </p>
-              </>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -294,24 +269,6 @@ export default function Dashboard() {
           icon="💰"
           accent
         />
-      </div>
-
-      <div>
-        <p className="text-text-muted font-body mb-3 text-xs font-bold tracking-widest uppercase">
-          Accesos rápidos
-        </p>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          {QUICK_LINKS.map((item) => (
-            <button
-              key={item.href}
-              onClick={() => navigate(item.href)}
-              className="bg-surface border-border text-text-secondary hover:border-border-strong hover:text-marca font-body flex items-center gap-2.5 rounded-2xl border p-3.5 text-left text-sm font-semibold transition-all duration-150"
-            >
-              <span className="text-lg">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div>
@@ -403,6 +360,24 @@ export default function Dashboard() {
               ))
           )}
         </div>
+
+        {/* <div>
+          <p className="text-text-muted font-body mb-3 text-xs font-bold tracking-widest uppercase">
+            Navegación Rápida
+          </p>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {QUICK_LINKS.map((item) => (
+              <button
+                key={item.href}
+                onClick={() => navigate(item.href)}
+                className="bg-surface border-border text-text-secondary hover:border-border-strong hover:text-marca font-body flex cursor-pointer items-center gap-2.5 rounded-2xl border p-3.5 text-left text-sm font-semibold transition-all duration-150"
+              >
+                <span className="text-lg">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div> */}
       </div>
     </div>
   );

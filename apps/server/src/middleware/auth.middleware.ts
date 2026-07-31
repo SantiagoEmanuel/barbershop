@@ -27,11 +27,12 @@ export function checkToken(req: Request, _res: Response, next: NextFunction) {
     return;
   }
 
+  // En caso de haber token se guarda el contenido del usuario
   try {
     req.user = jwt.verify(token, JWT_SECRET as string) as JwtPayload;
   } catch {
-    // Token inválido o expirado: continuamos como usuario anónimo.
-    // No bloqueamos acá; las rutas protegidas usan verifyToken.
+    //
+    console.log("Usuario anónimo");
   }
 
   next();
@@ -39,7 +40,7 @@ export function checkToken(req: Request, _res: Response, next: NextFunction) {
 }
 
 /**
- * Verifica que el request tenga un JWT válido en el header Authorization.
+ * Verifica que el request tenga un JWT válido en las cookies.
  * Si es válido, adjunta el payload decodificado en req.user.
  */
 export function verifyToken(req: Request, res: Response, next: NextFunction) {
@@ -61,8 +62,7 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
- * Factory que retorna un middleware que verifica el rol del usuario.
- * Debe usarse después de verifyToken.
+ * Verificación del rol del usuario, debe usarse luego de verifyToken.
  */
 export function verifyRole(...roles: Role[]) {
   return (req: Request, res: Response, next: NextFunction) => {

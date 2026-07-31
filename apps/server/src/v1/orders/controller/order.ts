@@ -1,4 +1,4 @@
-import ProductModel from "@/v1/routes/products/model/product";
+import ProductModel from "@/v1/products/model/product";
 import type { Request, Response } from "express";
 import OrderModel from "../model/order";
 

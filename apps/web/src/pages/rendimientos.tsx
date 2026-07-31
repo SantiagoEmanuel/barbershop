@@ -6,6 +6,7 @@ import {
   StatCard,
 } from "@config/components";
 import { useEffect, useState } from "react";
+import { BackTo } from "../components/backTo";
 import { BarsCard } from "../components/charts";
 import { formatARS } from "../components/ui/formatters";
 import { api } from "../lib/api";
@@ -56,6 +57,7 @@ export default function Rendimientos() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackTo />
       <SectionHeader
         eyebrow="Finanzas · Mes actual"
         title="Rendimientos"

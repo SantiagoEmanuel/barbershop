@@ -7,6 +7,7 @@ import {
 } from "@config/components";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { BackTo } from "../components/backTo";
 import { formatARS } from "../components/ui/formatters";
 import { api, post, put } from "../lib/api";
 import type { ApiResponse, Service } from "../types";
@@ -172,6 +173,7 @@ export default function Servicios() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackTo />
       <SectionHeader
         eyebrow="Admin"
         title="Servicios"

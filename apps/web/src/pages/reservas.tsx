@@ -1,6 +1,7 @@
 import { EmptyState, SectionHeader, Spinner } from "@config/components";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { BackTo } from "../components/backTo";
 import BookingModal from "../components/bookingModal";
 import { StatusBadge } from "../components/statusBadge";
 import { formatARS, formatDate, todayISO } from "../components/ui/formatters";
@@ -38,6 +39,7 @@ export default function Reservas() {
   );
   return (
     <div className="flex flex-col gap-6">
+      <BackTo />
       <SectionHeader
         eyebrow="Admin"
         title="Reservas"

@@ -43,7 +43,7 @@ export function Footer() {
               Hecho con ♥ por{" "}
               <span className="text-marca/50">
                 <a
-                  href="http://linkedin.com/in/santiagoemanuelmustafafont"
+                  href="https://www.santiagomustafa.com.ar"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

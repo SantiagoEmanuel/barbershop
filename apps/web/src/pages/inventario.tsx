@@ -6,6 +6,7 @@ import {
   Spinner,
 } from "@config/components";
 import { useEffect, useState } from "react";
+import { BackTo } from "../components/backTo";
 import { PurchaseModal, type PaymentMethod } from "../components/purchaseModal";
 import { formatARS } from "../components/ui/formatters";
 import { api, post, put } from "../lib/api";
@@ -348,6 +349,7 @@ export default function Inventario() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackTo />
       <SectionHeader
         eyebrow="Admin"
         title="Inventario"

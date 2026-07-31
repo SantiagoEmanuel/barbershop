@@ -5,6 +5,7 @@ import {
   StatCard,
 } from "@config/components";
 import { useEffect, useState } from "react";
+import { BackTo } from "../components/backTo";
 import { formatARS } from "../components/ui/formatters";
 import { api } from "../lib/api";
 import type { ApiResponse, Order } from "../types";
@@ -104,6 +105,7 @@ export default function Movimientos() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackTo />
       <SectionHeader
         eyebrow="Admin"
         title="Movimientos"

@@ -1,22 +1,22 @@
 import { config } from "dotenv";
-import { coerce, object, string } from "zod";
+import { coerce, object } from "zod";
 
-config({ path: [".env", ".env.local"] });
+config({ path: [".env", ".env.local", ".env.dev"] });
 
 const Env = object({
-  PORT: coerce.string(),
-  TURSO_TOKEN: string(),
-  TURSO_URL: string(),
-  JWT_SECRET: string(),
+  PORT: coerce.number(),
+  TURSO_TOKEN: coerce.string(),
+  TURSO_URL: coerce.string(),
+  JWT_SECRET: coerce.string(),
   HASH_SALT: coerce.number(),
-  MAILERSEND_TOKEN: string(),
-  HOST: string(),
-  MP_ACCESS_TOKEN: string(),
-  MP_WEBHOOK_SECRET: string(),
-  PUBLIC_API_URL: string(),
-  PUBLIC_WEB_URL: string(),
-  LOCALHOST_IP: string(),
-  NODE_ENV: string(),
+  MAILERSEND_TOKEN: coerce.string(),
+  HOST: coerce.string(),
+  MP_ACCESS_TOKEN: coerce.string(),
+  MP_WEBHOOK_SECRET: coerce.string(),
+  PUBLIC_API_URL: coerce.string(),
+  PUBLIC_WEB_URL: coerce.string(),
+  LOCALHOST_IP: coerce.string(),
+  NODE_ENV: coerce.string(),
 });
 
 export const {

@@ -9,6 +9,7 @@ import {
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
+import { BackTo } from "../components/backTo";
 import { BarsCard, DonutCard } from "../components/charts";
 import {
   FieldSelect,
@@ -408,6 +409,7 @@ export default function Egresos() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackTo />
       <SectionHeader
         eyebrow="Finanzas · Mes actual"
         title="Egresos"

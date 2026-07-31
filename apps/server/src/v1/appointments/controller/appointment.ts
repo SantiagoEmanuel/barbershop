@@ -1,7 +1,7 @@
 import { minutesToTime, timeToMinutes } from "@/utils/availability";
 import { confirmShift } from "@/utils/sendMail";
-import AvailabilityModel from "@/v1/routes/availability/model/availability";
-import ServiceModel from "@/v1/routes/services/model/service";
+import AvailabilityModel from "@/v1/availability/model/availability";
+import ServiceModel from "@/v1/services/model/service";
 import { Request, Response } from "express";
 import AppointmentModel, { Appointment } from "../model/appointment";
 

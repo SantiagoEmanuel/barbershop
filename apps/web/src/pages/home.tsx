@@ -88,7 +88,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => scrollTo("servicios")}
-              className="btn-ghost rounded-xl px-6 py-3 text-sm"
+              className="btn-ghost rounded-xl px-7 py-3.5 text-base"
             >
               Ver servicios →
             </button>
@@ -144,15 +144,15 @@ export default function Home() {
                 }}
                 className={`bg-surface border-border hover:border-marca/35 group flex flex-col gap-3 rounded-2xl border p-5 text-left transition-all duration-200 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] ${i === 0 ? "sm:col-span-full" : ""}`}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex w-full items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <p
-                      className={`text-marca font-display font-bold ${i === 0 ? "text-xl sm:text-2xl" : "text-base sm:text-lg"}`}
+                      className={`text-marca font-display font-bold uppercase ${i === 0 ? "text-xl sm:text-2xl" : "text-base sm:text-lg"}`}
                     >
                       {s.name}
                     </p>
                     {s.description && (
-                      <p className="text-text-muted font-body mt-1 text-sm leading-relaxed">
+                      <p className="text-text-muted font-body mt-1 text-xs leading-relaxed uppercase">
                         {s.description}
                       </p>
                     )}
@@ -213,7 +213,7 @@ export default function Home() {
                   <div className="flex items-center gap-3">
                     <UserAvatar name={b.name} size="lg" />
                     <div className="min-w-0">
-                      <p className="text-text-primary font-display text-base font-bold capitalize">
+                      <p className="text-text-primary font-display text-base font-bold uppercase">
                         {b.name}
                       </p>
                       {b.experienceYears != null && (

@@ -54,12 +54,10 @@ export default class PurchaseController {
       });
     }
     if (typeof quantity !== "number" || quantity <= 0) {
-      return res
-        .status(400)
-        .json({
-          message: "La cantidad debe ser un entero positivo",
-          data: null,
-        });
+      return res.status(400).json({
+        message: "La cantidad debe ser un entero positivo",
+        data: null,
+      });
     }
     if (typeof unitCost !== "number" || unitCost < 0) {
       return res.status(400).json({

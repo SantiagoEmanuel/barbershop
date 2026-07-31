@@ -1,47 +1,47 @@
 /// <reference types="vite-plugin-pwa/react" />
 import { Button, ModalBase, SectionHeader } from "@config/components";
-import { useEffect, useState } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 
-export function UpdatePrompt() {
-  const { needRefresh, updateServiceWorker } = useRegisterSW();
-  const [open, setOpen] = useState<boolean>(needRefresh[0] ?? false);
+const UPDATE_CHECK_MS = 60 * 60 * 1000; // cada 1 hora
 
-  useEffect(() => {
-    if (needRefresh[0]) {
-      setOpen(needRefresh[0]);
-    }
-  }, [needRefresh[0]]);
+export function UpdatePrompt() {
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegisteredSW(_url, registration) {
+      if (!registration) return;
+      setInterval(() => registration.update(), UPDATE_CHECK_MS);
+    },
+  });
+
+  function dismiss() {
+    setNeedRefresh(false);
+  }
 
   return (
-    <ModalBase onClose={() => setOpen(false)} open={open}>
+    <ModalBase onClose={dismiss} open={needRefresh}>
       <div className="flex w-full flex-col gap-8 p-4">
         <SectionHeader
           align="center"
           title="Actualización disponible"
-          description="Puedes actualizar a la última versión del sistema"
+          description="Hay una nueva versión disponible. Actualizá para obtener las últimas mejoras."
         />
-        <Action action={updateServiceWorker} cancel={() => setOpen(false)} />
+        <div className="flex items-center justify-center gap-4">
+          <Button
+            className="bg-marca text-background cursor-pointer rounded-md px-4 py-2 font-bold"
+            onClick={() => updateServiceWorker(true)}
+          >
+            Actualizar
+          </Button>
+          <Button
+            className="cursor-pointer rounded-md border px-4 py-2 font-bold"
+            onClick={dismiss}
+          >
+            Más tarde
+          </Button>
+        </div>
       </div>
     </ModalBase>
-  );
-}
-
-function Action({ action, cancel }: { action: () => any; cancel: () => void }) {
-  return (
-    <div className="flex items-center justify-center gap-4">
-      <Button
-        className="bg-marca text-background cursor-pointer rounded-md px-4 py-2 font-bold"
-        onClick={action}
-      >
-        Actualizar
-      </Button>
-      <Button
-        className="cursor-pointer rounded-md border px-4 py-2 font-bold"
-        onClick={cancel}
-      >
-        Más Tarde
-      </Button>
-    </div>
   );
 }

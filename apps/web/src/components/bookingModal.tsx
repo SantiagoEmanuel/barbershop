@@ -104,6 +104,10 @@ function StepBarber({ onNext }: { onNext: () => void }) {
       }
       setLoading(false);
     });
+
+    if (barberId) {
+      onNext();
+    }
   }, []);
 
   return (
@@ -182,6 +186,9 @@ function StepService({ onNext }: { onNext: () => void }) {
       setServices(r?.data ?? []);
       setLoading(false);
     });
+    if (serviceId) {
+      onNext();
+    }
   }, []);
 
   return (
@@ -552,9 +559,7 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
           <p className="text-text-muted font-body text-sm">
             Te esperamos el{" "}
             <strong className="text-text-primary">
-              {new Date(store.date).toLocaleDateString("es-AR", {
-                timeZone: "America/Argentina/Buenos_Aires",
-              })}
+              {formatDate(store.date)}
             </strong>{" "}
             a las{" "}
             <strong className="text-text-primary">{store.startTime}</strong> con{" "}
@@ -581,9 +586,7 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
     { label: "Forma de pago", value: store.paymentMethod },
     {
       label: "Fecha",
-      value: new Date(store.date).toLocaleDateString("es-AR", {
-        timeZone: "America/Argentina/Buenos_Aires",
-      }),
+      value: formatDate(store.date),
     },
     { label: "Hora", value: store.startTime },
     { label: "Nombre", value: store.clientName },
@@ -633,7 +636,8 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
 
 // ── Modal raíz ────────────────────────────────────────────────
 export default function BookingModal() {
-  const { isOpen, step, setStep, closeModal, reset } = useBookingStore();
+  const { isOpen, step, setStep, closeModal, reset, setBarber, setService } =
+    useBookingStore();
 
   function handleClose() {
     reset();
@@ -646,7 +650,17 @@ export default function BookingModal() {
         <div className="flex items-center gap-3">
           {step > 1 && step < 5 && (
             <button
-              onClick={() => setStep((step - 1) as typeof step)}
+              onClick={() => {
+                setStep((step - 1) as typeof step);
+                switch (step - 1) {
+                  case 1:
+                    setBarber("", "");
+                    break;
+                  case 2:
+                    setService("", "", 0, 0);
+                    break;
+                }
+              }}
               className="text-text-muted font-body flex items-center gap-1 text-xs font-semibold transition-colors duration-150"
             >
               ← Volver

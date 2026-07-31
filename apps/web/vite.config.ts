@@ -22,9 +22,9 @@ export default defineConfig({
         name: "Peko Barber",
         short_name: "Peko Barber",
         description:
-          "Barbería en Quimilí. Reservá tu turno online en menos de un minuto.",
+          "Barbería en Quimilí. Administra tu barbería mediante la app.",
         lang: "es-AR",
-        start_url: "/",
+        start_url: "/admin",
         scope: "/",
         display: "standalone",
         background_color: "#1e1d28",

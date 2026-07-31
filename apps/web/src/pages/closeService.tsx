@@ -8,6 +8,7 @@ import { initMercadoPago } from "@mercadopago/sdk-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { BackTo } from "../components/backTo";
 import { StatusBadge } from "../components/statusBadge";
 import { formatARS } from "../components/ui/formatters";
 import { api, post, put } from "../lib/api";
@@ -268,15 +269,8 @@ export default function CierreServicio() {
   const isCompleted = appointment.status === "completed";
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-text-muted bg-marca/6 border-border rounded-lg border p-2 text-sm"
-        >
-          ← Volver
-        </button>
-        <SectionHeader eyebrow="Admin" title="Cerrar servicio" />
-      </div>
+      <BackTo to="/admin/turnos" label="Turnos" />
+      <SectionHeader eyebrow="Admin" title="Cerrar servicio" />
       {JSON.stringify(grandCost)}
       <div className="card flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
