@@ -1,4 +1,6 @@
 import { UserAvatar } from "@config/components";
+import { useGSAP } from "@gsap/react";
+import { gsap } from "gsap";
 import {
   Calendar,
   LogOut,
@@ -32,6 +34,21 @@ export function UserMenu({
   const logout = useAuthStore((s) => s.logout);
   const menuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+
+  useGSAP(
+    () => {
+      if (!menuRef.current) return;
+      gsap.from(menuRef.current, {
+        y: -8,
+        opacity: 0,
+        scale: 0.95,
+        duration: 0.25,
+        ease: "power3.out",
+        transformOrigin: "top right",
+      });
+    },
+    { scope: menuRef },
+  );
 
   useEffect(() => {
     function handler(e: MouseEvent) {
