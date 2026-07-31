@@ -13,17 +13,17 @@ import { formatARS } from "../ui/formatters";
 
 /** Paleta alineada a los tokens de diseño (marca primero). */
 const CHART_COLORS = [
-  "#f8dfb0", // marca
+  "#c9a84c", // marca
   "#86c586", // success
   "#e6b96a", // warning
   "#9b8cce",
   "#6ab0d4",
   "#e08080", // error
-  "#d4a853", // marca-deep
+  "#a88a3a", // marca-deep
   "#c98ca0",
 ];
 
-const MUTED = "#8b8899";
+const MUTED = "#6b6660";
 
 function MoneyTooltip({
   active,
@@ -76,7 +76,7 @@ export function BarsCard({
           />
           <YAxis hide />
           <Tooltip
-            cursor={{ fill: "rgba(248,223,176,0.08)" }}
+            cursor={{ fill: "rgba(201,168,76,0.08)" }}
             content={<MoneyTooltip />}
           />
           <Bar dataKey="value" fill={color} radius={[6, 6, 0, 0]} />
