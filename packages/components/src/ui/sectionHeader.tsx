@@ -37,7 +37,7 @@ export function SectionHeader({
     >
       <div
         className={cn(
-          "flex min-w-0 flex-col gap-1.5",
+          "flex min-w-0 flex-col gap-2.5",
           isCenter && "items-center",
         )}
       >
@@ -50,11 +50,15 @@ export function SectionHeader({
           >
             <span
               aria-hidden
-              className="bg-marca block h-px w-6 rounded-full opacity-70"
+              className="bg-linear-to-l block h-0.5 w-18 rounded-full from-marca to-transparent"
             />
             <span className="text-marca font-body text-[11px] font-bold tracking-[0.18em] uppercase">
               {eyebrow}
             </span>
+            <span
+              aria-hidden
+              className="bg-linear-to-r block h-0.5 w-18 rounded-full from-marca to-transparent"
+            />
           </div>
         )}
         <h2 className="font-display text-text-primary text-2xl leading-tight font-bold sm:text-3xl">
