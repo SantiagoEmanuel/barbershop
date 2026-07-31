@@ -27,8 +27,8 @@ export default defineConfig({
         start_url: "/admin",
         scope: "/",
         display: "standalone",
-        background_color: "#1e1d28",
-        theme_color: "#1e1d28",
+        background_color: "#0e0e0e",
+        theme_color: "#0e0e0e",
         icons: [
           {
             src: "barber-icon-192.png",
