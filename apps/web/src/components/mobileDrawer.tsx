@@ -1,4 +1,6 @@
 import { Icon, UserAvatar } from "@config/components";
+import { useGSAP } from "@gsap/react";
+import { gsap } from "gsap";
 import { LogIn, LogOut, Scissors, Settings, UserPlus } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
@@ -166,9 +168,24 @@ export function MobileDrawer({
 // ── Subcomponentes internos ───────────────────────────────────
 
 function Overlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      if (!open || !ref.current) return;
+      gsap.from(ref.current, {
+        opacity: 0,
+        duration: 0.25,
+        ease: "power2.out",
+      });
+    },
+    { dependencies: [open] },
+  );
+
   if (!open) return null;
   return (
     <div
+      ref={ref}
       className="fixed inset-0 z-150 bg-[rgba(20,20,28,0.75)] backdrop-blur-[3px] lg:hidden"
       onClick={onClose}
     />
@@ -184,19 +201,39 @@ function Sheet({
   position: "top" | "bottom";
   children: React.ReactNode;
 }) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      if (!sheetRef.current) return;
+      if (open) {
+        gsap.fromTo(
+          sheetRef.current,
+          { y: position === "top" ? "-100%" : "100%" },
+          { y: "0%", duration: 0.35, ease: "power3.out" },
+        );
+      } else {
+        gsap.to(sheetRef.current, {
+          y: position === "top" ? "-110%" : "110%",
+          duration: 0.25,
+          ease: "power3.in",
+        });
+      }
+    },
+    { dependencies: [open] },
+  );
+
   const base =
-    "bg-surface border-border fixed right-0 left-0 z-160 border shadow-[0_-16px_40px_rgba(0,0,0,0.4)] transition-transform duration-300 lg:hidden";
+    "bg-surface border-border fixed right-0 left-0 z-160 border shadow-[0_-16px_40px_rgba(0,0,0,0.4)] lg:hidden";
   const pos =
     position === "top"
-      ? cn(
-          "top-0 rounded-b-2xl pt-2",
-          open ? "translate-y-0" : "-translate-y-[110%]",
-        )
-      : cn(
-          "bottom-0 rounded-t-2xl",
-          open ? "translate-y-0" : "translate-y-[110%]",
-        );
-  return <div className={cn(base, pos)}>{children}</div>;
+      ? "top-0 rounded-b-2xl pt-2 -translate-y-[110%]"
+      : "bottom-0 rounded-t-2xl translate-y-[110%]";
+  return (
+    <div ref={sheetRef} className={cn(base, pos)}>
+      {children}
+    </div>
+  );
 }
 
 function ClientLinks({ onClose }: { onClose: () => void }) {
