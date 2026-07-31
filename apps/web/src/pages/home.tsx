@@ -68,9 +68,9 @@ export default function Home() {
               fontSize: "clamp(2.25rem, 7vw, 4.5rem)",
             }}
           >
-            Sentate, saca tu turno y{" "}
+            Reserva tu turno{" "}
             <span className="text-marca font-normal italic">
-              déjame el resto a mí
+              del resto nos encargamos nosotros.
             </span>
           </h1>
 
@@ -245,11 +245,16 @@ export default function Home() {
           </span>
           <div className="relative z-10 flex flex-col gap-2">
             <h3 className="font-display text-text-primary text-2xl font-bold sm:text-3xl">
-              ¿Listo para verte bien?
+              ¿Listo para un nuevo look? ✂️
             </h3>
-            <p className="text-text-muted font-body max-w-md text-sm sm:text-base">
-              Reservá tu turno en menos de un minuto. Sin cuentas, sin vueltas.
-            </p>
+            <div>
+              <p className="text-text-muted font-body max-w-md text-sm sm:text-base">
+                Reserva tu turno en menos de un minuto.
+              </p>
+              <p className="text-text-muted font-body max-w-md text-sm sm:text-base">
+                Rápido, fácil y sin complicaciones.
+              </p>
+            </div>
           </div>
           <button
             onClick={openBooking}
