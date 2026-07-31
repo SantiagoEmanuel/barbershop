@@ -1,5 +1,8 @@
-import { SectionHeader, Spinner, UserAvatar } from "@config/components";
-import { useEffect, useState } from "react";
+import { cn, SectionHeader, Spinner, UserAvatar } from "@config/components";
+import { useGSAP } from "@gsap/react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useEffect, useRef, useState } from "react";
 import BookingModal from "../components/bookingModal";
 import { formatARS } from "../components/ui/formatters";
 import { api } from "../lib/api";
@@ -7,24 +10,7 @@ import { useBookingStore } from "../store/useBookingStore";
 import { useServicesStore } from "../store/useServicesStore";
 import type { ApiResponse, Barber } from "../types";
 
-// const STATS = [
-//   {
-//     num: "6+",
-//     label: "Años de experiencia",
-//   },
-//   {
-//     num: "1",
-//     label: "Barberos especializados",
-//   },
-//   {
-//     num: "5k+",
-//     label: "Clientes atendidos",
-//   },
-//   {
-//     num: "5★",
-//     label: "Valoración promedio",
-//   },
-// ];
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
   const openBooking = useBookingStore((s) => s.openModal);
@@ -33,15 +19,85 @@ export default function Home() {
   const services = useServicesStore((s) => s.services);
   const getServices = useServicesStore((s) => s.getServices);
   const [barbers, setBarbers] = useState<Barber[] | null>(null);
+  const servicesRef = useRef<HTMLDivElement>(null);
+  const barbersRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     getServices();
     api<ApiResponse<Barber[]>>("barber").then((r) => setBarbers(r?.data ?? []));
   }, [getServices]);
+
+  useGSAP(
+    () => {
+      if (!services?.length) return;
+      gsap.fromTo(
+        ".service-card",
+        { y: 40, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          stagger: 0.12,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: servicesRef.current,
+            start: "top 85%",
+          },
+        },
+      );
+    },
+    { scope: servicesRef, dependencies: [services] },
+  );
+
+  useGSAP(
+    () => {
+      if (!barbers?.length) return;
+      gsap.fromTo(
+        ".barber-card",
+        { y: 40, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          stagger: 0.12,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: barbersRef.current,
+            start: "top 85%",
+          },
+        },
+      );
+    },
+    { scope: barbersRef, dependencies: [barbers] },
+  );
+
+  useGSAP(
+    () => {
+      gsap.fromTo(
+        ctaRef.current,
+        { y: 30, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.7,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: ctaRef.current,
+            start: "top 85%",
+          },
+        },
+      );
+    },
+    { scope: ctaRef },
+  );
+
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({
       behavior: "smooth",
     });
   }
+
   return (
     <>
       <section className="relative mx-auto flex min-h-full max-w-4xl flex-col justify-between overflow-hidden px-5 pt-10 pb-8 sm:px-10 sm:pt-16">
@@ -94,25 +150,10 @@ export default function Home() {
             </button>
           </div>
         </div>
-
-        {/* <div className="bg-border relative z-10 mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl sm:mt-16 sm:grid-cols-4">
-          {STATS.map((s) => (
-            <div
-              key={s.num}
-              className="bg-surface flex flex-col gap-1 px-4 py-4 sm:px-5"
-            >
-              <span className="text-marca font-display text-xl font-bold sm:text-2xl">
-                {s.num}
-              </span>
-              <span className="text-text-muted font-body text-[11px] leading-tight sm:text-xs">
-                {s.label}
-              </span>
-            </div>
-          ))}
-        </div> */}
       </section>
 
       <section
+        ref={servicesRef}
         id="servicios"
         className="mx-auto w-full max-w-4xl px-5 py-12 sm:px-10 sm:py-16"
       >
@@ -142,20 +183,32 @@ export default function Home() {
                   setService(s.id, s.name, s.price, s.durationMinutes);
                   openBooking();
                 }}
-                className={`bg-surface border-border hover:border-marca/35 group flex flex-col gap-3 rounded-2xl border p-5 text-left transition-all duration-200 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] ${i === 0 ? "sm:col-span-full" : ""}`}
+                className={`service-card bg-surface border-border hover:border-marca/35 group flex flex-col justify-center gap-3 rounded-2xl border p-5 text-left transition-all duration-200 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] ${i === 0 ? "sm:col-span-full" : ""}`}
               >
                 <div className="flex w-full items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`text-marca font-display font-bold uppercase ${i === 0 ? "text-xl sm:text-2xl" : "text-base sm:text-lg"}`}
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span
+                      className={cn(
+                        "border-marca/80 size-10 rounded-full border",
+                      )}
                     >
-                      {s.name}
-                    </p>
-                    {s.description && (
-                      <p className="text-text-muted font-body mt-1 text-xs leading-relaxed uppercase">
-                        {s.description}
+                      <img
+                        src="scissors_icon.png"
+                        className="bg-marca h-auto w-full rounded-full p-1.5"
+                      />
+                    </span>
+                    <div>
+                      <p
+                        className={`text-marca font-display font-bold uppercase ${i === 0 ? "text-xl sm:text-2xl" : "text-base sm:text-lg"}`}
+                      >
+                        {s.name}
                       </p>
-                    )}
+                      {s.description && (
+                        <p className="text-text-muted font-body mt-1 text-xs leading-relaxed uppercase">
+                          {s.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="text-text-primary font-display text-lg font-bold tabular-nums">
@@ -166,7 +219,7 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                <p className="text-marca font-body mt-auto text-xs font-semibold opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <p className="text-marca font-body mt-auto text-xs font-semibold opacity-35 transition-opacity duration-200 group-hover:opacity-100">
                   Reservar →
                 </p>
               </button>
@@ -176,6 +229,7 @@ export default function Home() {
       </section>
 
       <section
+        ref={barbersRef}
         id="barberos"
         className="bg-surface/40 border-border mx-auto w-full max-w-4xl rounded-none border-y px-4 md:rounded-2xl"
       >
@@ -204,7 +258,7 @@ export default function Home() {
                   key={b.id}
                   type="button"
                   aria-label={`Reservar turno con ${b.name}`}
-                  className="bg-surface border-border hover:border-marca/30 focus-visible:border-marca flex flex-col gap-3 rounded-2xl border p-5 text-left transition-colors duration-200"
+                  className="barber-card bg-surface border-border hover:border-marca/30 focus-visible:border-marca flex flex-col gap-3 rounded-2xl border p-5 text-left transition-colors duration-200"
                   onClick={() => {
                     setBarber(b.id, b.name);
                     openBooking();
@@ -236,7 +290,10 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
-        <div className="bg-surface border-border-strong relative mx-auto flex w-full flex-col items-center gap-5 overflow-hidden rounded-2xl border px-6 py-10 text-center sm:px-12 sm:py-14">
+        <div
+          ref={ctaRef}
+          className="bg-surface border-border-strong relative mx-auto flex w-full flex-col items-center gap-5 overflow-hidden rounded-2xl border px-6 py-10 text-center sm:px-12 sm:py-14"
+        >
           <span
             aria-hidden
             className="bg-marca/8 text-marca pointer-events-none absolute -top-12 -right-12 flex size-44 items-center justify-center rounded-full text-6xl opacity-30"
