@@ -54,7 +54,7 @@ export default function Home() {
 
         <div className="via-marca/40 absolute top-0 right-0 left-0 h-px bg-linear-to-r from-transparent to-transparent" />
 
-        <div className="relative z-10 flex max-w-xl flex-col gap-6">
+        <div className="relative z-10 flex max-w-4xl flex-col gap-6 text-balance">
           <div className="flex items-center gap-3">
             <span className="line-marca" />
             <p className="text-marca font-body text-[10px] tracking-[0.25em] uppercase sm:text-xs">
@@ -75,8 +75,8 @@ export default function Home() {
           </h1>
 
           <p className="text-text-muted font-body max-w-sm text-sm leading-relaxed sm:text-base">
-            Desde el 2020 dando forma al estilo de los hombres de Quimilí. Sin
-            vueltas, sin esperas, sin sorpresas.
+            Desde 2020 ofreciendo puntualidad, atención personalizada y un corte
+            pensado para vos en Quimilí.
           </p>
 
           <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -116,11 +116,11 @@ export default function Home() {
         id="servicios"
         className="mx-auto w-full max-w-4xl px-5 py-12 sm:px-10 sm:py-16"
       >
-        <div className="mb-8 sm:mb-10">
+        <div className="mb-8 text-balance sm:mb-10">
           <SectionHeader
             eyebrow="Servicios"
-            title="¿Qué servicio quieres?"
-            description="Elegí uno y reserva tu turno en menos de 1 minuto."
+            title="Elegí tu servicio"
+            description="Selecciona el servicio que necesitas y reserva tu turno en menos de un minuto."
             align="center"
           />
         </div>
