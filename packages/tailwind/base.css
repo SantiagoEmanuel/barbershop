@@ -7,20 +7,20 @@
 /* ── Design tokens ─────────────────────────────────────────── */
 @theme {
   /* Identidad / marca */
-  --color-marca: #f8dfb0; /* dorado cálido (+contraste vs #F6E2BD original) */
-  --color-marca-deep: #d4a853; /* hover / active / emphasis */
-  --color-marca-subtle: rgba(248, 223, 176, 0.12); /* backgrounds sutiles */
+  --color-marca: #c9a84c; /* dorado rico — negro + oro clásico de barbería */
+  --color-marca-deep: #a88a3a; /* hover / active / emphasis */
+  --color-marca-subtle: rgba(201, 168, 76, 0.12); /* backgrounds sutiles */
 
   /* Texto */
-  --color-text-primary: #efeede; /* sin cambio — muy legible */
-  --color-text-secondary: #cbc5c1; /* sin cambio */
-  --color-text-muted: #8b8899; /* nuevo — hints, placeholders, footer */
+  --color-text-primary: #e8e4de; /* blanco cálido */
+  --color-text-secondary: #b5b0a8; /* gris cálido */
+  --color-text-muted: #6b6660; /* hints, placeholders, footer */
 
   /* Fondo */
-  --color-background: #272630; /* levemente más oscuro (era #282730) */
-  --color-surface: #323140; /* azul-violeta oscuro, más profundidad */
-  --color-surface-2: #3e3d4e; /* superficie elevada (modales, dropdowns) */
-  --color-surface-3: #4a4960; /* hover dentro de surface-2 */
+  --color-background: #0e0e0e; /* negro puro */
+  --color-surface: #1a1816; /* superficie base (cards) */
+  --color-surface-2: #242220; /* superficie elevada (modales, dropdowns) */
+  --color-surface-3: #2e2c2a; /* hover dentro de surface-2 */
 
   /* Semánticos */
   --color-success: #86c586;
@@ -28,8 +28,8 @@
   --color-warning: #e6b96a;
 
   /* Bordes */
-  --color-border: rgba(248, 223, 176, 0.1);
-  --color-border-strong: rgba(248, 223, 176, 0.25);
+  --color-border: rgba(201, 168, 76, 0.12);
+  --color-border-strong: rgba(201, 168, 76, 0.28);
   --color-border-error: rgba(220, 100, 100, 0.3);
 
   /* Tipografía */
@@ -83,23 +83,23 @@
     background: var(--color-background);
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(248, 223, 176, 0.15);
+    background: rgba(201, 168, 76, 0.15);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(248, 223, 176, 0.28);
+    background: rgba(201, 168, 76, 0.28);
   }
 
   /* Focus visible accesible */
   :focus-visible {
-    outline: 2px solid rgba(248, 223, 176, 0.6);
+    outline: 2px solid rgba(201, 168, 76, 0.6);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
 
   /* Selección de texto */
   ::selection {
-    background: rgba(248, 223, 176, 0.2);
+    background: rgba(201, 168, 76, 0.2);
     color: var(--color-text-primary);
   }
 }
@@ -150,9 +150,9 @@
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    background: rgba(248, 223, 176, 0.1);
+    background: rgba(201, 168, 76, 0.1);
     color: var(--color-marca);
-    border: 1px solid rgba(248, 223, 176, 0.2);
+    border: 1px solid rgba(201, 168, 76, 0.2);
     font-family: var(--font-body);
   }
 
@@ -174,7 +174,7 @@
     padding: 0.875rem 1.75rem;
     border-radius: var(--radius-md);
     background: var(--color-marca);
-    color: #272630;
+    color: #0e0e0e;
     font-family: var(--font-body);
     font-weight: 700;
     font-size: 0.875rem;
@@ -188,7 +188,7 @@
   }
 
   .btn-marca:hover {
-    background: #f0d49a;
+    background: #b8963f;
   }
   .btn-marca:active {
     transform: scale(0.97);
@@ -207,7 +207,7 @@
     font-family: var(--font-body);
     font-weight: 600;
     font-size: 0.875rem;
-    border: 1px solid rgba(248, 223, 176, 0.18);
+    border: 1px solid rgba(201, 168, 76, 0.18);
     cursor: pointer;
     transition:
       border-color 0.2s,
@@ -216,7 +216,7 @@
   }
 
   .btn-ghost:hover {
-    border-color: rgba(248, 223, 176, 0.4);
+    border-color: rgba(201, 168, 76, 0.4);
     color: var(--color-marca);
   }
 
