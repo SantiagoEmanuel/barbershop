@@ -119,12 +119,12 @@ export default function Home() {
           </div>
 
           <h1
-            className="font-display text-text-primary leading-[1.05] font-bold"
+            className="font-display flex flex-col gap-1 text-text-primary leading-[1.05] font-bold"
             style={{
               fontSize: "clamp(2.25rem, 7vw, 4.5rem)",
             }}
           >
-            Reserva tu turno{" "}
+            <span>Reserva tu turno,</span>
             <span className="text-marca font-normal italic">
               del resto nos encargamos nosotros.
             </span>
