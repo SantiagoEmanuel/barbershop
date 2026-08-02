@@ -39,10 +39,11 @@ export function MobileDrawer({
   const closeRef = useRef(onClose);
   useEffect(() => {
     closeRef.current = onClose;
-  }, [onClose]);
-  useEffect(() => {
     closeRef.current();
-  }, [location.pathname]);
+    if (user) {
+      closeRef.current();
+    }
+  }, [onClose, location.pathname]);
 
   // ── Sin user: top sheet con CTAs ─────────────────────────
   if (!user) {
