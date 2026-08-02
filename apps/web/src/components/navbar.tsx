@@ -47,12 +47,15 @@ export function Navbar({
 
   // Sombra/borde al hacer scroll — feedback sutil de que la navbar es sticky.
   useEffect(() => {
+    if (user) {
+      setDrawerOpen(false);
+    }
     function onScroll() {
       setScrolled(window.scrollY > 8);
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [user]);
 
   // Cerrar dropdown al cambiar de ruta.
   useEffect(() => {
