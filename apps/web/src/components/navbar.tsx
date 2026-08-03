@@ -57,11 +57,11 @@ export function Navbar({
     return () => window.removeEventListener("scroll", onScroll);
   }, [user]);
 
-  // Cerrar dropdown al cambiar de ruta.
+  // Cerrar dropdown al cambiar de ruta o al iniciar sesión.
   useEffect(() => {
     setUserMenuOpen(false);
     setDrawerOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, user]);
 
   return (
     <>

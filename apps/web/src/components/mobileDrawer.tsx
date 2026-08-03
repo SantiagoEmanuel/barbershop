@@ -44,6 +44,10 @@ export function MobileDrawer({
     closeRef.current();
   }, [location.pathname, user]);
 
+  if (!open) {
+    return null;
+  }
+
   // ── Sin user: top sheet con CTAs ─────────────────────────
   if (!user) {
     return (
