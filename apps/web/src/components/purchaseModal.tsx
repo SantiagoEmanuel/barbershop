@@ -2,7 +2,11 @@ import { FieldInput, ModalBase, Spinner } from "@config/components";
 import { useEffect, useState, type ReactNode } from "react";
 import { post } from "../lib/api";
 import type { ApiResponse, Product, Supply } from "../types";
-import { formatARS } from "./ui/formatters";
+import {
+  formatARS,
+  formatCentsForInput,
+  parseCurrencyToCents,
+} from "./ui/formatters";
 
 export interface PaymentMethod {
   id: string;
@@ -174,10 +178,14 @@ export function PurchaseModal({
               required
             />
             <FieldInput
-              label="Costo unit. (cent.) *"
-              value={unitCost}
-              onChange={setUnitCost}
-              type="number"
+              label="Costo unit. *"
+              value={unitCost ? formatCentsForInput(Number(unitCost)) : ""}
+              onChange={(v) => {
+                const cents = parseCurrencyToCents(v);
+                setUnitCost(cents === null ? "" : cents.toString());
+              }}
+              type="text"
+              placeholder="3500"
               required
             />
           </div>

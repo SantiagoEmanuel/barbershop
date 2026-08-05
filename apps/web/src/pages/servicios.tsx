@@ -8,7 +8,11 @@ import {
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { BackTo } from "../components/backTo";
-import { formatARS } from "../components/ui/formatters";
+import {
+  formatARS,
+  formatCentsForInput,
+  parseCurrencyToCents,
+} from "../components/ui/formatters";
 import { api, post, put } from "../lib/api";
 import type { ApiResponse, Service } from "../types";
 
@@ -88,11 +92,14 @@ function ServiceModal({
           />
           <div className="grid grid-cols-2 gap-3">
             <FieldInput
-              label="Precio (centavos) *"
-              value={price}
-              onChange={setPrice}
-              type="number"
-              placeholder="350000"
+              label="Precio *"
+              value={price ? formatCentsForInput(Number(price)) : ""}
+              onChange={(e) => {
+                const cents = parseCurrencyToCents(e);
+                setPrice(cents === null ? "" : cents.toString());
+              }}
+              type="text"
+              placeholder="3500"
               required
             />
             <FieldInput
@@ -105,7 +112,7 @@ function ServiceModal({
             />
           </div>
           <p className="text-text-muted font-body text-xs">
-            El precio va en centavos: $3.500 ARS = 350000
+            El precio va en pesos: $3.500 ARS = 3500
           </p>
           {error && (
             <p className="bg-error/10 text-error font-body rounded-lg px-3 py-2 text-xs">

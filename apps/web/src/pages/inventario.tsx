@@ -8,7 +8,11 @@ import {
 import { useEffect, useState } from "react";
 import { BackTo } from "../components/backTo";
 import { PurchaseModal, type PaymentMethod } from "../components/purchaseModal";
-import { formatARS } from "../components/ui/formatters";
+import {
+  formatARS,
+  formatCentsForInput,
+  parseCurrencyToCents,
+} from "../components/ui/formatters";
 import { api, post, put } from "../lib/api";
 import type { ApiResponse, Product, Supply } from "../types";
 
@@ -91,17 +95,23 @@ function ProductModal({
           />
           <div className="grid grid-cols-2 gap-3">
             <FieldInput
-              label="Precio venta (cent.) *"
-              value={price}
-              onChange={setPrice}
-              type="number"
+              label="Precio venta *"
+              value={price ? formatCentsForInput(Number(price)) : ""}
+              onChange={(v) => {
+                const cents = parseCurrencyToCents(v);
+                setPrice(cents === null ? "" : cents.toString());
+              }}
+              type="text"
               required
             />
             <FieldInput
-              label="Costo (cent.)"
-              value={cost}
-              onChange={setCost}
-              type="number"
+              label="Costo"
+              value={cost ? formatCentsForInput(Number(cost)) : ""}
+              onChange={(v) => {
+                const cents = parseCurrencyToCents(v);
+                setCost(cents === null ? "" : cents.toString());
+              }}
+              type="text"
             />
           </div>
           {initial ? (
@@ -227,10 +237,13 @@ function SupplyModal({
           <div className="grid grid-cols-2 gap-3">
             <FieldInput label="Unidad" value={unit} onChange={setUnit} />
             <FieldInput
-              label="Costo (cent.)"
-              value={cost}
-              onChange={setCost}
-              type="number"
+              label="Costo"
+              value={cost ? formatCentsForInput(Number(cost)) : ""}
+              onChange={(v) => {
+                const cents = parseCurrencyToCents(v);
+                setCost(cents === null ? "" : cents.toString());
+              }}
+              type="text"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">

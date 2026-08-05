@@ -16,7 +16,11 @@ import {
   PurchaseModal,
   type PaymentMethod,
 } from "../components/purchaseModal";
-import { formatARS } from "../components/ui/formatters";
+import {
+  formatARS,
+  formatCentsForInput,
+  parseCurrencyToCents,
+} from "../components/ui/formatters";
 import { api, post } from "../lib/api";
 import type {
   ApiResponse,
@@ -109,11 +113,14 @@ function ExpenseModal({
             required
           />
           <FieldInput
-            label="Monto (centavos) *"
-            value={amount}
-            onChange={setAmount}
-            type="number"
-            placeholder="150000"
+            label="Monto *"
+            value={amount ? formatCentsForInput(Number(amount)) : ""}
+            onChange={(v) => {
+              const cents = parseCurrencyToCents(v);
+              setAmount(cents === null ? "" : cents.toString());
+            }}
+            type="text"
+            placeholder="1500"
             required
           />
           <FieldSelect
@@ -306,10 +313,13 @@ function RecurringModal({
           />
           <div className="grid grid-cols-2 gap-3">
             <FieldInput
-              label="Monto (cent.) *"
-              value={amount}
-              onChange={setAmount}
-              type="number"
+              label="Monto *"
+              value={amount ? formatCentsForInput(Number(amount)) : ""}
+              onChange={(v) => {
+                const cents = parseCurrencyToCents(v);
+                setAmount(cents === null ? "" : cents.toString());
+              }}
+              type="text"
               required
             />
             <FieldInput
