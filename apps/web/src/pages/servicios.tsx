@@ -32,7 +32,7 @@ function ServiceModal({
   const [desc, setDesc] = useState(initial?.description ?? "");
   const [price, setPrice] = useState(String(initial?.price ?? ""));
   const [duration, setDuration] = useState(
-    String(initial?.durationMinutes ?? ""),
+    String(initial?.durationMinutes ?? "30"),
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -103,12 +103,13 @@ function ServiceModal({
               required
             />
             <FieldInput
-              label="Duración (min) *"
+              label="Duración (valor fijo)"
               value={duration}
               onChange={setDuration}
               type="number"
               placeholder="30"
               required
+              readonly
             />
           </div>
           <p className="text-text-muted font-body text-xs">
