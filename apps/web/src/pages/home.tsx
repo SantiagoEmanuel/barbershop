@@ -187,7 +187,7 @@ export default function Home() {
               >
                 <div className="flex w-full items-start justify-between gap-4">
                   <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span className={cn("size-10 rounded-full border")}>
+                    <span className={cn("size-10 rounded-full")}>
                       <img
                         src="scissors_icon.png"
                         className="bg-marca h-auto w-full rounded-full p-1.5"
