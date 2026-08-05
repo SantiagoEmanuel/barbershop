@@ -119,7 +119,7 @@ export default function Home() {
           </div>
 
           <h1
-            className="font-display flex flex-col gap-1 text-text-primary leading-[1.05] font-bold"
+            className="font-display text-text-primary flex flex-col gap-1 leading-[1.05] font-bold"
             style={{
               fontSize: "clamp(2.25rem, 7vw, 4.5rem)",
             }}
@@ -187,11 +187,7 @@ export default function Home() {
               >
                 <div className="flex w-full items-start justify-between gap-4">
                   <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span
-                      className={cn(
-                        "border-marca/80 size-10 rounded-full border",
-                      )}
-                    >
+                    <span className={cn("size-10 rounded-full border")}>
                       <img
                         src="scissors_icon.png"
                         className="bg-marca h-auto w-full rounded-full p-1.5"

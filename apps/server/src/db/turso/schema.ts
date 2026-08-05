@@ -535,15 +535,17 @@ export const expenses = table(
 // RELATIONS (para Drizzle query API con .with())
 // ─────────────────────────────────────────────
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   appointments: many(appointments),
+  barbers: one(barbers),
 }));
 
-export const barbersRelations = relations(barbers, ({ many }) => ({
+export const barbersRelations = relations(barbers, ({ many, one }) => ({
   schedules: many(barberSchedules),
   overrides: many(barberScheduleOverrides),
   appointments: many(appointments),
   productSales: many(productSales),
+  users: one(users),
 }));
 
 export const servicesRelations = relations(services, ({ many }) => ({

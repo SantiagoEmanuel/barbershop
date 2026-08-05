@@ -41,6 +41,18 @@ interface Appointment {
   barber: {
     id?: string;
     name?: string;
+    users?: {
+      id: string;
+      name: string;
+      email: string;
+      username: string;
+      password: string;
+      role: "admin" | "client" | "barber";
+      phone: string;
+      isActive: boolean;
+      verify: boolean;
+      createdAt: Date;
+    } | null;
   };
   client: {
     id: string;
@@ -55,7 +67,7 @@ export async function confirmShift(data: Appointment) {
   const recipient = [new Recipient(data.clientEmail, data.clientName)];
 
   const recipient2 = [
-    new Recipient("pekojimenez1996@gmail.com", "José Jimenez"),
+    new Recipient(data.barber.users!.email, data.barber.name),
   ];
 
   // Apunta al frontend; esa página confirma el turno vía API automáticamente.

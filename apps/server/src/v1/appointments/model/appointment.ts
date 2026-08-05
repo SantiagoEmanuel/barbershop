@@ -35,7 +35,11 @@ export default class AppointmentModel {
       where: eq(appointments.id, id),
       with: {
         service: true,
-        barber: true,
+        barber: {
+          with: {
+            users: true,
+          },
+        },
         client: true,
       },
     });
