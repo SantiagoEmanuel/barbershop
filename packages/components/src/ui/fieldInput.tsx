@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 /**
  * Variante compacta de Field — pensada para forms dentro de modales del admin
  * (servicios, productos, barberos). Acepta string o number en value para
@@ -22,12 +24,18 @@ export function FieldInput({
   disabled?: boolean;
   readonly?: boolean;
 }) {
+  const inputId = useId();
+
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-text-muted font-body text-xs font-semibold tracking-wide uppercase">
+      <label
+        htmlFor={inputId}
+        className="text-text-muted font-body text-xs font-semibold tracking-wide uppercase"
+      >
         {label}
       </label>
       <input
+        id={inputId}
         type={type}
         value={value}
         disabled={disabled}
