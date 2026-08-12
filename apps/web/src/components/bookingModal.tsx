@@ -258,7 +258,6 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
   const { barberId, serviceDuration, date, startTime, setDate, setSlot } =
     useBookingStore();
   const user = useAuthStore((u) => u.user);
-  const [rawSlots, setRawSlots] = useState<Slot[]>([]);
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -271,17 +270,10 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
     )
       .then((r) => {
         const slots = r?.data?.slots ?? [];
-        setRawSlots(slots);
         setValidSlots(filterValidSlots(slots, serviceDuration));
       })
       .finally(() => setLoadingSlots(false));
   }, [date, barberId]);
-
-  useEffect(() => {
-    if (rawSlots.length > 0) {
-      setValidSlots(filterValidSlots(rawSlots, serviceDuration));
-    }
-  }, [serviceDuration, rawSlots]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -319,8 +311,8 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
             </div>
           ) : validSlots.length === 0 ? (
             <div className="border-border text-text-muted font-body rounded-xl border bg-black/20 px-4 py-5 text-center text-sm">
-              No hay turnos disponibles para el día {formatDate(date)}. Intenta
-              con otra fecha.
+              Lo sentimos, trabajamos por turno de llegada el {formatDate(date)}
+              . Estamos cerrados los domingos
             </div>
           ) : (
             <>
