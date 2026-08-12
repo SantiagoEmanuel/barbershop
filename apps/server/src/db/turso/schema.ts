@@ -600,7 +600,10 @@ export const expenses = table(
 
 export const usersRelations = relations(users, ({ many, one }) => ({
   appointments: many(appointments),
-  barbers: one(barbers),
+  barbers: one(barbers, {
+    fields: [users.id],
+    references: [barbers.userId],
+  }),
 }));
 
 export const barbersRelations = relations(barbers, ({ many, one }) => ({
@@ -609,7 +612,10 @@ export const barbersRelations = relations(barbers, ({ many, one }) => ({
   appointments: many(appointments),
   overbookedAppointments: many(overbookedAppointments),
   productSales: many(productSales),
-  users: one(users),
+  users: one(users, {
+    fields: [barbers.userId],
+    references: [users.id],
+  }),
 }));
 
 export const servicesRelations = relations(services, ({ many }) => ({
