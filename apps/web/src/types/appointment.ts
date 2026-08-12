@@ -28,4 +28,6 @@ export interface Appointment {
   barber: Barber;
   client?: User;
   clientEmail: string | null;
+  /** Identifica los turnos cargados por un admin por encima de un conflicto. */
+  kind?: "regular" | "extraordinary";
 }

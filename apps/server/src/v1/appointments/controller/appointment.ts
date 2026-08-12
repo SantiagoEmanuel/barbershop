@@ -69,36 +69,61 @@ export default class AppointmentController {
         });
       }
 
-      const newAppointment = await AppointmentModel.create({
-        barberId,
-        date,
-        serviceId,
-        startTime,
-        clientName,
-        clientPhone,
-        clientEmail: clientEmail ?? user?.email,
-        clientId: user?.id,
-        notes,
-        endTime: minutesToTime(newEndTime),
-        priceSnapshot: service.price,
-        status,
-      });
+      if (conflict > 0 && user?.role === "admin") {
+        const newAppointment = await AppointmentModel.createByAdmin({
+          barberId,
+          date,
+          serviceId,
+          startTime,
+          clientName,
+          clientPhone,
+          endTime: minutesToTime(newEndTime),
+          priceSnapshot: service.price,
+        });
 
-      if (!newAppointment) {
-        return res.status(500).json({
-          message: "Ha ocurrido un error al guardar tu turno",
-          data: null,
+        if (!newAppointment) {
+          return res.status(500).json({
+            message: "Ha ocurrido un error al guardar tu turno",
+            data: null,
+          });
+        }
+
+        return res.status(201).json({
+          message: "Turno agendado correctamente",
+          data: newAppointment,
+        });
+      } else {
+        const newAppointment = await AppointmentModel.create({
+          barberId,
+          date,
+          serviceId,
+          startTime,
+          clientName,
+          clientPhone,
+          clientEmail: clientEmail ?? user?.email,
+          clientId: user?.id,
+          notes,
+          endTime: minutesToTime(newEndTime),
+          priceSnapshot: service.price,
+          status,
+        });
+
+        if (!newAppointment) {
+          return res.status(500).json({
+            message: "Ha ocurrido un error al guardar tu turno",
+            data: null,
+          });
+        }
+
+        const appointment = await AppointmentModel.getById(newAppointment.id);
+
+        await confirmShift(appointment);
+
+        return res.status(201).json({
+          message: "Turno agendado correctamente",
+          data: newAppointment,
         });
       }
-
-      const appointment = await AppointmentModel.getById(newAppointment.id);
-
-      await confirmShift(appointment);
-
-      return res.status(201).json({
-        message: "Turno agendado correctamente",
-        data: newAppointment,
-      });
     } catch (err: any) {
       const status = typeof err.status === "number" ? err.status : 500;
       return res

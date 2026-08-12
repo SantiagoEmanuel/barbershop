@@ -145,7 +145,10 @@ export default function CierreServicio() {
           id: string;
         }>
       >("order/create", {
-        appointmentId: appointment.id,
+        appointmentId:
+          appointment.kind === "extraordinary" ? undefined : appointment.id,
+        overbookedAppointmentId:
+          appointment.kind === "extraordinary" ? appointment.id : undefined,
         paymentMethodId: selectedPayment,
         amount: grandTotal,
         soldBy: appointment.barber.id,
@@ -192,7 +195,10 @@ export default function CierreServicio() {
           payerEmail: appointment.clientEmail,
           payerName: appointment.clientName,
           paymentMethodId: id,
-          appointment: appointmentId,
+          appointmentId:
+            appointment.kind === "extraordinary" ? undefined : appointment.id,
+          overbookedAppointmentId:
+            appointment.kind === "extraordinary" ? appointment.id : undefined,
           amount: grandTotal,
         }),
       ]).then(async ([response]) => {

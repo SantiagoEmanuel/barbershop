@@ -82,7 +82,7 @@ export default function Ingresos() {
         <StatCard
           label="Total ingresos"
           value={formatARS(income?.total ?? 0)}
-          sub={`${income?.count ?? 0} órdenes pagas`}
+          sub={`${income?.count ?? 0} órdenes pagas${summary?.extraordinaryOrdersCount ? ` · ${summary.extraordinaryOrdersCount} extraordinario${summary.extraordinaryOrdersCount === 1 ? "" : "s"}` : ""}`}
           icon="💰"
           accent
         />
@@ -133,15 +133,22 @@ export default function Ingresos() {
                   className="border-border flex items-center gap-3 border-b py-2 last:border-b-0"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-text-primary font-body truncate text-sm font-semibold">
-                      {o.service ?? "Venta de mostrador"}
-                      {o.productsCount > 0 && (
-                        <span className="text-text-muted font-normal">
-                          {" "}
-                          · {o.productsCount} prod.
+                    <div className="flex items-center gap-2">
+                      <p className="text-text-primary font-body truncate text-sm font-semibold">
+                        {o.service ?? "Venta de mostrador"}
+                        {o.productsCount > 0 && (
+                          <span className="text-text-muted font-normal">
+                            {" "}
+                            · {o.productsCount} prod.
+                          </span>
+                        )}
+                      </p>
+                      {o.appointmentKind === "extraordinary" && (
+                        <span className="border-marca/40 bg-marca/10 text-marca shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+                          Extraordinario
                         </span>
                       )}
-                    </p>
+                    </div>
                     <p className="text-text-muted font-body text-xs">
                       {o.barber ?? "—"} · {o.paymentMethod ?? "—"} ·{" "}
                       {new Date(o.paidAt).toLocaleDateString("es-AR")}

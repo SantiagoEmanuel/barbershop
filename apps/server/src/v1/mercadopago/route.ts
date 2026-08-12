@@ -1,5 +1,10 @@
 import { db } from "@/db/db";
-import { appointments, orders, paymentMethods } from "@/db/turso/schema";
+import {
+  appointments,
+  orders,
+  overbookedAppointments,
+  paymentMethods,
+} from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
 import {
   createPreference,
@@ -16,11 +21,22 @@ MPRouter.post("/create-preference", async (req, res, next) => {
 
   try {
     const result = await db.transaction(async (tx) => {
+      if (data.appointmentId && data.overbookedAppointmentId) {
+        throw new AppError("Una orden solo puede asociarse a un turno", 400);
+      }
+
       if (data.appointmentId) {
         const apt = await tx.query.appointments.findFirst({
           where: eq(appointments.id, data.appointmentId),
         });
         if (!apt) throw new AppError("El turno no existe", 404);
+      }
+
+      if (data.overbookedAppointmentId) {
+        const apt = await tx.query.overbookedAppointments.findFirst({
+          where: eq(overbookedAppointments.id, data.overbookedAppointmentId),
+        });
+        if (!apt) throw new AppError("El turno extraordinario no existe", 404);
       }
 
       const pm = await tx.query.paymentMethods.findFirst({

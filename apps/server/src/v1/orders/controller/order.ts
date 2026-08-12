@@ -27,6 +27,7 @@ export default class OrderController {
 
     try {
       const data = await OrderModel.getByDate(date);
+      console.log({ data });
       return res.json({ message: "OK", data });
     } catch (err: any) {
       return res
@@ -64,11 +65,13 @@ export default class OrderController {
   }
 
   static async create(req: Request, res: Response) {
-    const { appointmentId, paymentMethodId, amount } = req.body as {
-      appointmentId?: string;
-      paymentMethodId?: string;
-      amount?: number;
-    };
+    const { appointmentId, overbookedAppointmentId, paymentMethodId, amount } =
+      req.body as {
+        appointmentId?: string;
+        overbookedAppointmentId?: string;
+        paymentMethodId?: string;
+        amount?: number;
+      };
 
     if (!paymentMethodId || amount == null) {
       return res.status(400).json({
@@ -87,6 +90,7 @@ export default class OrderController {
     try {
       const data = await OrderModel.create({
         appointmentId,
+        overbookedAppointmentId,
         paymentMethodId,
         amount,
       });
@@ -109,14 +113,21 @@ export default class OrderController {
    * referencia de la sesión).
    */
   static async createByBarber(req: Request, res: Response) {
-    const { amount, soldBy, items, paymentMethodId, appointmentId } =
-      req.body as {
-        amount?: number;
-        soldBy?: string;
-        items?: CounterSaleItem[];
-        paymentMethodId?: string;
-        appointmentId?: string;
-      };
+    const {
+      amount,
+      soldBy,
+      items,
+      paymentMethodId,
+      appointmentId,
+      overbookedAppointmentId,
+    } = req.body as {
+      amount?: number;
+      soldBy?: string;
+      items?: CounterSaleItem[];
+      paymentMethodId?: string;
+      appointmentId?: string;
+      overbookedAppointmentId?: string;
+    };
 
     // 1. Validación de presencia (ojo con los `!` que se te habían escapado)
     if (
@@ -165,6 +176,7 @@ export default class OrderController {
       //    consideran órdenes con status "paid").
       const order = await OrderModel.create({
         appointmentId,
+        overbookedAppointmentId,
         paymentMethodId,
         amount,
         status: "paid",

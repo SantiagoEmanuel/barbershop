@@ -22,10 +22,11 @@ type AppointmentStatus =
   | "no_show";
 
 interface Appointment {
+  kind: "regular" | "extraordinary";
   id: string;
   clientName: string;
   clientPhone: string;
-  clientEmail: string;
+  clientEmail: string | null;
   date: string;
   startTime: string;
   endTime: string;
@@ -37,7 +38,7 @@ interface Appointment {
     name?: string;
     durationMinutes?: number;
     price?: number;
-  };
+  } | null;
   barber: {
     id?: string;
     name?: string;
@@ -53,22 +54,20 @@ interface Appointment {
       verify: boolean;
       createdAt: Date;
     } | null;
-  };
-  client: {
-    id: string;
-    name: string;
   } | null;
 }
 
 export async function confirmShift(data: Appointment) {
-  if (!data) {
-    return;
-  }
+  // Los turnos extraordinarios no tienen email de cliente ni el usuario del
+  // barbero cargado; no deben disparar correos de confirmación.
+  if (data.kind !== "regular") return null;
+
+  if (!data.clientEmail || !data.barber || !data.barber.users || !data.service)
+    return null;
+
   const recipient = [new Recipient(data.clientEmail, data.clientName)];
 
-  const recipient2 = [
-    new Recipient(data.barber.users!.email, data.barber.name),
-  ];
+  const recipient2 = [new Recipient(data.barber.users.email, data.barber.name)];
 
   // Apunta al frontend; esa página confirma el turno vía API automáticamente.
   const confirmUrl = `${PUBLIC_WEB_URL}/turno/confirmar/${data.id}`;
@@ -99,9 +98,7 @@ export async function confirmShift(data: Appointment) {
 }
 
 export async function confirmEmail(data: Partial<User>) {
-  if (!data) {
-    return;
-  }
+  if (!data) return;
 
   const token = sign(
     {
@@ -135,6 +132,9 @@ export async function confirmEmail(data: Partial<User>) {
 }
 
 function confirmShiftHTML(data: Appointment, confirmUrl: string) {
+  if (!data.clientEmail || !data.barber || !data.barber.users || !data.service)
+    return "";
+
   const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
     weekday: "long",
     day: "numeric",
@@ -263,12 +263,12 @@ function confirmShiftHTML(data: Appointment, confirmUrl: string) {
                         </p>
 
                         <p
-                         style="
-                          margin: 6px 0 0;
-                          font-size: 18px;
-                          color: #0f0f0f;
-                          font-weight: bold;
-                          text-transform: capitalize
+                          style="
+                            margin: 6px 0 0;
+                            font-size: 18px;
+                            color: #0f0f0f;
+                            font-weight: bold;
+                            text-transform: capitalize
                           "
                           class="capitalize"
                         >
@@ -459,6 +459,9 @@ function confirmShiftHTML(data: Appointment, confirmUrl: string) {
 }
 
 function sendShiftToBarber(data: Appointment) {
+  if (!data.clientEmail || !data.barber || !data.barber.users || !data.service)
+    return "";
+
   const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
     weekday: "long",
     day: "numeric",
@@ -753,6 +756,9 @@ function sendShiftToBarber(data: Appointment) {
 }
 
 function sendShiftToBarberTExt(data: Appointment) {
+  if (!data.clientEmail || !data.barber || !data.barber.users || !data.service)
+    return "";
+
   const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
     weekday: "long",
     day: "numeric",
@@ -777,6 +783,9 @@ function sendShiftToBarberTExt(data: Appointment) {
 }
 
 function confirmShiftTEXT(data: Appointment, confirmUrl: string) {
+  if (!data.clientEmail || !data.barber || !data.barber.users || !data.service)
+    return "";
+
   const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
     weekday: "long",
     day: "numeric",

@@ -37,6 +37,7 @@ references/
 .eslintcache
 .prettiercache
 **/**/.gitignore
+.pnpm-store/
 
 # RestClient
 *.http

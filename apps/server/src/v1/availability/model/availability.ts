@@ -3,6 +3,7 @@ import {
   appointments,
   barberScheduleOverrides,
   barberSchedules,
+  overbookedAppointments,
 } from "@/db/turso/schema";
 import {
   filterOccupiedSlots,
@@ -59,14 +60,29 @@ export default class AvailabilityModel {
     if (slots.length === 0) return [];
 
     // 4. Turnos ya ocupados (pending o confirmed) — status cancelled/no_show quedan libres
-    const occupied = await db.query.appointments.findMany({
-      where: and(
-        eq(appointments.barberId, barberId),
-        eq(appointments.date, date),
-        inArray(appointments.status, ["pending", "confirmed", "completed"]),
-      ),
-      columns: { startTime: true, endTime: true },
-    });
+    const [regularOccupied, extraordinaryOccupied] = await Promise.all([
+      db.query.appointments.findMany({
+        where: and(
+          eq(appointments.barberId, barberId),
+          eq(appointments.date, date),
+          inArray(appointments.status, ["pending", "confirmed", "completed"]),
+        ),
+        columns: { startTime: true, endTime: true },
+      }),
+      db.query.overbookedAppointments.findMany({
+        where: and(
+          eq(overbookedAppointments.barberId, barberId),
+          eq(overbookedAppointments.date, date),
+          inArray(overbookedAppointments.status, [
+            "pending",
+            "confirmed",
+            "completed",
+          ]),
+        ),
+        columns: { startTime: true, endTime: true },
+      }),
+    ]);
+    const occupied = [...regularOccupied, ...extraordinaryOccupied];
 
     // 5. Filtrar colisiones y retornar slots disponibles
     return filterOccupiedSlots(slots, occupied);

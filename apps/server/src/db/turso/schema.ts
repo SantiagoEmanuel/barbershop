@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   index,
   integer,
   sqliteTable as table,
@@ -285,6 +286,52 @@ export const appointments = table(
   ],
 );
 
+export const overbookedAppointments = table(
+  "overbooked_appointment",
+  {
+    id: id(),
+    barberId: text("barber_id")
+      .notNull()
+      .references(() => barbers.id),
+    serviceId: text("service_id")
+      .notNull()
+      .references(() => services.id),
+    clientName: text("client_name").notNull(),
+    clientPhone: text("client_phone").notNull(),
+    date: text("date").notNull(),
+    /** Hora de inicio: 'HH:MM' */
+    startTime: text("start_time").notNull(),
+    /**
+     * Hora de fin: start_time + service.durationMinutes.
+     * Se persiste para no recalcular en cada consulta de disponibilidad
+     * y para hacer queries de overlap eficientemente.
+     */
+    endTime: text("end_time").notNull(),
+    /** Los turnos extraordinarios se gestionan igual que los regulares. */
+    status: text("status", {
+      enum: ["pending", "confirmed", "completed", "cancelled", "no_show"],
+    })
+      .notNull()
+      .default("confirmed"),
+    cancelledAt: integer("cancelled_at", { mode: "timestamp" }),
+    /**
+     * Precio capturado al momento de la reserva, en centavos.
+     * Independiente de futuros cambios en services.price.
+     * Es el precio que el cliente aceptó pagar.
+     */
+    priceSnapshot: integer("price_snapshot").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    /**
+     * Índice compuesto principal: la query más frecuente del sistema
+     * es "todos los turnos del barbero X para la fecha Y".
+     * Sin este índice compuesto esa query hace full scan.
+     */
+    index("idx_overbooked_barber_date").on(t.barberId, t.date),
+  ],
+);
+
 // ─────────────────────────────────────────────
 // ORDERS (pagos — separados del turno)
 // ─────────────────────────────────────────────
@@ -300,6 +347,9 @@ export const orders = table(
     appointmentId: text("appointment_id")
       .unique()
       .references(() => appointments.id),
+    overbookedAppointmentId: text("overbooked_appointment_id")
+      .unique()
+      .references(() => overbookedAppointments.id),
     paymentMethodId: text("payment_method_id")
       .notNull()
       .references(() => paymentMethods.id),
@@ -333,6 +383,19 @@ export const orders = table(
     // Lookup de webhook: POST /webhook/mp → buscar por external_payment_id
     index("idx_orders_external_payment_id").on(t.externalPaymentId),
     index("idx_orders_status").on(t.status),
+    // Una orden puede corresponder a un turno regular, extraordinario o a una
+    // venta de mostrador. Lo único inválido es vincularla a ambos tipos.
+    check(
+      "orders_at_most_one_appointment",
+      sql`NOT (appointment_id IS NOT NULL AND overbooked_appointment_id IS NOT NULL)`,
+    ),
+    uniqueIndex("uq_orders_appointment")
+      .on(t.appointmentId)
+      .where(sql`appointment_id IS NOT NULL`),
+
+    uniqueIndex("uq_orders_overbooked_appointment")
+      .on(t.overbookedAppointmentId)
+      .where(sql`overbooked_appointment_id IS NOT NULL`),
   ],
 );
 
@@ -544,6 +607,7 @@ export const barbersRelations = relations(barbers, ({ many, one }) => ({
   schedules: many(barberSchedules),
   overrides: many(barberScheduleOverrides),
   appointments: many(appointments),
+  overbookedAppointments: many(overbookedAppointments),
   productSales: many(productSales),
   users: one(users),
 }));
@@ -599,10 +663,32 @@ export const appointmentsRelations = relations(appointments, ({ one }) => ({
   }),
 }));
 
+export const overbookedAppointmentsRelations = relations(
+  overbookedAppointments,
+  ({ one }) => ({
+    barber: one(barbers, {
+      fields: [overbookedAppointments.barberId],
+      references: [barbers.id],
+    }),
+    service: one(services, {
+      fields: [overbookedAppointments.serviceId],
+      references: [services.id],
+    }),
+    order: one(orders, {
+      fields: [overbookedAppointments.id],
+      references: [orders.overbookedAppointmentId],
+    }),
+  }),
+);
+
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   appointment: one(appointments, {
     fields: [orders.appointmentId],
     references: [appointments.id],
+  }),
+  overbookedAppointment: one(overbookedAppointments, {
+    fields: [orders.overbookedAppointmentId],
+    references: [overbookedAppointments.id],
   }),
   paymentMethod: one(paymentMethods, {
     fields: [orders.paymentMethodId],

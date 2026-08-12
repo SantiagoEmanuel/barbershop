@@ -1,5 +1,5 @@
 import { db } from "@/db/db";
-import { appointments } from "@/db/turso/schema";
+import { appointments, overbookedAppointments } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
 import { and, count, eq, gt, inArray, lt } from "drizzle-orm";
 
@@ -27,11 +27,21 @@ export interface Appointment {
 
 interface AppointmentProps {
   create: Appointment;
+  createByAdmin: {
+    serviceId: string;
+    startTime: string;
+    priceSnapshot: number;
+    barberId: string;
+    endTime: string;
+    clientName: string;
+    clientPhone: string;
+    date: string;
+  };
 }
 
 export default class AppointmentModel {
   static async getById(id: string) {
-    const data = await db.query.appointments.findFirst({
+    const regular = await db.query.appointments.findFirst({
       where: eq(appointments.id, id),
       with: {
         service: true,
@@ -44,31 +54,65 @@ export default class AppointmentModel {
       },
     });
 
-    if (!data) {
-      throw new AppError("Turno inexistente", 404);
-    }
+    if (regular) return { ...regular, kind: "regular" as const };
 
-    return data;
+    const extraordinary = await db.query.overbookedAppointments.findFirst({
+      where: eq(overbookedAppointments.id, id),
+      with: { service: true, barber: true },
+    });
+
+    if (!extraordinary) throw new AppError("Turno inexistente", 404);
+
+    return {
+      ...extraordinary,
+      clientEmail: null,
+      clientId: null,
+      notes: null,
+      kind: "extraordinary" as const,
+    };
   }
   static async getByDate(barberId: string, date: string) {
     try {
-      const data = await db.query.appointments.findMany({
-        where: and(
-          // "all" → todos los barberos (sin filtrar por barbero ni estado),
-          // necesario para que el dashboard calcule completados y facturación.
-          barberId !== "all"
-            ? eq(appointments.barberId, barberId as string)
-            : undefined,
-          eq(appointments.date, date as string),
-        ),
-        with: {
-          service: true,
-          barber: true,
-          client: true,
-        },
-      });
+      const [regular, extraordinary] = await Promise.all([
+        db.query.appointments.findMany({
+          where: and(
+            // "all" → todos los barberos (sin filtrar por barbero ni estado),
+            // necesario para que el dashboard calcule completados y facturación.
+            barberId !== "all"
+              ? eq(appointments.barberId, barberId as string)
+              : undefined,
+            eq(appointments.date, date as string),
+          ),
+          with: {
+            service: true,
+            barber: true,
+            client: true,
+          },
+        }),
+        db.query.overbookedAppointments.findMany({
+          where: and(
+            barberId !== "all"
+              ? eq(overbookedAppointments.barberId, barberId)
+              : undefined,
+            eq(overbookedAppointments.date, date),
+          ),
+          with: { service: true, barber: true },
+        }),
+      ]);
 
-      return data;
+      return [
+        ...regular.map((appointment) => ({
+          ...appointment,
+          kind: "regular" as const,
+        })),
+        ...extraordinary.map((appointment) => ({
+          ...appointment,
+          clientEmail: null,
+          clientId: null,
+          notes: null,
+          kind: "extraordinary" as const,
+        })),
+      ];
     } catch (err: any) {
       throw new AppError(
         err.message || "Ha ocurrido un error al obtener los turnos solicitados",
@@ -88,6 +132,36 @@ export default class AppointmentModel {
 
     return newAppointment;
   }
+  static async createByAdmin({
+    serviceId,
+    startTime,
+    priceSnapshot,
+    barberId,
+    endTime,
+    clientName,
+    clientPhone,
+    date,
+  }: AppointmentProps["createByAdmin"]) {
+    const [newAppointment] = await db
+      .insert(overbookedAppointments)
+      .values({
+        serviceId,
+        startTime,
+        endTime,
+        priceSnapshot,
+        barberId,
+        clientName,
+        clientPhone,
+        date,
+        status: "confirmed",
+      })
+      .returning();
+
+    if (!newAppointment) {
+      throw new AppError("No se pudo generar el turno", 404);
+    }
+    return newAppointment;
+  }
   static async update(
     status:
       | "pending"
@@ -98,7 +172,7 @@ export default class AppointmentModel {
       | undefined,
     id: string,
   ) {
-    const [dataUpdated] = await db
+    const [regular] = await db
       .update(appointments)
       .set({
         status,
@@ -107,11 +181,22 @@ export default class AppointmentModel {
       .where(eq(appointments.id, id as string))
       .returning();
 
-    if (!dataUpdated) {
-      throw new AppError("El turno no existe en al base de datos", 400);
+    if (regular) return { ...regular, kind: "regular" as const };
+
+    const [extraordinary] = await db
+      .update(overbookedAppointments)
+      .set({
+        status,
+        cancelledAt: status === "cancelled" ? new Date() : null,
+      })
+      .where(eq(overbookedAppointments.id, id))
+      .returning();
+
+    if (!extraordinary) {
+      throw new AppError("El turno no existe en la base de datos", 400);
     }
 
-    return dataUpdated;
+    return { ...extraordinary, kind: "extraordinary" as const };
   }
   static async my(clientId: string) {
     const data = await db.query.appointments.findMany({
@@ -134,19 +219,33 @@ export default class AppointmentModel {
     startTime: string,
     endTime: string,
   ) {
-    const [data] = await db
-      .select({ count: count() })
-      .from(appointments)
-      .where(
-        and(
-          eq(appointments.barberId, barberId),
-          eq(appointments.date, date),
-          lt(appointments.startTime, endTime), // a.startTime < endTime
-          gt(appointments.endTime, startTime), // a.endTime > startTime
-          inArray(appointments.status, ["pending", "confirmed"]), // Solo turnos que bloquean
+    const [regular, extraordinary] = await Promise.all([
+      db
+        .select({ count: count() })
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.barberId, barberId),
+            eq(appointments.date, date),
+            lt(appointments.startTime, endTime), // a.startTime < endTime
+            gt(appointments.endTime, startTime), // a.endTime > startTime
+            inArray(appointments.status, ["pending", "confirmed"]), // Solo turnos que bloquean
+          ),
         ),
-      );
+      db
+        .select({ count: count() })
+        .from(overbookedAppointments)
+        .where(
+          and(
+            eq(overbookedAppointments.barberId, barberId),
+            eq(overbookedAppointments.date, date),
+            lt(overbookedAppointments.startTime, endTime),
+            gt(overbookedAppointments.endTime, startTime),
+            inArray(overbookedAppointments.status, ["pending", "confirmed"]),
+          ),
+        ),
+    ]);
 
-    return data.count;
+    return regular[0].count + extraordinary[0].count;
   }
 }

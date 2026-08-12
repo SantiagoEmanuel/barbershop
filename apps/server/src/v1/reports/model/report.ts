@@ -1,6 +1,6 @@
 import { db } from "@/db/db";
 import { expenses, productSales } from "@/db/turso/schema";
-import { and, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 
 interface Range {
   from: Date;
@@ -16,9 +16,10 @@ export default class ReportModel {
   /** Órdenes pagas dentro del rango (fecha = paidAt ?? createdAt). */
   private static async paidOrdersInRange({ from, to }: Range) {
     const orders = await db.query.orders.findMany({
-      where: (o, { eq }) => eq(o.status, "paid"),
+      where: (o) => eq(o.status, "paid"),
       with: {
         appointment: { with: { service: true, barber: true } },
+        overbookedAppointment: { with: { service: true, barber: true } },
         paymentMethod: true,
         productSales: { with: { product: true } },
       },
@@ -45,6 +46,9 @@ export default class ReportModel {
 
     const income = orders.reduce((s, o) => s + o.amount, 0);
     const totalExpenses = expenseRows.reduce((s, e) => s + e.amount, 0);
+    const extraordinaryOrdersCount = orders.filter(
+      (o) => o.overbookedAppointmentId !== null,
+    ).length;
 
     // Ingresos: productos vs servicios.
     let productIncome = 0;
@@ -78,6 +82,7 @@ export default class ReportModel {
       expenses: totalExpenses,
       balance: income - totalExpenses,
       ordersCount: orders.length,
+      extraordinaryOrdersCount,
       incomeBreakdown: {
         services: serviceIncome,
         products: productIncome,
@@ -122,8 +127,19 @@ export default class ReportModel {
         amount: o.amount,
         paidAt: o.paidAt ?? o.createdAt,
         paymentMethod: o.paymentMethod?.name ?? null,
-        service: o.appointment?.service?.name ?? null,
-        barber: o.appointment?.barber?.name ?? null,
+        service:
+          o.appointment?.service?.name ??
+          o.overbookedAppointment?.service?.name ??
+          null,
+        barber:
+          o.appointment?.barber?.name ??
+          o.overbookedAppointment?.barber?.name ??
+          null,
+        appointmentKind: o.overbookedAppointmentId
+          ? "extraordinary"
+          : o.appointmentId
+            ? "regular"
+            : null,
         productsCount: o.productSales.reduce((s, ps) => s + ps.quantity, 0),
       })),
     };
@@ -233,7 +249,7 @@ export default class ReportModel {
     const toKey = dayKey(range.to);
 
     const appts = await db.query.appointments.findMany({
-      where: (a, { eq }) => eq(a.status, "completed"),
+      where: (a) => eq(a.status, "completed"),
       with: { service: true },
     });
 

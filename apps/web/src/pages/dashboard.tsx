@@ -60,12 +60,14 @@ function BalanceCard({
   value,
   icon,
   tone,
+  sub,
   onClick,
 }: {
   label: string;
   value: string;
   icon: string;
   tone: "income" | "expense" | "balance";
+  sub?: string;
   onClick?: () => void;
 }) {
   const toneClass =
@@ -99,6 +101,7 @@ function BalanceCard({
       >
         {value}
       </p>
+      {sub && <p className="text-text-muted font-body text-xs">{sub}</p>}
       {onClick && (
         <p className="text-text-muted font-body group-hover:text-marca text-xs transition-colors">
           Ver detalle →
@@ -202,6 +205,11 @@ export default function Dashboard() {
             tone="income"
             icon="📈"
             value={formatARS(summary?.income ?? 0)}
+            sub={
+              summary?.extraordinaryOrdersCount
+                ? `Incluye ${summary.extraordinaryOrdersCount} turno${summary.extraordinaryOrdersCount === 1 ? "" : "s"} extraordinario${summary.extraordinaryOrdersCount === 1 ? "" : "s"}`
+                : undefined
+            }
             onClick={() => navigate("/admin/ingresos")}
           />
           <BalanceCard

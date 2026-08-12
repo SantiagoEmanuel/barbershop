@@ -191,15 +191,19 @@ export default function Ventas() {
     setError("");
     setSuccess("");
     try {
+      const selectedShift = todayShifts.find(
+        (shift) => shift.id === selectedAppointment,
+      );
       const appointmentId =
-        selectedAppointment && selectedAppointment !== "null"
-          ? selectedAppointment
-          : undefined;
+        selectedShift?.kind !== "extraordinary" ? selectedShift?.id : undefined;
+      const overbookedAppointmentId =
+        selectedShift?.kind === "extraordinary" ? selectedShift.id : undefined;
       const res = await post<ApiResponse<Order>>("order/create", {
         paymentMethodId: selectedPayment,
         amount: totals.grandTotal,
         soldBy: selectedBarber,
         appointmentId,
+        overbookedAppointmentId,
         items: cart.map((l) => ({
           kind: l.kind,
           id: l.id,

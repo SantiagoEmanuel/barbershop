@@ -13,6 +13,7 @@ export interface ReportSummary {
   expenses: number;
   balance: number;
   ordersCount: number;
+  extraordinaryOrdersCount: number;
   incomeBreakdown: {
     services: number;
     products: number;
@@ -37,6 +38,7 @@ export interface IncomeReport {
     paymentMethod: string | null;
     service: string | null;
     barber: string | null;
+    appointmentKind: "regular" | "extraordinary" | null;
     productsCount: number;
   }[];
 }

@@ -1,11 +1,17 @@
 import { db } from "@/db/db";
-import { appointments, orders, paymentMethods } from "@/db/turso/schema";
+import {
+  appointments,
+  orders,
+  overbookedAppointments,
+  paymentMethods,
+} from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
 import { createPreference } from "@/utils/mercadopago.client";
 import { eq } from "drizzle-orm";
 
 interface CreateOrderData {
   appointmentId?: string;
+  overbookedAppointmentId?: string;
   paymentMethodId: string;
   amount: number;
   status?: "pending" | "paid" | "refunded" | "failed";
@@ -36,11 +42,21 @@ interface UpdateOrderData {
 
 export default class OrderModel {
   static async create(data: CreateOrderData) {
+    if (data.appointmentId && data.overbookedAppointmentId) {
+      throw new AppError("Una orden solo puede asociarse a un turno", 400);
+    }
     if (data.appointmentId) {
       const apt = await db.query.appointments.findFirst({
         where: eq(appointments.id, data.appointmentId),
       });
       if (!apt) throw new AppError("El turno no existe", 404);
+    }
+
+    if (data.overbookedAppointmentId) {
+      const apt = await db.query.overbookedAppointments.findFirst({
+        where: eq(overbookedAppointments.id, data.overbookedAppointmentId),
+      });
+      if (!apt) throw new AppError("El turno extraordinario no existe", 404);
     }
 
     const pm = await db.query.paymentMethods.findFirst({
@@ -112,6 +128,7 @@ export default class OrderModel {
         appointment: {
           with: { barber: true, service: true, client: true },
         },
+        overbookedAppointment: { with: { barber: true, service: true } },
         paymentMethod: true,
       },
     });
@@ -119,6 +136,7 @@ export default class OrderModel {
     return allOrders.filter((o) => {
       const d =
         o.appointment?.date ??
+        o.overbookedAppointment?.date ??
         (o.createdAt instanceof Date
           ? o.createdAt.toISOString()
           : String(o.createdAt)
@@ -133,6 +151,7 @@ export default class OrderModel {
         appointment: {
           with: { barber: true, service: true, client: true },
         },
+        overbookedAppointment: { with: { barber: true, service: true } },
         paymentMethod: true,
       },
       orderBy: (o, { desc }) => [desc(o.createdAt)],
@@ -146,6 +165,7 @@ export default class OrderModel {
         appointment: {
           with: { barber: true, service: true },
         },
+        overbookedAppointment: { with: { barber: true, service: true } },
         productSales: true,
         paymentMethod: true,
       },
