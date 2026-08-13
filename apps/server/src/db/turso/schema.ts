@@ -156,6 +156,11 @@ export const barberSchedules = table(
     endTime: text("end_time").notNull(),
     startBreak: text("start_brake").notNull(),
     endBreak: text("end_brake").notNull(),
+    appointmentMode: text("appointment_mode", {
+      enum: ["walk_in", "appointment"],
+    })
+      .notNull()
+      .default("appointment"),
     /**
      * Cada cuántos minutos existe un slot disponible.
      * Debe coincidir con (o ser múltiplo de) service.durationMinutes.
