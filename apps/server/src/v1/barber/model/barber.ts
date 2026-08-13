@@ -29,6 +29,7 @@ interface UpdateBarberSchedule {
   startTime: string;
   startBreak: string;
   endBreak: string;
+  appointmentMode: "appointment" | "walk_in";
 }
 
 interface ScheduleInput {
@@ -39,6 +40,7 @@ interface ScheduleInput {
   endBreak: string;
   isActive?: boolean;
   slotDurationMinutes?: number;
+  appointmentMode: "appointment" | "walk_in";
 }
 
 export default class BarberModel {
@@ -57,7 +59,7 @@ export default class BarberModel {
       where: eq(barbers.slug, slug),
       with: {
         schedules: {
-          where: (s, { eq }) => eq(s.isActive, true),
+          where: (s) => eq(s.isActive, true),
         },
       },
     });
@@ -77,7 +79,7 @@ export default class BarberModel {
       where: eq(barbers.userId, userId),
       with: {
         schedules: {
-          where: (s, { eq }) => eq(s.isActive, true),
+          where: (s) => eq(s.isActive, true),
         },
       },
     });
@@ -107,6 +109,8 @@ export default class BarberModel {
       throw new Error("No se enviaron campos para actualizar");
     }
 
+    console.log({ data });
+
     const [update] = await db
       .update(barberSchedules)
       .set(data)
@@ -119,6 +123,8 @@ export default class BarberModel {
     if (Object.keys(data).length === 0) {
       throw new Error("No se pudo guardar el horario");
     }
+
+    console.log({ data });
 
     const [created] = await db
       .insert(barberSchedules)
@@ -157,6 +163,7 @@ export default class BarberModel {
             endBreak: s.endBreak,
             slotDurationMinutes: s.slotDurationMinutes ?? 30,
             isActive: true,
+            appointmentMode: s.appointmentMode,
           })),
         )
         .returning();

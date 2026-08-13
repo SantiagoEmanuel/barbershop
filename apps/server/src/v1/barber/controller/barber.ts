@@ -172,6 +172,7 @@ export default class BarberController {
         endBreak?: string;
         isActive?: boolean;
         slotDurationMinutes?: number;
+        appointmentMode: "appointment" | "walk_in";
       }[];
     };
 
@@ -231,6 +232,7 @@ export default class BarberController {
       startTime,
       endBreak,
       startBreak,
+      appointmentMode,
     } = req.body;
 
     if (
@@ -239,7 +241,8 @@ export default class BarberController {
       !endTime ||
       !startTime ||
       !endBreak ||
-      !startBreak
+      !startBreak ||
+      !appointmentMode
     ) {
       return res.status(400).json({
         message: "Datos inválidos",
@@ -256,6 +259,7 @@ export default class BarberController {
         startBreak,
         startTime,
         isActive,
+        appointmentMode,
       });
 
       if (!data) {
@@ -289,6 +293,7 @@ export default class BarberController {
       startTime,
       endBreak,
       startBreak,
+      appointmentMode,
     } = req.body;
     const id = req.params.id;
 
@@ -299,7 +304,8 @@ export default class BarberController {
       !isActive ||
       !startTime ||
       !endBreak ||
-      !startBreak
+      !startBreak ||
+      !appointmentMode
     ) {
       return res.status(400).json({
         message: "Datos inválidos",
@@ -316,6 +322,7 @@ export default class BarberController {
         startBreak,
         startTime,
         isActive,
+        appointmentMode,
       });
 
       if (!data) {

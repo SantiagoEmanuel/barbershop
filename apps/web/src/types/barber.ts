@@ -7,6 +7,7 @@ export interface Schedule {
   isActive: boolean;
   startBreak: string;
   endBreak: string;
+  appointmentMode: "appointment" | "walk_in";
 }
 
 export interface Barber {
