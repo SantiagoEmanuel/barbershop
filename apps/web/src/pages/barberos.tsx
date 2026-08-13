@@ -197,13 +197,14 @@ function SchedulePanel({
       const existing = (barber.schedules ?? []).find((s) => s.dayOfWeek === i);
       return (
         existing ?? {
-          dayOfWeek: i,
+          dayOfWeek: i - 1,
           startTime: "09:00",
           endTime: i === 6 ? "14:00" : "19:00",
           slotDurationMinutes: 30,
           isActive: i >= 1 && i <= 6,
           startBreak: "13:00",
           endBreak: "16:00",
+          appointmentMode: "appointment",
         }
       );
     }),
@@ -265,7 +266,7 @@ function SchedulePanel({
           {schedules.map((s, i) => (
             <div
               key={s.dayOfWeek}
-              className={`flex items-center gap-3 rounded-xl border px-3 py-3 transition-all duration-150 ${s.isActive ? "bg-marca/5 border-border-strong" : "border-border bg-black/15 opacity-50"}`}
+              className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 transition-all duration-150 ${s.isActive ? "bg-marca/5 border-border-strong" : "border-border bg-black/15 opacity-50"}`}
             >
               <button
                 onClick={() =>
@@ -283,6 +284,27 @@ function SchedulePanel({
                 className={`font-body size-8 shrink-0 rounded-lg border text-xs font-bold transition-all duration-150 ${s.isActive ? "bg-marca/15 text-marca border-border-strong" : "text-text-muted border-border bg-black/30"}`}
               >
                 {DAYS[i]}
+              </button>
+
+              <button
+                onClick={() =>
+                  setSchedules((prev) =>
+                    prev.map((x) =>
+                      x.dayOfWeek === i
+                        ? {
+                            ...x,
+                            appointmentMode:
+                              x.appointmentMode === "walk_in"
+                                ? "appointment"
+                                : "walk_in",
+                          }
+                        : x,
+                    ),
+                  )
+                }
+                className={`font-body size-16 shrink-0 rounded-lg border text-xs font-bold transition-all duration-150 ${s.appointmentMode === "walk_in" ? "bg-marca/15 text-marca border-border-strong" : "text-text-muted border-border bg-black/30"}`}
+              >
+                Por llegada
               </button>
 
               <div className="flex flex-col gap-2">
