@@ -16,7 +16,7 @@ export default class AvailabilityModel {
   static async getSlots(barberId: string, date: string): Promise<Slot[]> {
     // date es "YYYY-MM-DD" — dayOfWeek: 0 domingo … 6 sábado
     // Usamos T12:00:00 para evitar desfasajes de timezone
-    const dayOfWeek = new Date(`${date}T12:00:00`).getDay();
+    const dayOfWeek = new Date(`${date}T12:00:00`).getDay() - 1;
 
     // 1. Horario base semanal del barbero para ese día.
     //    barberId es el id real del barbero (no el userId de su cuenta).
@@ -29,7 +29,7 @@ export default class AvailabilityModel {
     });
 
     // El barbero no trabaja ese día de la semana
-    if (!schedule) return [];
+    if (!schedule || schedule.appointmentMode !== "appointment") return [];
 
     let { startTime, endTime } = schedule;
     const { startBreak, endBreak } = schedule;
