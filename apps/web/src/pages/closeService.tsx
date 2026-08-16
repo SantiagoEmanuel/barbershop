@@ -506,7 +506,7 @@ export default function CierreServicio() {
             disabled={submitting || !selectedPayment}
             className={
               !preference
-                ? "btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[0.9rem] disabled:opacity-70"
+                ? "btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[0.9rem] disabled:cursor-not-allowed disabled:opacity-50"
                 : "hidden"
             }
           >
