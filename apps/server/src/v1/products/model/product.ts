@@ -25,7 +25,8 @@ interface CreateSaleData {
   soldBy: string;
   quantity: number;
   priceSnapshot: number;
-  costSnapshot: number;
+  /** Si no viene informado, se captura el costo vigente del producto. */
+  costSnapshot?: number;
 }
 
 export default class ProductModel {
@@ -156,7 +157,7 @@ export default class ProductModel {
           soldBy: data.soldBy,
           quantity: data.quantity,
           priceSnapshot: data.priceSnapshot,
-          costSnapshot: data.costSnapshot,
+          costSnapshot: data.costSnapshot ?? product.cost,
         })
         .returning();
 

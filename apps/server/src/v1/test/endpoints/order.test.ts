@@ -1,4 +1,5 @@
 import app from "@/config";
+import { todayISO } from "@config/utils";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { adminToken } from "../helpers";
@@ -11,7 +12,7 @@ describe("GET /api/v1/order (admin)", () => {
   });
 
   it("devuelve órdenes con token admin", async () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = todayISO();
     const res = await request(app)
       .get("/api/v1/order")
       .set("Cookie", `auth_token=${adminToken()}`)

@@ -237,7 +237,9 @@ export default class BarberController {
 
     if (
       !barberId ||
-      !dayOfWeek ||
+      typeof dayOfWeek !== "number" ||
+      dayOfWeek < 0 ||
+      dayOfWeek > 6 ||
       !endTime ||
       !startTime ||
       !endBreak ||
@@ -299,9 +301,11 @@ export default class BarberController {
 
     if (
       !barberId ||
-      !dayOfWeek ||
+      typeof dayOfWeek !== "number" ||
+      dayOfWeek < 0 ||
+      dayOfWeek > 6 ||
       !endTime ||
-      !isActive ||
+      typeof isActive !== "boolean" ||
       !startTime ||
       !endBreak ||
       !startBreak ||

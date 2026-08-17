@@ -6,6 +6,7 @@ import {
   Spinner,
   StatCard,
 } from "@config/components";
+import { formatBusinessDateTime } from "@config/utils";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
@@ -502,7 +503,7 @@ export default function Egresos() {
                       {e.kind &&
                         ` · ${e.kind === "fixed" ? "fijo" : "variable"}`}
                       {e.paymentMethod && ` · ${e.paymentMethod}`} ·{" "}
-                      {new Date(e.incurredAt).toLocaleDateString("es-AR")}
+                      {formatBusinessDateTime(e.incurredAt)}
                     </p>
                   </div>
                   <span className="text-error font-body shrink-0 text-sm font-bold">

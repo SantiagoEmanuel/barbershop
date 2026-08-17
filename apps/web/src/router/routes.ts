@@ -15,9 +15,8 @@ import Home from "../pages/home";
  *           └── /admin/...  Dashboard, Turnos, etc.
  *
  * Home se importa de forma estática porque es la ruta que se pre-renderiza
- * para SEO. El resto (perfil, panel admin y la integración de pagos) se carga
- * de forma diferida: reduce el bundle inicial y evita importar el SDK de
- * MercadoPago durante el prerender en build.
+ * para SEO. El resto (perfil y panel admin) se carga de forma diferida para
+ * reducir el bundle inicial.
  */
 
 /** Helper: convierte un import con `default` en una ruta lazy de react-router. */
@@ -40,10 +39,6 @@ export const routes: RouteObject[] = [
           // Reutilizamos Perfil — ya tiene la sección de turnos
           { path: "mis-turnos", lazy: lazy(() => import("../pages/profile")) },
           { path: "confirm", lazy: lazy(() => import("../pages/confirm")) },
-          {
-            path: "payment-verification",
-            lazy: lazy(() => import("../pages/paymentVerification")),
-          },
           {
             path: "turno/confirmar/:appointmentId",
             lazy: lazy(() => import("../pages/confirmTurno")),

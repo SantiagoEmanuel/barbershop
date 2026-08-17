@@ -1,5 +1,5 @@
+import { todayISO } from "@config/utils";
 import { create } from "zustand";
-import { todayISOArgentina } from "../components/ui/formatters";
 import type { BookingStep } from "../types";
 
 interface BookingState {
@@ -24,6 +24,7 @@ interface BookingState {
 
   paymentMethod: string;
   paymentMethodId: string;
+  appointmentType: "appointment" | "walk_in";
 
   // Acciones
   openModal: () => void;
@@ -45,6 +46,7 @@ interface BookingState {
     email: string,
   ) => void;
   setPaymentMethod: (method: string, id: string) => void;
+  setAppointmentType: (data: "appointment" | "walk_in") => void;
   reset: () => void;
 }
 
@@ -57,7 +59,7 @@ const defaultState = {
   serviceName: "",
   servicePrice: 0,
   serviceDuration: 0,
-  date: todayISOArgentina(),
+  date: todayISO(),
   startTime: "",
   clientName: "",
   clientPhone: "",
@@ -65,6 +67,7 @@ const defaultState = {
   notes: "",
   paymentMethod: "",
   paymentMethodId: "",
+  appointmentType: "appointment" as const,
 };
 
 export const useBookingStore = create<BookingState>((set) => ({
@@ -82,6 +85,7 @@ export const useBookingStore = create<BookingState>((set) => ({
       serviceDuration: duration,
     }),
   setDate: (date) => set({ date }),
+  setAppointmentType: (appointmentType) => set({ appointmentType }),
   setSlot: (startTime) => set({ startTime }),
   setClient: (clientName, clientPhone, notes, clientEmail) =>
     set({ clientName, clientPhone, notes, clientEmail }),

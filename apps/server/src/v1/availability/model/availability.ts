@@ -10,13 +10,14 @@ import {
   generateSlots,
   type Slot,
 } from "@/utils/availability";
+import { dayOfWeekForBusinessDate } from "@config/utils";
 import { and, eq, inArray } from "drizzle-orm";
 
 export default class AvailabilityModel {
   static async getSlots(barberId: string, date: string): Promise<Slot[]> {
-    // date es "YYYY-MM-DD" — dayOfWeek: 0 domingo … 6 sábado
-    // Usamos T12:00:00 para evitar desfasajes de timezone
-    const dayOfWeek = new Date(`${date}T12:00:00`).getDay() - 1;
+    // date es "YYYY-MM-DD" — dayOfWeek: 0 domingo … 6 sábado.
+    // La fecha representa el calendario argentino, no el huso del servidor.
+    const dayOfWeek = dayOfWeekForBusinessDate(date);
 
     // 1. Horario base semanal del barbero para ese día.
     //    barberId es el id real del barbero (no el userId de su cuenta).

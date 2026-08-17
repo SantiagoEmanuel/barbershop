@@ -1,5 +1,6 @@
 import { db } from "@/db/db";
 import { expenses, productSales } from "@/db/turso/schema";
+import { businessDate } from "@config/utils";
 import { and, eq, gte, lte } from "drizzle-orm";
 
 interface Range {
@@ -7,9 +8,9 @@ interface Range {
   to: Date;
 }
 
-/** 'YYYY-MM-DD' en UTC, para agrupar series por día. */
+/** 'YYYY-MM-DD' en la zona operativa, para agrupar series por día. */
 function dayKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return businessDate(d);
 }
 
 export default class ReportModel {

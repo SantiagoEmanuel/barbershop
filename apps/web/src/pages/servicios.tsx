@@ -31,9 +31,7 @@ function ServiceModal({
   const [name, setName] = useState(initial?.name ?? "");
   const [desc, setDesc] = useState(initial?.description ?? "");
   const [price, setPrice] = useState(String(initial?.price ?? ""));
-  const [duration, setDuration] = useState(
-    String(initial?.durationMinutes ?? "30"),
-  );
+  const [duration, setDuration] = useState(String(30));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -42,7 +40,7 @@ function ServiceModal({
       setName(initial?.name ?? "");
       setDesc(initial?.description ?? "");
       setPrice(String(initial?.price ?? ""));
-      setDuration(String(initial?.durationMinutes ?? ""));
+      setDuration(String(30));
       setError("");
     }
   }, [open, initial]);
@@ -56,7 +54,7 @@ function ServiceModal({
         name,
         description: desc || undefined,
         price: Number(price),
-        durationMinutes: Number(duration),
+        durationMinutes: 30,
       };
       const res = initial
         ? await put<ApiResponse<Service>>(`service/${initial.id}`, body)

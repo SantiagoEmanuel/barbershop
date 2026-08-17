@@ -1,3 +1,8 @@
+import {
+  businessDayEnd,
+  businessDayStart,
+  isValidBusinessDate,
+} from "@config/utils";
 import type { Request, Response } from "express";
 import PurchaseModel from "../model/purchase";
 
@@ -7,10 +12,19 @@ export default class PurchaseController {
     const toRaw = req.query.to as string | undefined;
     const itemType = req.query.itemType as "product" | "supply" | undefined;
 
+    if (
+      (fromRaw && !isValidBusinessDate(fromRaw)) ||
+      (toRaw && !isValidBusinessDate(toRaw))
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Rango de fechas inválido", data: null });
+    }
+
     try {
       const data = await PurchaseModel.getAll({
-        from: fromRaw ? new Date(fromRaw) : undefined,
-        to: toRaw ? new Date(`${toRaw}T23:59:59.999Z`) : undefined,
+        from: fromRaw ? businessDayStart(fromRaw) : undefined,
+        to: toRaw ? businessDayEnd(toRaw) : undefined,
         itemType,
       });
       return res.json({ message: "OK", data });

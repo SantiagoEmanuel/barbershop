@@ -32,7 +32,6 @@ export function checkToken(req: Request, _res: Response, next: NextFunction) {
     req.user = jwt.verify(token, JWT_SECRET as string) as JwtPayload;
   } catch {
     //
-    console.log("Usuario anónimo");
   }
 
   next();

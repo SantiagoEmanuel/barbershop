@@ -127,7 +127,6 @@ const SERVICES = [
 const PAYMENT_METHODS = [
   { name: "Efectivo", type: "cash" as const, isActive: true },
   { name: "Débito / Crédito", type: "card" as const, isActive: true },
-  { name: "Mercado Pago", type: "online" as const, isActive: true },
 ];
 
 // lunes=1 … sábado=6 (domingo=0 libre)
@@ -152,12 +151,11 @@ async function seed() {
 
   // 1. Usuarios
   console.log("👤  Insertando usuarios...");
-  const insertedUsers = await db
+  await db
     .insert(users)
     .values(USERS)
     .onConflictDoNothing()
-    .returning({ id: users.id, email: users.email });
-  console.log(`    ${insertedUsers.length} usuarios insertados`);
+    .returning({ id: users.id });
 
   // 2. Barberos
   console.log("✂️   Insertando barberos...");
@@ -166,48 +164,36 @@ async function seed() {
     .values(BARBERS)
     .onConflictDoNothing()
     .returning({ id: barbers.id, slug: barbers.slug });
-  console.log(`    ${insertedBarbers.length} barberos insertados`);
 
   // 3. Servicios
   console.log("📋  Insertando servicios...");
-  const insertedServices = await db
+  await db
     .insert(services)
     .values(SERVICES)
     .onConflictDoNothing()
-    .returning({ id: services.id, name: services.name });
-  console.log(`    ${insertedServices.length} servicios insertados`);
+    .returning({ id: services.id });
 
   // 4. Métodos de pago
   console.log("💳  Insertando métodos de pago...");
-  const insertedPM = await db
+  await db
     .insert(paymentMethods)
     .values(PAYMENT_METHODS)
     .onConflictDoNothing()
     .returning({ id: paymentMethods.id });
-  console.log(`    ${insertedPM.length} métodos de pago insertados`);
 
   // 5. Horarios de barberos
   console.log("📅  Insertando horarios...");
-  let scheduleCount = 0;
   for (const barber of insertedBarbers) {
     const schedules = weekdaySchedule(barber.id);
-    const result = await db
+    await db
       .insert(barberSchedules)
       .values(schedules)
       .onConflictDoNothing()
       .returning({ id: barberSchedules.id });
-    scheduleCount += result.length;
   }
-  console.log(`    ${scheduleCount} horarios insertados`);
 
   // ── Resumen ──────────────────────────────────────────────────
   console.log("\n✅  Seed completado:\n");
-  console.log("  Credenciales de prueba:");
-  console.log("  ├─ admin@barbershop.com  / Admin1234!   (rol: admin)");
-  console.log("  ├─ carlos@gmail.com      / Cliente123!  (rol: client)");
-  console.log("  └─ lucia@gmail.com       / Cliente123!  (rol: client)\n");
-  console.log("  Barberos:", insertedBarbers.map((b) => b.slug).join(", "));
-  console.log("  Servicios:", insertedServices.map((s) => s.name).join(", "));
 
   process.exit(0);
 }

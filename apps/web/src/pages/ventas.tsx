@@ -6,11 +6,12 @@ import {
   Spinner,
   StatCard,
 } from "@config/components";
+import { todayISO } from "@config/utils";
 import { Package, Scissors } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { BackTo } from "../components/backTo";
 import { CartLineRow } from "../components/cartLineRow";
-import { formatARS, todayISO } from "../components/ui/formatters";
+import { formatARS } from "../components/ui/formatters";
 import { api, post } from "../lib/api";
 import { useServicesStore } from "../store/useServicesStore";
 import {
@@ -23,6 +24,7 @@ import {
 } from "../types";
 import type { CartLine } from "../types/cartLine";
 import type { PickerTab } from "../types/picker";
+
 export default function Ventas() {
   const [products, setProducts] = useState<Product[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -46,6 +48,7 @@ export default function Ventas() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   useEffect(() => {
     let barberId = "";
     Promise.all([
@@ -85,6 +88,7 @@ export default function Ventas() {
       });
     getServices();
   }, [getServices]);
+
   function addProduct(p: Product) {
     setCart((prev) => {
       const existing = prev.find(
@@ -120,6 +124,7 @@ export default function Ventas() {
       ];
     });
   }
+
   function addService(s: Service) {
     setCart((prev) => {
       const existing = prev.find((l) => l.kind === "service" && l.id === s.id);
@@ -145,6 +150,7 @@ export default function Ventas() {
       ];
     });
   }
+
   function updateQty(line: CartLine, qty: number) {
     if (qty <= 0) {
       setCart((prev) =>
@@ -168,6 +174,7 @@ export default function Ventas() {
       }),
     );
   }
+
   const totals = useMemo(() => {
     const productsTotal = cart
       .filter((l) => l.kind === "product")
@@ -182,28 +189,33 @@ export default function Ventas() {
       itemCount: cart.reduce((acc, l) => acc + l.quantity, 0),
     };
   }, [cart]);
+
   const dailyTotal = todayOrders
     .filter((o) => o.status === "paid")
     .reduce((acc, o) => acc + o.amount, 0);
+
   async function handleSell() {
     if (cart.length === 0 || !selectedBarber || !selectedPayment) return;
     setSubmitting(true);
     setError("");
     setSuccess("");
+
     try {
       const selectedShift = todayShifts.find(
         (shift) => shift.id === selectedAppointment,
       );
-      const appointmentId =
-        selectedShift?.kind !== "extraordinary" ? selectedShift?.id : undefined;
-      const overbookedAppointmentId =
-        selectedShift?.kind === "extraordinary" ? selectedShift.id : undefined;
+
+      const appointmentLink = selectedShift
+        ? selectedShift.kind === "extraordinary"
+          ? { overbookedAppointmentId: selectedShift.id }
+          : { appointmentId: selectedShift.id }
+        : {};
+
       const res = await post<ApiResponse<Order>>("order/create", {
         paymentMethodId: selectedPayment,
         amount: totals.grandTotal,
         soldBy: selectedBarber,
-        appointmentId,
-        overbookedAppointmentId,
+        ...appointmentLink,
         items: cart.map((l) => ({
           kind: l.kind,
           id: l.id,
@@ -211,7 +223,9 @@ export default function Ventas() {
           priceSnapshot: l.price,
         })),
       });
+
       if (!res?.data) throw new Error("No se pudo registrar la venta");
+
       setProducts((prev) =>
         prev.map((p) => {
           const line = cart.find((l) => l.kind === "product" && l.id === p.id);
@@ -315,7 +329,7 @@ export default function Ventas() {
                 }}
                 className="bg-surface border-border text-text-primary font-body w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
               >
-                <option value="null">Seleccionar turno (opcional)</option>
+                <option value="">Seleccionar turno (opcional)</option>
                 {todayShifts.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.clientName} - {b.service.name} ({b.startTime}hs -{" "}

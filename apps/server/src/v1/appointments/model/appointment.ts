@@ -1,14 +1,11 @@
 import { db } from "@/db/db";
+import { publicUserColumns } from "@/db/turso/publicUserColumns";
 import { appointments, overbookedAppointments } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
 import { and, count, eq, gt, inArray, lt } from "drizzle-orm";
 
 export type AppointmentStatus =
-  | "pending"
-  | "confirmed"
-  | "completed"
-  | "cancelled"
-  | "no_show";
+  "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
 
 export interface Appointment {
   barberId: string;
@@ -23,6 +20,7 @@ export interface Appointment {
   date: string;
   notes: string | null;
   status: AppointmentStatus;
+  appointmentType?: "appointment" | "walk_in";
 }
 
 interface AppointmentProps {
@@ -47,10 +45,10 @@ export default class AppointmentModel {
         service: true,
         barber: {
           with: {
-            users: true,
+            users: { columns: publicUserColumns },
           },
         },
-        client: true,
+        client: { columns: publicUserColumns },
       },
     });
 
@@ -86,7 +84,7 @@ export default class AppointmentModel {
           with: {
             service: true,
             barber: true,
-            client: true,
+            client: { columns: publicUserColumns },
           },
         }),
         db.query.overbookedAppointments.findMany({

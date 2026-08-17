@@ -5,6 +5,7 @@ import {
   recurringExpenses,
 } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
+import { businessDayStart } from "@config/utils";
 import { and, eq, gte, lte } from "drizzle-orm";
 
 type ExpenseKind = "fixed" | "variable";
@@ -185,8 +186,16 @@ export default class ExpenseModel {
       throw new AppError("Mes inválido. Usar YYYY-MM", 400);
     }
 
-    const monthStart = new Date(Date.UTC(year, m - 1, 1));
-    const monthEnd = new Date(Date.UTC(year, m, 1));
+    const monthStart = businessDayStart(
+      `${year}-${String(m).padStart(2, "0")}-01`,
+    );
+    const nextYear = m === 12 ? year + 1 : year;
+    const nextMonth = m === 12 ? 1 : m + 1;
+    const monthEnd = new Date(
+      businessDayStart(
+        `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`,
+      ).getTime() - 1,
+    );
 
     const templates = await this.getRecurring();
     const alreadyThisMonth = await db.query.expenses.findMany({
@@ -205,7 +214,9 @@ export default class ExpenseModel {
     for (const tpl of templates) {
       if (doneIds.has(tpl.id)) continue;
       const day = Math.min(Math.max(tpl.dayOfMonth, 1), 28);
-      const incurredAt = new Date(Date.UTC(year, m - 1, day));
+      const incurredAt = businessDayStart(
+        `${year}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+      );
       const row = await this.create({
         categoryId: tpl.categoryId,
         description: tpl.description,

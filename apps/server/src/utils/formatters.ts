@@ -13,10 +13,6 @@ export function formatDate(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
-export function todayISO() {
-  return new Date().toISOString().split("T")[0]!;
-}
-
 export function translateStatus(status: AppointmentStatus) {
   switch (status) {
     case "pending":

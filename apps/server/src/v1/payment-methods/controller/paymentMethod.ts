@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import PaymentMethodModel from "../model/paymentMethod";
 
-const VALID_TYPES = ["cash", "card", "online"] as const;
+const VALID_TYPES = ["cash", "card"] as const;
 type PaymentMethodType = (typeof VALID_TYPES)[number];
 
 export default class PaymentMethodController {

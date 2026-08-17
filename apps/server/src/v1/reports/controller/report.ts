@@ -1,3 +1,9 @@
+import {
+  businessDayEnd,
+  businessDayStart,
+  businessMonthRange,
+  isValidBusinessDate,
+} from "@config/utils";
 import type { Request, Response } from "express";
 import ReportModel from "../model/report";
 
@@ -9,16 +15,16 @@ function resolveRange(req: Request) {
   const fromRaw = req.query.from as string | undefined;
   const toRaw = req.query.to as string | undefined;
 
-  const now = new Date();
-  const defaultFrom = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
-  );
-  const defaultTo = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999),
-  );
+  if (
+    (fromRaw && !isValidBusinessDate(fromRaw)) ||
+    (toRaw && !isValidBusinessDate(toRaw))
+  ) {
+    return null;
+  }
 
-  const from = fromRaw ? new Date(`${fromRaw}T00:00:00.000Z`) : defaultFrom;
-  const to = toRaw ? new Date(`${toRaw}T23:59:59.999Z`) : defaultTo;
+  const defaults = businessMonthRange();
+  const from = fromRaw ? businessDayStart(fromRaw) : defaults.from;
+  const to = toRaw ? businessDayEnd(toRaw) : defaults.to;
 
   return { from, to };
 }
@@ -26,7 +32,7 @@ function resolveRange(req: Request) {
 function handler(fn: (range: { from: Date; to: Date }) => Promise<unknown>) {
   return async (req: Request, res: Response) => {
     const range = resolveRange(req);
-    if (isNaN(range.from.getTime()) || isNaN(range.to.getTime())) {
+    if (!range) {
       return res
         .status(400)
         .json({ message: "Rango de fechas inválido", data: null });

@@ -45,7 +45,7 @@ export default class AuthController {
         .status(200)
         .json({
           message: "Inicio de sesión exitoso",
-          data: user,
+          data: AuthModel.toPublicUser(user),
         });
     } catch (err: any) {
       const status = err.status ?? 500;
@@ -149,10 +149,7 @@ export default class AuthController {
         .status(200)
         .json({
           message: "Inicio de sesión exitoso",
-          data: {
-            ...user,
-            password: "queti",
-          },
+          data: AuthModel.toPublicUser(user),
         });
     } catch (err: any) {
       const status = err.status ?? 500;
@@ -208,10 +205,7 @@ export default class AuthController {
         .status(200)
         .json({
           message: "Ok",
-          data: {
-            ...user,
-            password: "Is not for u",
-          },
+          data: AuthModel.toPublicUser(user),
         });
     } catch (err: any) {
       const status = err.status ?? 500;

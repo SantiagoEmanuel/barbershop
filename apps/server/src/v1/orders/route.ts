@@ -30,7 +30,12 @@ orderRouter.post("/", verifyToken, OrderController.create);
 
 // Venta de mostrador / cierre de servicio: crea la orden (paga) y registra
 // las ventas de producto del carrito, descontando stock.
-orderRouter.post("/create", verifyToken, OrderController.createByBarber);
+orderRouter.post(
+  "/create",
+  verifyToken,
+  verifyRole("admin", "barber"),
+  OrderController.createByBarber,
+);
 
 orderRouter.put(
   "/:id/update",

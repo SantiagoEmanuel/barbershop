@@ -1,6 +1,7 @@
 import { db } from "@/db/db";
 import { barbers, barberSchedules } from "@/db/turso/schema";
-import { eq } from "drizzle-orm";
+import { dayOfWeekInBusinessTimeZone } from "@config/utils";
+import { and, eq } from "drizzle-orm";
 
 interface CreateBarberData {
   name: string;
@@ -79,7 +80,11 @@ export default class BarberModel {
       where: eq(barbers.userId, userId),
       with: {
         schedules: {
-          where: (s) => eq(s.isActive, true),
+          where: (s) =>
+            and(
+              eq(s.isActive, true),
+              eq(s.dayOfWeek, dayOfWeekInBusinessTimeZone()),
+            ),
         },
       },
     });
@@ -109,8 +114,6 @@ export default class BarberModel {
       throw new Error("No se enviaron campos para actualizar");
     }
 
-    console.log({ data });
-
     const [update] = await db
       .update(barberSchedules)
       .set(data)
@@ -123,8 +126,6 @@ export default class BarberModel {
     if (Object.keys(data).length === 0) {
       throw new Error("No se pudo guardar el horario");
     }
-
-    console.log({ data });
 
     const [created] = await db
       .insert(barberSchedules)

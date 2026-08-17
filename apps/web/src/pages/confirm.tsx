@@ -23,8 +23,6 @@ export default function ConfirmUser() {
         if (!response?.data) {
           return;
         }
-        console.log({ response });
-
         setIsConfirm(response?.data ? true : false);
         setUser(response.data);
       },

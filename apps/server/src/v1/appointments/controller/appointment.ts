@@ -17,8 +17,10 @@ export default class AppointmentController {
       notes,
       status,
       clientEmail,
+      appointmentType,
     }: Appointment = req.body;
     const user = req.user;
+    const isOverbook = appointmentType === "walk_in";
 
     if (
       !barberId ||
@@ -34,16 +36,28 @@ export default class AppointmentController {
       });
     }
 
+    if (isOverbook && !user) {
+      return res.status(401).json({
+        message: "Debes iniciar sesión para crear un sobre turno",
+        data: null,
+      });
+    }
+
+    if (isOverbook && user && !["admin", "barber"].includes(user.role)) {
+      return res.status(403).json({
+        message: "Solo un barbero o administrador puede crear un sobre turno",
+        data: null,
+      });
+    }
+
+    if (!isOverbook && !clientEmail && !user?.email) {
+      return res.status(400).json({
+        message: "El email del cliente es obligatorio",
+        data: null,
+      });
+    }
+
     try {
-      const isWorkDay = await AvailabilityModel.getSlots(barberId, date);
-
-      if (isWorkDay.length === 0) {
-        return res.status(400).json({
-          message: "Lo siento, no hay turnos disponibles para esa fecha",
-          data: null,
-        });
-      }
-
       const service = await ServiceModel.getById(serviceId);
 
       if (!service) {
@@ -55,21 +69,9 @@ export default class AppointmentController {
 
       const newEndTime = timeToMinutes(startTime) + service.durationMinutes;
 
-      const conflict = await AppointmentModel.verifyConflict(
-        barberId,
-        date,
-        startTime,
-        minutesToTime(newEndTime),
-      );
-
-      if (conflict > 0 && user?.role !== "admin") {
-        return res.status(409).json({
-          message: "Lo sentimos, justo alguien acaba de reservar ese turno",
-          data: null,
-        });
-      }
-
-      if (conflict > 0 && user?.role === "admin") {
+      // Un sobre turno se crea deliberadamente fuera de la grilla de slots y
+      // puede solaparse con otro turno. No debe pasar por availability.
+      if (isOverbook) {
         const newAppointment = await AppointmentModel.createByAdmin({
           barberId,
           date,
@@ -81,49 +83,58 @@ export default class AppointmentController {
           priceSnapshot: service.price,
         });
 
-        if (!newAppointment) {
-          return res.status(500).json({
-            message: "Ha ocurrido un error al guardar tu turno",
-            data: null,
-          });
-        }
-
         return res.status(201).json({
-          message: "Turno agendado correctamente",
-          data: newAppointment,
-        });
-      } else {
-        const newAppointment = await AppointmentModel.create({
-          barberId,
-          date,
-          serviceId,
-          startTime,
-          clientName,
-          clientPhone,
-          clientEmail: clientEmail ?? user?.email,
-          clientId: user?.id,
-          notes,
-          endTime: minutesToTime(newEndTime),
-          priceSnapshot: service.price,
-          status,
-        });
-
-        if (!newAppointment) {
-          return res.status(500).json({
-            message: "Ha ocurrido un error al guardar tu turno",
-            data: null,
-          });
-        }
-
-        const appointment = await AppointmentModel.getById(newAppointment.id);
-
-        await confirmShift(appointment);
-
-        return res.status(201).json({
-          message: "Turno agendado correctamente",
+          message: "Sobre turno agendado correctamente",
           data: newAppointment,
         });
       }
+
+      const isWorkDay = await AvailabilityModel.getSlots(barberId, date);
+
+      if (isWorkDay.length === 0) {
+        return res.status(400).json({
+          message: "Lo siento, no hay turnos disponibles para esa fecha",
+          data: null,
+        });
+      }
+
+      const conflict = await AppointmentModel.verifyConflict(
+        barberId,
+        date,
+        startTime,
+        minutesToTime(newEndTime),
+      );
+
+      if (conflict > 0) {
+        return res.status(409).json({
+          message: "Lo sentimos, justo alguien acaba de reservar ese turno",
+          data: null,
+        });
+      }
+
+      const newAppointment = await AppointmentModel.create({
+        barberId,
+        date,
+        serviceId,
+        startTime,
+        clientName,
+        clientPhone,
+        clientEmail: clientEmail ?? user?.email ?? "",
+        clientId: user?.id,
+        notes,
+        endTime: minutesToTime(newEndTime),
+        priceSnapshot: service.price,
+        status,
+      });
+
+      const appointment = await AppointmentModel.getById(newAppointment.id);
+
+      await confirmShift(appointment);
+
+      return res.status(201).json({
+        message: "Turno agendado correctamente",
+        data: newAppointment,
+      });
     } catch (err: any) {
       const status = typeof err.status === "number" ? err.status : 500;
       return res

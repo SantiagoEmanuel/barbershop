@@ -38,7 +38,7 @@ references/
 .prettiercache
 **/**/.gitignore
 .pnpm-store/
-pnpm-lock.yaml
+**/.data/
 
 # RestClient
 *.http

@@ -1,5 +1,6 @@
 import { HASH_SALT } from "@/constants/credentials.env";
 import { db } from "@/db/db";
+import { publicUserColumns } from "@/db/turso/publicUserColumns";
 import { users } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
 import { compareSync, hashSync } from "bcrypt";
@@ -18,6 +19,8 @@ export type User = {
   verify: boolean;
 };
 
+export type PublicUser = Omit<User, "password">;
+
 type NewUser = {
   email: string;
   name: string;
@@ -32,6 +35,20 @@ interface AuthProps {
 }
 
 export default class AuthModel {
+  static toPublicUser(user: User): PublicUser {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      phone: user.phone,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      verify: user.verify,
+    };
+  }
+
   static async login(email: string) {
     const user = await db.query.users.findFirst({
       where: eq(users.email, email),
@@ -50,19 +67,7 @@ export default class AuthModel {
       throw new AppError("No se pudo crear el usuario", 500);
     }
 
-    const dataSecured = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      username: newUser.username,
-      role: newUser.role,
-      phone: newUser.phone,
-      isActive: newUser.isActive,
-      verify: newUser.verify,
-      createdAt: newUser.createdAt,
-    };
-
-    return dataSecured;
+    return this.toPublicUser(newUser);
   }
   static async update(data: AuthProps["update"]) {
     const [updateUser] = await db
@@ -102,15 +107,10 @@ export default class AuthModel {
     return user;
   }
   static async getAdmins() {
-    const data = await db.query.users
-      .findMany({
-        where: eq(users.role, "admin"),
-      })
-      .then((r) => {
-        return r.map((c) => {
-          return { ...c, password: "" };
-        });
-      });
+    const data = await db.query.users.findMany({
+      where: eq(users.role, "admin"),
+      columns: publicUserColumns,
+    });
 
     if (!data) {
       throw new AppError("No se pueden obtener los datos", 500);
@@ -126,13 +126,7 @@ export default class AuthModel {
   static async getLinkableUsers() {
     return db.query.users.findMany({
       where: eq(users.isActive, true),
-      columns: {
-        id: true,
-        name: true,
-        username: true,
-        email: true,
-        role: true,
-      },
+      columns: publicUserColumns,
       orderBy: (u, { asc }) => [asc(u.name)],
     });
   }

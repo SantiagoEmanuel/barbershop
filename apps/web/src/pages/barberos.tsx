@@ -35,17 +35,6 @@ function BarberModal({
   const [error, setError] = useState("");
   const [loadData, setLoadData] = useState(false);
   const [barbers, setBarbers] = useState<{ id: string; name: string }[]>([]);
-  useEffect(() => {
-    catchBarbers();
-    if (open) {
-      setName(initial?.name ?? "");
-      setSlug(initial?.slug ?? "");
-      setBio(initial?.bio ?? "");
-      setExpYears(String(initial?.experienceYears ?? ""));
-      setError("");
-      setUserReference(initial?.userId ?? "");
-    }
-  }, [open, initial]);
 
   async function catchBarbers() {
     if (loadData) return;
@@ -64,6 +53,19 @@ function BarberModal({
     setLoadData(true);
     setBarbers(res?.data ?? []);
   }
+
+  useEffect(() => {
+    catchBarbers();
+    if (open) {
+      setName(initial?.name ?? "");
+      setSlug(initial?.slug ?? "");
+      setBio(initial?.bio ?? "");
+      setExpYears(String(initial?.experienceYears ?? ""));
+      setError("");
+      setUserReference(initial?.userId ?? "");
+    }
+  }, [open, initial]);
+
   function handleNameChange(v: string) {
     setName(v);
     if (!initial) {
@@ -197,7 +199,7 @@ function SchedulePanel({
       const existing = (barber.schedules ?? []).find((s) => s.dayOfWeek === i);
       return (
         existing ?? {
-          dayOfWeek: i - 1,
+          dayOfWeek: i,
           startTime: "09:00",
           endTime: i === 6 ? "14:00" : "19:00",
           slotDurationMinutes: 30,
