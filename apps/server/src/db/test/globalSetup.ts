@@ -25,4 +25,29 @@ export async function setup() {
   await migrate(db, {
     migrationsFolder: resolve(process.cwd(), "src/db/test/migrations"),
   });
+
+  await db.insert((await import("../../db/turso/schema")).users).values([
+    {
+      id: "test-admin-id",
+      name: "Test Admin",
+      email: "admin@test.com",
+      username: "test_admin",
+      password: "test-password-hash",
+      role: "admin",
+      phone: "+5493510000101",
+      isActive: true,
+      verify: true,
+    },
+    {
+      id: "test-client-id",
+      name: "Test Client",
+      email: "client@test.com",
+      username: "test_client",
+      password: "test-password-hash",
+      role: "client",
+      phone: "+5493510000102",
+      isActive: true,
+      verify: true,
+    },
+  ]);
 }

@@ -30,6 +30,14 @@ describe("Endpoints protegidos — sin token devuelven 401", () => {
   }
 });
 
+it("rechaza un JWT inválido con 401 y no con 500", async () => {
+  const res = await request(app)
+    .get("/api/v1/reports/summary")
+    .set("Cookie", "auth_token=no-es-un-jwt");
+
+  expect(res.status).toBe(401);
+});
+
 describe("Endpoints admin — con rol client devuelven 403", () => {
   const adminOnlyGET = [
     "/api/v1/auth/get-admins",
