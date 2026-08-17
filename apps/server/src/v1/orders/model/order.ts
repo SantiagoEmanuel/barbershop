@@ -10,6 +10,7 @@ import {
   products,
   services,
 } from "@/db/turso/schema";
+import type { Role } from "@/middleware/permissions";
 import AppError from "@/utils/AppError";
 import { businessDate } from "@config/utils";
 import { and, eq, gte, sql } from "drizzle-orm";
@@ -18,9 +19,7 @@ interface CreateOrderData {
   appointmentId?: string;
   overbookedAppointmentId?: string;
   paymentMethodId: string;
-  amount: number;
-  status?: "pending" | "paid" | "refunded" | "failed";
-  paidAt?: Date;
+  actor?: { id: string; role: Role };
 }
 
 export interface CounterSaleItem {
@@ -34,8 +33,9 @@ interface CreatePaidCounterSaleData {
   appointmentId?: string;
   overbookedAppointmentId?: string;
   paymentMethodId: string;
-  amount: number;
-  soldBy: string;
+  /** Legacy input; never used to calculate or persist the order amount. */
+  amount?: number;
+  soldBy?: string;
   items: CounterSaleItem[];
   sellerUserId?: string;
 }
@@ -62,6 +62,9 @@ export default class OrderModel {
     if (appointmentId && overbookedAppointmentId) {
       throw new AppError("Una orden solo puede asociarse a un turno", 400);
     }
+    if (!appointmentId && !overbookedAppointmentId) {
+      throw new AppError("La orden debe estar asociada a un turno", 400);
+    }
 
     let apt;
     let ova;
@@ -79,11 +82,32 @@ export default class OrderModel {
       if (!ova) throw new AppError("El sobre turno no existe", 404);
     }
 
+    const linkedAppointment = apt ?? ova;
+    if (
+      !linkedAppointment ||
+      ["cancelled", "no_show"].includes(linkedAppointment.status)
+    ) {
+      throw new AppError("No se puede cobrar un turno cancelado", 409);
+    }
+    if (
+      data.actor?.role === "client" &&
+      ("clientId" in linkedAppointment
+        ? linkedAppointment.clientId !== data.actor.id
+        : true)
+    ) {
+      throw new AppError("No podés crear una orden para otro cliente", 403);
+    }
+
+    const amount = linkedAppointment.priceSnapshot;
+    if (amount <= 0) {
+      throw new AppError("El turno no tiene un precio válido", 409);
+    }
+
     const pm = await connection.query.paymentMethods.findFirst({
       where: eq(paymentMethods.id, data.paymentMethodId),
     });
 
-    if (!pm || (pm.type !== "cash" && pm.type !== "card")) {
+    if (!pm || !pm.isActive || (pm.type !== "cash" && pm.type !== "card")) {
       throw new AppError("Método de pago inexistente", 404);
     }
 
@@ -92,9 +116,8 @@ export default class OrderModel {
         .insert(orders)
         .values({
           paymentMethodId: data.paymentMethodId,
-          amount: data.amount,
-          status: data.status,
-          paidAt: data.paidAt,
+          amount,
+          status: "pending",
           appointmentId: apt?.id ?? null,
           overbookedAppointmentId: ova?.id ?? null,
         })
@@ -128,19 +151,24 @@ export default class OrderModel {
         throw new AppError("Una orden solo puede asociarse a un turno", 400);
       }
 
-      const seller = await tx.query.barbers.findFirst({
-        where: eq(barbers.id, data.soldBy),
-      });
+      const seller = data.sellerUserId
+        ? await tx.query.barbers.findFirst({
+            where: eq(barbers.userId, data.sellerUserId),
+          })
+        : data.soldBy
+          ? await tx.query.barbers.findFirst({
+              where: eq(barbers.id, data.soldBy),
+            })
+          : undefined;
       if (!seller) throw new AppError("Barbero vendedor inválido", 400);
-      if (data.sellerUserId && seller.userId !== data.sellerUserId) {
-        throw new AppError("No podés registrar ventas por otro barbero", 403);
-      }
+      const sellerId = seller.id;
 
       const paymentMethod = await tx.query.paymentMethods.findFirst({
         where: eq(paymentMethods.id, data.paymentMethodId),
       });
       if (
         !paymentMethod ||
+        !paymentMethod.isActive ||
         (paymentMethod.type !== "cash" && paymentMethod.type !== "card")
       ) {
         throw new AppError("Método de pago inexistente", 404);
@@ -165,6 +193,22 @@ export default class OrderModel {
         if (!overbookedAppointment) {
           throw new AppError("El sobre turno no existe", 404);
         }
+      }
+
+      const linkedAppointment = appointment ?? overbookedAppointment;
+      if (
+        linkedAppointment &&
+        ["cancelled", "completed", "no_show"].includes(linkedAppointment.status)
+      ) {
+        throw new AppError("El turno ya no puede cerrarse", 409);
+      }
+
+      if (
+        linkedAppointment &&
+        data.sellerUserId &&
+        linkedAppointment.barberId !== seller.id
+      ) {
+        throw new AppError("El turno no pertenece al barbero vendedor", 403);
       }
 
       let expectedAmount =
@@ -214,13 +258,6 @@ export default class OrderModel {
         expectedAmount += product.price * item.quantity;
       }
 
-      if (data.amount !== expectedAmount) {
-        throw new AppError(
-          "El importe de la venta no coincide con los precios actuales",
-          409,
-        );
-      }
-
       const [order] = await tx
         .insert(orders)
         .values({
@@ -243,7 +280,7 @@ export default class OrderModel {
         await tx.insert(productSales).values({
           productId: product.id,
           orderId: order.id,
-          soldBy: data.soldBy,
+          soldBy: sellerId,
           quantity: item.quantity,
           priceSnapshot: product.price,
           costSnapshot: product.cost,
@@ -263,16 +300,32 @@ export default class OrderModel {
       }
 
       if (appointment) {
-        await tx
+        const [completed] = await tx
           .update(appointments)
           .set({ status: "completed" })
-          .where(eq(appointments.id, appointment.id));
+          .where(
+            and(
+              eq(appointments.id, appointment.id),
+              sql`${appointments.status} IN ('pending', 'confirmed')`,
+            ),
+          )
+          .returning({ id: appointments.id });
+        if (!completed)
+          throw new AppError("El turno ya no puede cerrarse", 409);
       }
       if (overbookedAppointment) {
-        await tx
+        const [completed] = await tx
           .update(overbookedAppointments)
           .set({ status: "completed" })
-          .where(eq(overbookedAppointments.id, overbookedAppointment.id));
+          .where(
+            and(
+              eq(overbookedAppointments.id, overbookedAppointment.id),
+              sql`${overbookedAppointments.status} IN ('pending', 'confirmed')`,
+            ),
+          )
+          .returning({ id: overbookedAppointments.id });
+        if (!completed)
+          throw new AppError("El turno ya no puede cerrarse", 409);
       }
 
       return order;
@@ -336,6 +389,33 @@ export default class OrderModel {
       where: eq(orders.id, id),
     });
     if (!existing) throw new AppError("Orden no encontrada", 404);
+
+    if (data.paymentMethodId) {
+      const paymentMethod = await db.query.paymentMethods.findFirst({
+        where: eq(paymentMethods.id, data.paymentMethodId),
+      });
+      if (!paymentMethod || !paymentMethod.isActive) {
+        throw new AppError("Método de pago inexistente", 404);
+      }
+    }
+
+    if (data.status && data.status !== existing.status) {
+      const transitions: Record<
+        NonNullable<UpdateOrderData["status"]>,
+        NonNullable<UpdateOrderData["status"]>[]
+      > = {
+        pending: ["pending", "paid", "failed"],
+        paid: ["paid", "refunded"],
+        failed: ["failed", "pending"],
+        refunded: ["refunded"],
+      };
+      if (!transitions[existing.status].includes(data.status)) {
+        throw new AppError(
+          `No se puede cambiar una orden de ${existing.status} a ${data.status}`,
+          409,
+        );
+      }
+    }
 
     const patch = { ...data } as Record<string, unknown>;
 

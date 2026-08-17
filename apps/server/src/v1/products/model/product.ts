@@ -16,7 +16,6 @@ interface UpdateProductData {
   description?: string;
   price?: number;
   cost?: number;
-  stock?: number;
   isActive?: boolean;
 }
 
@@ -24,9 +23,6 @@ interface CreateSaleData {
   orderId: string;
   soldBy: string;
   quantity: number;
-  priceSnapshot: number;
-  /** Si no viene informado, se captura el costo vigente del producto. */
-  costSnapshot?: number;
 }
 
 export default class ProductModel {
@@ -46,8 +42,18 @@ export default class ProductModel {
   }
 
   static async create(data: CreateProductData) {
-    if (data.stock < 0)
-      throw new AppError("El stock no puede ser negativo", 400);
+    if (
+      !data.name.trim() ||
+      data.name.length > 120 ||
+      !Number.isSafeInteger(data.price) ||
+      data.price <= 0 ||
+      (data.cost !== undefined &&
+        (!Number.isSafeInteger(data.cost) || data.cost < 0)) ||
+      !Number.isSafeInteger(data.stock) ||
+      data.stock < 0
+    ) {
+      throw new AppError("Datos de producto inválidos", 400);
+    }
     const [created] = await db.insert(products).values(data).returning();
     if (!created) throw new AppError("No se pudo crear el producto", 500);
     return created;
@@ -57,8 +63,15 @@ export default class ProductModel {
     if (Object.keys(data).length === 0) {
       throw new AppError("No se enviaron campos para actualizar", 404);
     }
-    if (data.stock !== undefined && data.stock < 0) {
-      throw new AppError("El stock no puede ser negativo", 400);
+    if (
+      (data.name !== undefined &&
+        (!data.name.trim() || data.name.length > 120)) ||
+      (data.price !== undefined &&
+        (!Number.isSafeInteger(data.price) || data.price <= 0)) ||
+      (data.cost !== undefined &&
+        (!Number.isSafeInteger(data.cost) || data.cost < 0))
+    ) {
+      throw new AppError("Datos de producto inválidos", 400);
     }
 
     const [updated] = await db
@@ -156,8 +169,10 @@ export default class ProductModel {
           orderId: data.orderId,
           soldBy: data.soldBy,
           quantity: data.quantity,
-          priceSnapshot: data.priceSnapshot,
-          costSnapshot: data.costSnapshot ?? product.cost,
+          // Nunca confiar en el precio enviado por el frontend: ambos
+          // snapshots se toman del catálogo dentro de la transacción.
+          priceSnapshot: product.price,
+          costSnapshot: product.cost,
         })
         .returning();
 

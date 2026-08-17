@@ -101,11 +101,16 @@ export default class ProductController {
     };
 
     const patch: Record<string, unknown> = {};
+    if (stock !== undefined) {
+      return res.status(400).json({
+        message: "El stock solo se modifica mediante compras o ventas",
+        data: null,
+      });
+    }
     if (name !== undefined) patch.name = name;
     if (description !== undefined) patch.description = description;
     if (price !== undefined) patch.price = price;
     if (cost !== undefined) patch.cost = cost;
-    if (stock !== undefined) patch.stock = stock;
     if (isActive !== undefined) patch.isActive = isActive;
 
     if (Object.keys(patch).length === 0) {
@@ -150,16 +155,15 @@ export default class ProductController {
 
   static async createSale(req: Request, res: Response) {
     const { id } = req.params;
-    const { orderId, soldBy, quantity, priceSnapshot } = req.body as {
+    const { orderId, soldBy, quantity } = req.body as {
       orderId?: string;
       soldBy?: string;
       quantity?: number;
-      priceSnapshot?: number;
     };
 
-    if (!orderId || !soldBy || quantity == null || priceSnapshot == null) {
+    if (!orderId || !soldBy || quantity == null) {
       return res.status(400).json({
-        message: "Campos requeridos: orderId, soldBy, quantity, priceSnapshot",
+        message: "Campos requeridos: orderId, soldBy, quantity",
         data: null,
       });
     }
@@ -175,19 +179,11 @@ export default class ProductController {
       });
     }
 
-    if (typeof priceSnapshot !== "number" || priceSnapshot <= 0) {
-      return res.status(400).json({
-        message: "El precio debe ser un número positivo en centavos",
-        data: null,
-      });
-    }
-
     try {
       const data = await ProductModel.createSale(id as string, {
         orderId,
         soldBy,
         quantity,
-        priceSnapshot,
       });
       return res
         .status(201)

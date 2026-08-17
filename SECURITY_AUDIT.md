@@ -5,7 +5,7 @@ Alcance: revisión estática del backend, frontend, esquema de datos, configurac
 
 ## Resumen ejecutivo
 
-El proyecto tiene una base de seguridad razonable, pero no debe considerarse todavía un backend completamente seguro. La autenticación mejoró: los tokens se validan criptográficamente, se contrastan con el usuario activo de la base y las rutas administrativas exigen el rol correspondiente.
+El proyecto tiene una base de seguridad razonable, pero no debe considerarse todavía un backend completamente seguro. La autenticación mejoró: los tokens se validan criptográficamente, se contrastan con el usuario activo de la base y las rutas administrativas exigen el rol correspondiente. En esta iteración también se corrigieron los flujos críticos de reservas, órdenes, ventas y stock para que los importes, estados, snapshots y relaciones sensibles se deriven en el servidor.
 
 No encontré evidencia de:
 
@@ -16,9 +16,6 @@ No encontré evidencia de:
 
 Sí encontré riesgos pendientes que pueden producir:
 
-- reservas fuera de horario o con estados manipulados;
-- bloqueo o alteración de órdenes;
-- cierre de turnos pertenecientes a otro barbero;
 - exposición de datos personales mediante el endpoint público de confirmación;
 - abuso del envío de correos;
 - acceso directo a la base si se filtra el token de Turso o se compromete el servidor.
@@ -51,7 +48,10 @@ Prioridades: **P0** inmediata, **P1** antes del próximo despliegue, **P2** pró
 - Helmet activa HSTS en producción, `frameguard`, `noSniff` y oculta la tecnología del servidor. Ver [config.ts](apps/server/src/config.ts#L14).
 - Existe limitación general, de autenticación y de reservas. Login y registro aplican el limitador directamente sobre las rutas reales. Ver [auth/route.ts](apps/server/src/v1/auth/route.ts#L8).
 - Las rutas de reportes, gastos, compras, inventario, servicios y administración requieren rol administrativo.
-- Las transacciones de ventas y stock usan operaciones atómicas y el backend calcula el importe de la venta de mostrador. Ver [order.ts](apps/server/src/v1/orders/model/order.ts#L120).
+- Las transacciones de ventas y stock usan operaciones atómicas y el backend calcula el importe, snapshots, vendedor y stock de la venta de mostrador. Ver [order.ts](apps/server/src/v1/orders/model/order.ts#L140).
+- Las reservas rechazan campos calculados o de estado enviados por el frontend, validan barbero/servicio activos y comprueban el slot exacto disponible. Ver [appointment.ts](apps/server/src/v1/appointments/controller/appointment.ts#L12).
+- Las órdenes simples requieren un turno, comprueban propiedad para clientes y derivan el importe desde `priceSnapshot`; las ventas rechazan turnos cerrados y vinculan el vendedor autenticado con su perfil.
+- Los endpoints de catálogo no permiten modificar stock directamente; las compras y ventas son las operaciones que lo incrementan o decrementan.
 
 ### Base de datos y secretos
 
@@ -62,17 +62,18 @@ Prioridades: **P0** inmediata, **P1** antes del próximo despliegue, **P2** pró
 
 ## Hallazgos pendientes
 
-| ID | Gravedad | Prioridad | Servicio| Hallazgo | Impacto|| ------ | -------- | --------: | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| SEC-01 | Alta | P1 | Reservas | El cliente puede enviar `status` al crear un turno y el backend lo persiste sin imponer `pending`. Además, se comprueba que exista algún slot ese día, pero no que el `startTime` solicitado sea un slot válido. Ver [appointment.ts](apps/server/src/v1/appointments/controller/appointment.ts#L9). | Puede crear reservas confirmadas/completadas o fuera de horario y contaminar la agenda y los reportes. |
-| SEC-02 | Alta | P1 | Órdenes/Pagos | `POST /order` requiere cualquier JWT válido, no un rol ni la propiedad del turno. Acepta `appointmentId` y `amount` enviados por el cliente y crea órdenes pendientes. Ver [orders/route.ts](apps/server/src/v1/orders/route.ts#L28) y [order.ts](apps/server/src/v1/orders/model/order.ts#L56). | Un cliente puede generar órdenes arbitrarias, bloquear el turno con la restricción única o llenar la base con órdenes pendientes. |
-| SEC-03 | Alta | P1 | Órdenes/Comisiones | En una venta de mostrador, un barbero solo se valida contra `soldBy`; no se verifica que el turno asociado pertenezca a ese barbero. Ver [order.ts](apps/server/src/v1/orders/model/order.ts#L131). | Un barbero autenticado podría cerrar un turno de otro barbero y atribuirse la venta. |
-| SEC-04 | Media | P1 | Reservas/Privacidad | `PATCH /appointments/:id/confirm` es público y usa el UUID como único secreto de capacidad. La respuesta contiene nombre, teléfono, email, notas y relaciones del turno. Ver [appointments/route.ts](apps/server/src/v1/appointments/route.ts#L11) y [appointment.ts](apps/server/src/v1/appointments/model/appointment.ts#L41). | Si el UUID se filtra por correo, logs, historial o analítica, puede confirmarse el turno y obtenerse PII. |
-| SEC-05 | Media | P2 | Email/Reservas | El email del cliente no se valida con un esquema estricto y el nombre del cliente se inserta sin escape en plantillas HTML. Ver [appointment.ts](apps/server/src/v1/appointments/controller/appointment.ts#L53) y [sendMail.ts](apps/server/src/utils/sendMail.ts#L217). | Abuso del dominio remitente, phishing en correos y posible inyección de HTML en clientes de correo. |
-| SEC-06 | Media | P2 | Auth/Email | El token de confirmación de correo no define expiración, propósito ni audiencia, y la cuenta se actualiza antes de verificar completamente la correspondencia del email. Ver [sendMail.ts](apps/server/src/utils/sendMail.ts#L91) y [auth.ts](apps/server/src/v1/auth/controller/auth.ts#L95). | Un enlace filtrado puede reutilizarse indefinidamente y el flujo de verificación tiene una mutación previa a la validación completa. |
-| SEC-07 | Media | P2 | Validación | Los tipos TypeScript no son validación de runtime. Hay múltiples `req.body as ...` y varios campos sin límites de tamaño, formato o rango. Los `enum` de Drizzle tampoco sustituyen necesariamente constraints `CHECK` en SQLite. | Entradas malformadas, estados inválidos, errores de DB, crecimiento de datos y abuso de lógica. |
-| SEC-08 | Media | P2 | Errores/Observabilidad | Varios controladores devuelven directamente `err.message`, que puede incluir mensajes de DB o detalles internos. Ver [error.middleware.ts](apps/server/src/middleware/error.middleware.ts#L3). | Revelación de información útil para reconocimiento o explotación. |
-| SEC-09 | Baja | P2 | Auth | Login diferencia usuario inexistente de contraseña incorrecta y el flujo de confirmación no se aplica como requisito para iniciar sesión. Ver [auth.ts](apps/server/src/v1/auth/model/auth.ts#L52) y [auth.ts](apps/server/src/v1/auth/controller/auth.ts#L19). | Enumeración de cuentas y registro de cuentas no verificadas según la regla de negocio. |
-| SEC-10 | Baja | P3 | Plataforma | CSP está deshabilitada y no se observa configuración explícita de `trust proxy` ni un store distribuido para rate limiting. Ver [config.ts](apps/server/src/config.ts#L14) y [ratelimiter.middleware.ts](apps/server/src/middleware/ratelimiter.middleware.ts#L1). | Menor defensa ante XSS y límites inconsistentes detrás de proxy o con varias réplicas. |
+| ID     | Gravedad | Prioridad | Servicio               | Hallazgo                                                                                                                                                                                                                                                                                                                         | Impacto                                                                                                                                                                                      |
+| ------ | -------- | --------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-01 | Alta     | P1        | Reservas               | El endpoint aceptaba estado, identidad y campos calculados del cliente, y no comprobaba el slot exacto.                                                                                                                                                                                                                          | **CORREGIDO**: esquema estricto; estado inicial `pending`; identidad de clientes autenticados tomada de DB; precio y fin calculados con servicio activo; slot exacto y relaciones validados. |
+| SEC-02 | Alta     | P1        | Órdenes/Pagos          | `POST /order` aceptaba monto enviado por el cliente y no comprobaba suficientemente la propiedad o la asociación del turno.                                                                                                                                                                                                      | **CORREGIDO**: el monto se deriva del snapshot del turno; se exige exactamente un turno, se rechazan campos extra como `amount`, se valida estado, método activo y propiedad del cliente.    |
+| SEC-03 | Alta     | P1        | Órdenes/Comisiones     | Una venta podía cerrar un turno de otro barbero y aceptar snapshots manipulados.                                                                                                                                                                                                                                                 | **CORREGIDO**: el vendedor de un barbero autenticado se resuelve desde su usuario; se verifica la relación con el turno; precios, costos y stock salen de DB en una transacción.             |
+| SEC-04 | Media    | P1        | Reservas/Privacidad    | `PATCH /appointments/:id/confirm` es público y usa el UUID como único secreto de capacidad. La respuesta contiene nombre, teléfono, email, notas y relaciones del turno. Ver [appointments/route.ts](apps/server/src/v1/appointments/route.ts#L11) y [appointment.ts](apps/server/src/v1/appointments/model/appointment.ts#L41). | Si el UUID se filtra por correo, logs, historial o analítica, puede confirmarse el turno y obtenerse PII.                                                                                    |
+| SEC-05 | Media    | P2        | Email/Reservas         | El email del cliente no se valida con un esquema estricto y el nombre del cliente se inserta sin escape en plantillas HTML. Ver [appointment.ts](apps/server/src/v1/appointments/controller/appointment.ts#L53) y [sendMail.ts](apps/server/src/utils/sendMail.ts#L217).                                                         | Abuso del dominio remitente, phishing en correos y posible inyección de HTML en clientes de correo.                                                                                          |
+| SEC-06 | Media    | P2        | Auth/Email             | El token de confirmación de correo no define expiración, propósito ni audiencia, y la cuenta se actualiza antes de verificar completamente la correspondencia del email. Ver [sendMail.ts](apps/server/src/utils/sendMail.ts#L91) y [auth.ts](apps/server/src/v1/auth/controller/auth.ts#L95).                                   | Un enlace filtrado puede reutilizarse indefinidamente y el flujo de verificación tiene una mutación previa a la validación completa.                                                         |
+| SEC-07 | Media    | P2        | Validación             | Los tipos TypeScript no son validación de runtime en todos los endpoints. Los flujos críticos ya tienen validación estricta, límites y comprobaciones de relación, pero aún quedan endpoints administrativos con validación parcial.                                                                                             | Entradas malformadas, estados inválidos, errores de DB, crecimiento de datos y abuso de lógica.                                                                                              |
+| SEC-08 | Media    | P2        | Errores/Observabilidad | Varios controladores devuelven directamente `err.message`, que puede incluir mensajes de DB o detalles internos. Ver [error.middleware.ts](apps/server/src/middleware/error.middleware.ts#L3).                                                                                                                                   | Revelación de información útil para reconocimiento o explotación.                                                                                                                            |
+| SEC-09 | Baja     | P2        | Auth                   | Login diferencia usuario inexistente de contraseña incorrecta y el flujo de confirmación no se aplica como requisito para iniciar sesión. Ver [auth.ts](apps/server/src/v1/auth/model/auth.ts#L52) y [auth.ts](apps/server/src/v1/auth/controller/auth.ts#L19).                                                                  | Enumeración de cuentas y registro de cuentas no verificadas según la regla de negocio.                                                                                                       |
+| SEC-10 | Baja     | P3        | Plataforma             | CSP está deshabilitada y no se observa configuración explícita de `trust proxy` ni un store distribuido para rate limiting. Ver [config.ts](apps/server/src/config.ts#L14) y [ratelimiter.middleware.ts](apps/server/src/middleware/ratelimiter.middleware.ts#L1).                                                               | Menor defensa ante XSS y límites inconsistentes detrás de proxy o con varias réplicas.                                                                                                       |
 
 ## Riesgo específico de filtración de la DB
 
@@ -104,13 +105,9 @@ Esto no equivale a una lectura arbitraria de toda la DB, pero sí puede ser una 
 
 ### Antes del próximo despliegue — P1
 
-1. Crear schemas Zod de runtime para reservas, órdenes, autenticación, gastos, compras y parámetros de fecha/hora.
-2. Eliminar `status` del body de una reserva pública; el backend debe establecer siempre `pending`.
-3. Validar que el turno solicitado pertenezca a los slots disponibles, que fecha/hora sean válidas y que barbero/servicio estén activos.
-4. Restringir `POST /order` a los roles necesarios y comprobar propiedad, estado y asociación del turno.
-5. Verificar que un barbero solo pueda cerrar turnos de su propio perfil, salvo una operación administrativa explícita.
-6. Cambiar la confirmación pública a un token aleatorio, de un solo uso, con expiración y almacenado de forma hasheada; devolver solo los datos mínimos necesarios.
-7. Escapar todo contenido dinámico en HTML de email y validar destinatarios.
+1. Completar schemas Zod de runtime en gastos, compras, catálogo y parámetros de fecha/hora administrativos.
+2. Cambiar la confirmación pública a un token aleatorio, de un solo uso, con expiración y almacenado de forma hasheada; devolver solo los datos mínimos necesarios.
+3. Escapar todo contenido dinámico en HTML de email y validar destinatarios.
 
 ### Próxima iteración — P2
 
@@ -135,6 +132,8 @@ Esto no equivale a una lectura arbitraria de toda la DB, pero sí puede ser una 
 ## Verificación realizada
 
 - Type-check del servidor: correcto.
+- Type-check del frontend: correcto.
+- Suite del servidor en ejecución serial: correcta, incluyendo regresiones que rechazan `status`, `priceSnapshot`, `endTime`, `amount` y otros campos manipulables.
 - Tests enfocados de autenticación, autorización y endpoints públicos: correctos.
 - Se añadió una regresión que comprueba que un JWT inválido devuelve `401`, no `500`.
 - La auditoría fue estática; no se probaron credenciales reales, Turso de producción, infraestructura, DNS, WAF, backups ni configuraciones del proveedor.

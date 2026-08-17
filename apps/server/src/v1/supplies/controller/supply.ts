@@ -103,11 +103,16 @@ export default class SupplyController {
     };
 
     const patch: Record<string, unknown> = {};
+    if (stock !== undefined) {
+      return res.status(400).json({
+        message: "El stock solo se modifica mediante compras o consumos",
+        data: null,
+      });
+    }
     if (name !== undefined) patch.name = name;
     if (description !== undefined) patch.description = description;
     if (unit !== undefined) patch.unit = unit;
     if (cost !== undefined) patch.cost = cost;
-    if (stock !== undefined) patch.stock = stock;
     if (lowStockThreshold !== undefined)
       patch.lowStockThreshold = lowStockThreshold;
     if (isActive !== undefined) patch.isActive = isActive;

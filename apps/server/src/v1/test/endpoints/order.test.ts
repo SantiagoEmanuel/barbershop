@@ -2,7 +2,22 @@ import app from "@/config";
 import { todayISO } from "@config/utils";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
-import { adminToken } from "../helpers";
+import { adminToken, clientToken } from "../helpers";
+
+describe("POST /api/v1/order (integridad del importe)", () => {
+  it("rechaza un importe enviado por el frontend", async () => {
+    const res = await request(app)
+      .post("/api/v1/order")
+      .set("Cookie", `auth_token=${clientToken()}`)
+      .send({
+        appointmentId: "00000000-0000-0000-0000-000000000000",
+        paymentMethodId: "payment-method-id",
+        amount: 1,
+      });
+
+    expect(res.status).toBe(400);
+  });
+});
 
 describe("GET /api/v1/order (admin)", () => {
   it("rechaza sin autenticación", async () => {

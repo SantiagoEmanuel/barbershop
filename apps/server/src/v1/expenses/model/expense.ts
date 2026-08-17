@@ -2,6 +2,7 @@ import { db, type DbOrTx } from "@/db/db";
 import {
   expenseCategories,
   expenses,
+  paymentMethods,
   recurringExpenses,
 } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
@@ -100,7 +101,34 @@ export default class ExpenseModel {
   }
 
   static async create(data: CreateExpenseData, tx: DbOrTx = db) {
-    if (data.amount <= 0) throw new AppError("El monto debe ser positivo", 400);
+    if (!Number.isSafeInteger(data.amount) || data.amount <= 0) {
+      throw new AppError(
+        "El monto debe ser un entero positivo en centavos",
+        400,
+      );
+    }
+
+    const category = await tx.query.expenseCategories.findFirst({
+      where: and(
+        eq(expenseCategories.id, data.categoryId),
+        eq(expenseCategories.isActive, true),
+      ),
+    });
+    if (!category) throw new AppError("Rubro de gasto inválido", 400);
+
+    if (data.paymentMethodId) {
+      const paymentMethod = await tx.query.paymentMethods.findFirst({
+        where: and(
+          eq(paymentMethods.id, data.paymentMethodId),
+          eq(paymentMethods.isActive, true),
+        ),
+      });
+      if (!paymentMethod) throw new AppError("Método de pago inválido", 400);
+    }
+
+    if (data.incurredAt && data.incurredAt > new Date()) {
+      throw new AppError("La fecha del gasto no puede ser futura", 400);
+    }
     const [created] = await tx.insert(expenses).values(data).returning();
     if (!created) throw new AppError("No se pudo registrar el gasto", 500);
     return created;

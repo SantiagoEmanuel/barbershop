@@ -1,5 +1,6 @@
 import { isValidBusinessDate, todayISO } from "@config/utils";
 import type { Request, Response } from "express";
+import { z } from "zod";
 import OrderModel, { type CounterSaleItem } from "../model/order";
 
 const VALID_STATUSES = ["pending", "paid", "refunded", "failed"] as const;
@@ -56,38 +57,27 @@ export default class OrderController {
   }
 
   static async create(req: Request, res: Response) {
-    const { appointmentId, overbookedAppointmentId, paymentMethodId, amount } =
-      req.body as {
-        appointmentId?: string;
-        overbookedAppointmentId?: string;
-        paymentMethodId?: string;
-        amount?: number;
-      };
+    const parsed = z
+      .object({
+        appointmentId: z.string().trim().min(1).optional(),
+        overbookedAppointmentId: z.string().trim().min(1).optional(),
+        paymentMethodId: z.string().trim().min(1),
+      })
+      .strict()
+      .safeParse(req.body);
 
-    if (!paymentMethodId || amount == null) {
+    if (!parsed.success) {
       return res.status(400).json({
-        message: "Campos requeridos: paymentMethodId, amount",
-        data: null,
-      });
-    }
-
-    if (
-      typeof amount !== "number" ||
-      !Number.isSafeInteger(amount) ||
-      amount <= 0
-    ) {
-      return res.status(400).json({
-        message: "El monto debe ser un número positivo en centavos",
+        message:
+          "Campos requeridos: paymentMethodId y un turno; el monto lo calcula el backend",
         data: null,
       });
     }
 
     try {
       const data = await OrderModel.create({
-        appointmentId,
-        overbookedAppointmentId,
-        paymentMethodId,
-        amount,
+        ...parsed.data,
+        actor: req.user,
       });
       return res
         .status(201)
@@ -109,14 +99,12 @@ export default class OrderController {
    */
   static async createByBarber(req: Request, res: Response) {
     const {
-      amount,
       soldBy,
       items,
       paymentMethodId,
       appointmentId,
       overbookedAppointmentId,
     } = req.body as {
-      amount?: number;
       soldBy?: string;
       items?: CounterSaleItem[];
       paymentMethodId?: string;
@@ -125,28 +113,22 @@ export default class OrderController {
     };
 
     // 1. Validación de presencia (ojo con los `!` que se te habían escapado)
+    const canChooseSeller =
+      req.user?.role === "admin" || req.user?.role === "dev";
     if (
-      amount == null ||
-      !soldBy ||
+      (canChooseSeller && !soldBy) ||
       !paymentMethodId ||
       !Array.isArray(items)
     ) {
       return res.status(400).json({
-        message: "Campos requeridos: amount, soldBy, paymentMethodId, items[]",
+        message:
+          "Campos requeridos: paymentMethodId, items[] y vendedor para administración",
         data: null,
       });
     }
 
-    // 2. Validación de tipos
-    if (
-      typeof amount !== "number" ||
-      !Number.isSafeInteger(amount) ||
-      amount <= 0
-    ) {
-      return res.status(400).json({
-        message: "El monto debe ser un número positivo en centavos",
-        data: null,
-      });
+    if (items.length > 100) {
+      return res.status(400).json({ message: "Demasiados items", data: null });
     }
 
     // 3. Validación básica de cada item
@@ -157,7 +139,8 @@ export default class OrderController {
         !it.id ||
         typeof it.quantity !== "number" ||
         !Number.isInteger(it.quantity) ||
-        it.quantity <= 0
+        it.quantity <= 0 ||
+        it.quantity > 1000
       ) {
         return res.status(400).json({
           message: "Items inválidos: revisar kind, id y quantity",
@@ -175,7 +158,6 @@ export default class OrderController {
         appointmentId,
         overbookedAppointmentId,
         paymentMethodId,
-        amount,
         soldBy,
         items,
         sellerUserId: req.user?.role === "barber" ? req.user.id : undefined,
