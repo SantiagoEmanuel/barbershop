@@ -1,6 +1,9 @@
 import { JWT_SECRET } from "@/constants/credentials.env";
+import { db } from "@/db/db";
+import { users } from "@/db/turso/schema";
+import { and, eq } from "drizzle-orm";
 import type { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import { verify } from "jsonwebtoken";
 
 export type Role = "admin" | "client" | "barber";
 
@@ -19,46 +22,77 @@ declare global {
   }
 }
 
-export function checkToken(req: Request, _res: Response, next: NextFunction) {
-  const token = req.cookies.auth_token;
+const ROLES: readonly Role[] = ["admin", "client", "barber"];
 
-  if (!token) {
-    next();
-    return;
-  }
+function isJwtPayload(value: unknown): value is JwtPayload {
+  if (!value || typeof value !== "object") return false;
 
-  // En caso de haber token se guarda el contenido del usuario
-  try {
-    req.user = jwt.verify(token, JWT_SECRET as string) as JwtPayload;
-  } catch {
-    //
-  }
-
-  next();
-  return;
+  const payload = value as Record<string, unknown>;
+  return (
+    typeof payload.id === "string" &&
+    typeof payload.email === "string" &&
+    typeof payload.role === "string" &&
+    ROLES.includes(payload.role as Role)
+  );
 }
 
-/**
- * Verifica que el request tenga un JWT válido en las cookies.
- * Si es válido, adjunta el payload decodificado en req.user.
- */
-export function verifyToken(req: Request, res: Response, next: NextFunction) {
-  const token = req.cookies.auth_token;
+const authenticate =
+  (required: boolean) =>
+  async (req: Request, res: Response, next: NextFunction) => {
+    const reject = (message: string) => {
+      if (!required) {
+        next();
+        return;
+      }
 
-  if (!token) {
-    return res.status(401).json({ message: "Token requerido", data: null });
-  }
+      return res.status(401).json({ message, data: null });
+    };
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET as string) as JwtPayload;
-    req.user = decoded;
-    next();
-  } catch {
-    return res
-      .status(401)
-      .json({ message: "Token inválido o expirado", data: null });
-  }
-}
+    const token = req.cookies.auth_token;
+    if (!token) return reject("Token requerido");
+
+    let payload: JwtPayload;
+    try {
+      const decoded = verify(token, JWT_SECRET);
+      if (!isJwtPayload(decoded)) {
+        return reject("Token inválido o expirado");
+      }
+      payload = decoded;
+    } catch {
+      return reject("Token inválido o expirado");
+    }
+
+    let currentUser: { id: string; email: string; role: Role } | undefined;
+    try {
+      currentUser = await db.query.users.findFirst({
+        where: and(eq(users.id, payload.id), eq(users.isActive, true)),
+        columns: {
+          id: true,
+          email: true,
+          role: true,
+        },
+      });
+    } catch (err) {
+      return next(err);
+    }
+
+    if (
+      !currentUser ||
+      currentUser.email !== payload.email ||
+      currentUser.role !== payload.role
+    ) {
+      return reject("Token inválido o expirado");
+    }
+
+    req.user = currentUser;
+    return next();
+  };
+
+/** Autenticación opcional para endpoints públicos que admiten sesión. */
+export const optionalToken = authenticate(false);
+
+/** Autenticación obligatoria para endpoints protegidos. */
+export const verifyToken = authenticate(true);
 
 /**
  * Verificación del rol del usuario, debe usarse luego de verifyToken.
