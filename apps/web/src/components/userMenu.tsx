@@ -10,8 +10,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
+import { hasPermission } from "../lib/permissions";
 import { useAuthStore } from "../store/useAuthStore";
-import type { User } from "../types";
+import { PERMISSIONS, type User } from "../types";
 import { MenuLink } from "./menuLink";
 
 /**
@@ -60,7 +61,7 @@ export function UserMenu({
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose]);
 
-  const isAdmin = user.role === "admin";
+  const isAdmin = hasPermission(user, PERMISSIONS.USERS_READ);
   const inAdminArea = location.pathname.startsWith("/admin");
 
   return (

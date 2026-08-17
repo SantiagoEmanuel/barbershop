@@ -261,7 +261,8 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
     setAppointmentType,
   } = useBookingStore();
   const user = useAuthStore((u) => u.user);
-  const canCreateOverbook = user?.role === "admin" || user?.role === "barber";
+  const canCreateOverbook =
+    user?.role === "admin" || user?.role === "barber" || user?.role === "dev";
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 

@@ -1,7 +1,7 @@
 import { Icon, UserAvatar } from "@config/components";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "../store/useAuthStore";
-import { NAV_ITEMS } from "./navItems";
+import { getVisibleNavItems } from "./navItems";
 import { SideNavItem } from "./sideNavItem";
 
 /**
@@ -13,6 +13,7 @@ export function Sidebar() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
+  const navItems = getVisibleNavItems(user);
 
   return (
     <aside className="bg-surface border-border sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-y-auto border-r lg:flex">
@@ -56,7 +57,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <SideNavItem key={item.href} item={item} />
         ))}
       </nav>

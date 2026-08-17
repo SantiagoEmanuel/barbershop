@@ -1,11 +1,12 @@
 import { Navigate, Outlet } from "react-router";
+import { getVisibleNavItems } from "../components/navItems";
 import { useAuthStore } from "../store/useAuthStore";
 
 /**
  * AdminGuard
  *
  * Verifica solo con el store de Zustand (rehidratado desde localStorage).
- * Razón: el backend ya protege cada endpoint con verifyToken + verifyRole("admin").
+ * Razón: el backend ya protege cada endpoint con verifyToken + permisos.
  * Un check extra al backend en cada render del guard es costoso sin ganancia real
  * de seguridad — si alguien bypasea el guard, igual recibe 401/403 en cada request.
  * La única superficie real de ataque es la UI, que no expone datos sensibles
@@ -13,8 +14,9 @@ import { useAuthStore } from "../store/useAuthStore";
  */
 export default function AdminGuard() {
   const user = useAuthStore((s) => s.user);
+  const firstAllowedRoute = getVisibleNavItems(user)[0]?.href ?? "/";
 
-  if (!user || user.role !== "admin") {
+  if (firstAllowedRoute === "/") {
     return <Navigate to="/" replace />;
   }
 

@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { cn } from "../lib/cn";
 import { useAuthStore } from "../store/useAuthStore";
-import { NAV_ITEMS } from "./navItems";
+import { getVisibleNavItems } from "./navItems";
 import { SideNavItem } from "./sideNavItem";
 
 /**
@@ -83,7 +83,8 @@ export function MobileDrawer({
   }
 
   // ── Con user: bottom sheet con navegación según rol ──────
-  const isAdmin = user.role === "admin";
+  const navItems = getVisibleNavItems(user);
+  const isAdmin = navItems.length > 0;
 
   return (
     <>
@@ -119,7 +120,7 @@ export function MobileDrawer({
           <nav className="flex flex-col gap-1">
             {isAdmin && inAdminArea ? (
               <>
-                {NAV_ITEMS.map((item) => (
+                {navItems.map((item) => (
                   <SideNavItem key={item.href} item={item} onClick={onClose} />
                 ))}
                 <SideNavItem
