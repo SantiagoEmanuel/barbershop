@@ -40,8 +40,10 @@ export const users = table(
      * 'admin'  puede gestionar barberos, servicios y ver todas las órdenes.
      * 'barber' es un usuario vinculado a un perfil de barbero (corta pelo).
      * 'client' solo puede crear y ver sus propios turnos.
+     * 'dev' tiene todos los permisos operativos y de desarrollo; no se asigna
+     * desde el registro público.
      */
-    role: text("role", { enum: ["admin", "client", "barber"] })
+    role: text("role", { enum: ["admin", "client", "barber", "dev"] })
       .notNull()
       .default("client"),
     /** Útil para recordatorios por WhatsApp o SMS. */

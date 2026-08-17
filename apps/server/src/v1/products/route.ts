@@ -1,8 +1,6 @@
-import {
-  optionalToken,
-  verifyRole,
-  verifyToken,
-} from "@/middleware/auth.middleware";
+import { optionalToken, verifyToken } from "@/middleware/auth.middleware";
+import { PERMISSIONS } from "@/middleware/permissions";
+import { requirePermission } from "@/middleware/permissions.middleware";
 import { Router } from "express";
 import ProductController from "./controller/product";
 
@@ -16,19 +14,19 @@ productRouter.get("/:id", ProductController.getById);
 productRouter.post(
   "/",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.CATALOG_MANAGE),
   ProductController.create,
 );
 productRouter.put(
   "/:id",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.CATALOG_MANAGE),
   ProductController.update,
 );
 productRouter.delete(
   "/:id",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.CATALOG_MANAGE),
   ProductController.remove,
 );
 

@@ -28,6 +28,17 @@ export async function setup() {
 
   await db.insert((await import("../../db/turso/schema")).users).values([
     {
+      id: "test-dev-id",
+      name: "Test Developer",
+      email: "dev@test.com",
+      username: "test_dev",
+      password: "test-password-hash",
+      role: "dev",
+      phone: "+5493510000100",
+      isActive: true,
+      verify: true,
+    },
+    {
       id: "test-admin-id",
       name: "Test Admin",
       email: "admin@test.com",
@@ -35,6 +46,17 @@ export async function setup() {
       password: "test-password-hash",
       role: "admin",
       phone: "+5493510000101",
+      isActive: true,
+      verify: true,
+    },
+    {
+      id: "test-role-target-id",
+      name: "Role Target",
+      email: "role-target@test.com",
+      username: "role_target",
+      password: "test-password-hash",
+      role: "client",
+      phone: "+5493510000103",
       isActive: true,
       verify: true,
     },

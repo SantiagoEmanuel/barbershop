@@ -1,3 +1,4 @@
+import { hasPermission, PERMISSIONS } from "@/middleware/permissions";
 import type { Request, Response } from "express";
 import PaymentMethodModel from "../model/paymentMethod";
 
@@ -7,7 +8,8 @@ type PaymentMethodType = (typeof VALID_TYPES)[number];
 export default class PaymentMethodController {
   static async getAll(req: Request, res: Response) {
     const includeInactive =
-      req.query.all === "true" && req.user?.role === "admin";
+      req.query.all === "true" &&
+      hasPermission(req.user?.role, PERMISSIONS.PAYMENT_METHODS_MANAGE);
     try {
       const data = await PaymentMethodModel.getAll({ includeInactive });
       return res.json({ message: "OK", data });

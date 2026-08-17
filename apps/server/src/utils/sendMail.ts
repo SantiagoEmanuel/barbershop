@@ -3,6 +3,7 @@ import {
   MAILERSEND_TOKEN,
   PUBLIC_WEB_URL,
 } from "@/constants/credentials.env";
+import type { AppRole } from "@/middleware/permissions";
 import { User } from "@/v1/auth/model/auth";
 import { formatBusinessCalendarDate } from "@config/utils";
 import { sign } from "jsonwebtoken";
@@ -43,7 +44,7 @@ interface Appointment {
       id: string;
       name: string;
       email: string;
-      role: "admin" | "client" | "barber";
+      role: AppRole;
     } | null;
   } | null;
 }

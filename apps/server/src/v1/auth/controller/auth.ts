@@ -1,4 +1,12 @@
 import { JWT_SECRET } from "@/constants/credentials.env";
+import {
+  getRoleDefinitions,
+  getRolePermissions,
+  hasPermission,
+  isRole,
+  PERMISSIONS,
+  type AppRole,
+} from "@/middleware/permissions";
 import AppError from "@/utils/AppError";
 import { confirmEmail } from "@/utils/sendMail";
 import { Request, Response } from "express";
@@ -167,6 +175,88 @@ export default class AuthController {
       data: null,
     });
   }
+
+  static async me(req: Request, res: Response) {
+    if (!req.user) {
+      return res.status(401).json({ message: "No autenticado", data: null });
+    }
+
+    try {
+      const user = await AuthModel.getById(req.user.id);
+      return res.status(200).json({
+        message: "Sesión válida",
+        data: AuthModel.toPublicUser(user),
+      });
+    } catch (err: any) {
+      const status = err.status ?? 500;
+      return res
+        .status(status)
+        .json({ message: err.message ?? "Server Error", data: null });
+    }
+  }
+
+  static async permissions(req: Request, res: Response) {
+    if (!req.user) {
+      return res.status(401).json({ message: "No autenticado", data: null });
+    }
+
+    return res.status(200).json({
+      message: "Permisos obtenidos",
+      data: {
+        role: req.user.role,
+        permissions: getRolePermissions(req.user.role),
+      },
+    });
+  }
+
+  static async roles(req: Request, res: Response) {
+    if (!hasPermission(req.user?.role, PERMISSIONS.USERS_MANAGE)) {
+      return res.status(403).json({
+        message: "No tenés permisos para realizar esta acción",
+        data: null,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Roles obtenidos",
+      data: getRoleDefinitions(),
+    });
+  }
+
+  static async updateRole(req: Request, res: Response) {
+    if (!req.user) {
+      return res.status(401).json({ message: "No autenticado", data: null });
+    }
+
+    const id = req.params.id as string;
+    const { role } = req.body as { role?: unknown };
+
+    if (!id || !isRole(role)) {
+      return res.status(400).json({
+        message: "El rol indicado no es válido",
+        data: null,
+      });
+    }
+
+    try {
+      const updatedUser = await AuthModel.changeRole(
+        id,
+        role as AppRole,
+        req.user,
+      );
+
+      return res.status(200).json({
+        message: "Rol actualizado",
+        data: AuthModel.toPublicUser(updatedUser),
+      });
+    } catch (err: any) {
+      const status = err.status ?? 500;
+      return res.status(status).json({
+        message: err.message ?? "No se pudo actualizar el rol",
+        data: null,
+      });
+    }
+  }
   static async restoreSession(req: Request, res: Response) {
     const token = req.cookies.auth_token;
 
@@ -226,11 +316,10 @@ export default class AuthController {
     }
   }
   static async getAdminUsers(req: Request, res: Response) {
-    const role = req.user?.role;
-
-    if (role !== "admin") {
-      return res.status(409).json({
-        message: "No estás autorizado a hacer eso",
+    if (!hasPermission(req.user?.role, PERMISSIONS.USERS_READ)) {
+      return res.status(403).json({
+        message: "No tenés permisos para realizar esta acción",
+        data: null,
       });
     }
 

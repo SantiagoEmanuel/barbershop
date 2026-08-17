@@ -4,8 +4,10 @@ import { users } from "@/db/turso/schema";
 import { and, eq } from "drizzle-orm";
 import type { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
+import { ROLES, type Role as PermissionRole } from "./permissions";
 
-export type Role = "admin" | "client" | "barber";
+export type Role = PermissionRole;
+export { ROLES } from "./permissions";
 
 export interface JwtPayload {
   id: string;
@@ -21,8 +23,6 @@ declare global {
     }
   }
 }
-
-const ROLES: readonly Role[] = ["admin", "client", "barber"];
 
 function isJwtPayload(value: unknown): value is JwtPayload {
   if (!value || typeof value !== "object") return false;

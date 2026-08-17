@@ -1,8 +1,6 @@
-import {
-  optionalToken,
-  verifyRole,
-  verifyToken,
-} from "@/middleware/auth.middleware";
+import { optionalToken, verifyToken } from "@/middleware/auth.middleware";
+import { PERMISSIONS } from "@/middleware/permissions";
+import { requirePermission } from "@/middleware/permissions.middleware";
 import { Router } from "express";
 import PaymentMethodController from "./controller/paymentMethod";
 
@@ -16,13 +14,13 @@ paymentMethodRouter.get("/:id", PaymentMethodController.getById);
 paymentMethodRouter.post(
   "/",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.PAYMENT_METHODS_MANAGE),
   PaymentMethodController.create,
 );
 paymentMethodRouter.put(
   "/:id",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.PAYMENT_METHODS_MANAGE),
   PaymentMethodController.update,
 );
 

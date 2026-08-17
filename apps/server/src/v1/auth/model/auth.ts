@@ -2,16 +2,22 @@ import { HASH_SALT } from "@/constants/credentials.env";
 import { db } from "@/db/db";
 import { publicUserColumns } from "@/db/turso/publicUserColumns";
 import { users } from "@/db/turso/schema";
+import {
+  getRolePermissions,
+  type AppRole,
+  type Permission,
+  type Role,
+} from "@/middleware/permissions";
 import AppError from "@/utils/AppError";
 import { compareSync, hashSync } from "bcrypt";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 export type User = {
   id: string;
   email: string;
   name: string;
   username: string;
-  role: "admin" | "client" | "barber";
+  role: AppRole;
   phone: string;
   isActive: boolean;
   createdAt: Date;
@@ -19,7 +25,9 @@ export type User = {
   verify: boolean;
 };
 
-export type PublicUser = Omit<User, "password">;
+export type PublicUser = Omit<User, "password"> & {
+  permissions: Permission[];
+};
 
 type NewUser = {
   email: string;
@@ -46,6 +54,7 @@ export default class AuthModel {
       isActive: user.isActive,
       createdAt: user.createdAt,
       verify: user.verify,
+      permissions: getRolePermissions(user.role),
     };
   }
 
@@ -108,7 +117,7 @@ export default class AuthModel {
   }
   static async getAdmins() {
     const data = await db.query.users.findMany({
-      where: eq(users.role, "admin"),
+      where: inArray(users.role, ["admin", "dev"]),
       columns: publicUserColumns,
     });
 
@@ -117,6 +126,64 @@ export default class AuthModel {
     }
 
     return data;
+  }
+
+  static async changeRole(
+    userId: string,
+    role: AppRole,
+    actor: { id: string; role: Role },
+  ) {
+    if (userId === actor.id) {
+      throw new AppError("No podés modificar tu propio rol", 400);
+    }
+
+    return db.transaction(async (tx) => {
+      const currentUser = await tx.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!currentUser) {
+        throw new AppError("Usuario inexistente", 404);
+      }
+
+      // El rol dev puede conceder capacidades de desarrollo y solo debe ser
+      // administrado por otro dev mediante un procedimiento explícito.
+      if (
+        (currentUser.role === "dev" || role === "dev") &&
+        actor.role !== "dev"
+      ) {
+        throw new AppError(
+          "Solo un usuario dev puede administrar el rol dev",
+          403,
+        );
+      }
+
+      if (currentUser.role === "admin" && role !== "admin") {
+        const [{ count }] = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(users)
+          .where(eq(users.role, "admin"));
+
+        if (Number(count) <= 1) {
+          throw new AppError(
+            "No se puede degradar al último administrador",
+            409,
+          );
+        }
+      }
+
+      const [updatedUser] = await tx
+        .update(users)
+        .set({ role })
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!updatedUser) {
+        throw new AppError("No se pudo actualizar el rol", 500);
+      }
+
+      return updatedUser;
+    });
   }
   /**
    * Usuarios activos que el admin puede vincular a un perfil de barbero.

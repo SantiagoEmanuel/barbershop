@@ -1,7 +1,7 @@
 import app from "@/config";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
-import { adminToken, clientToken } from "../helpers";
+import { adminToken, clientToken, devToken } from "../helpers";
 
 /**
  * Tests de autorización: verifica que los endpoints protegidos
@@ -11,6 +11,9 @@ describe("Endpoints protegidos — sin token devuelven 401", () => {
   const protectedGET = [
     "/api/v1/auth/get-admins",
     "/api/v1/auth/users",
+    "/api/v1/auth/me",
+    "/api/v1/auth/permissions",
+    "/api/v1/auth/roles",
     "/api/v1/barber/me",
     "/api/v1/appointments/my",
     "/api/v1/supplies",
@@ -79,6 +82,14 @@ describe("Endpoints admin — con token admin responden correctamente", () => {
       expect(res.body).toHaveProperty("data");
     });
   }
+});
+
+it("permite a dev acceder a un endpoint administrativo mediante permisos", async () => {
+  const res = await request(app)
+    .get("/api/v1/reports/summary")
+    .set("Cookie", `auth_token=${devToken()}`);
+
+  expect(res.status).toBe(200);
 });
 
 describe("POST protegidos — sin token devuelven 401", () => {

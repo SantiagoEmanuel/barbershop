@@ -1,10 +1,12 @@
+import { hasPermission, PERMISSIONS } from "@/middleware/permissions";
 import type { Request, Response } from "express";
 import SupplyModel from "../model/supply";
 
 export default class SupplyController {
   static async getAll(req: Request, res: Response) {
     const includeInactive =
-      req.query.all === "true" && req.user?.role === "admin";
+      req.query.all === "true" &&
+      hasPermission(req.user?.role, PERMISSIONS.INVENTORY_MANAGE);
     try {
       const data = await SupplyModel.getAll({ includeInactive });
       return res.json({ message: "OK", data });

@@ -1,3 +1,4 @@
+import { hasPermission, PERMISSIONS } from "@/middleware/permissions";
 import { minutesToTime, timeToMinutes } from "@/utils/availability";
 import { confirmShift } from "@/utils/sendMail";
 import AvailabilityModel from "@/v1/availability/model/availability";
@@ -43,7 +44,11 @@ export default class AppointmentController {
       });
     }
 
-    if (isOverbook && user && !["admin", "barber"].includes(user.role)) {
+    if (
+      isOverbook &&
+      user &&
+      !hasPermission(user.role, PERMISSIONS.APPOINTMENTS_OVERBOOK)
+    ) {
       return res.status(403).json({
         message: "Solo un barbero o administrador puede crear un sobre turno",
         data: null,
@@ -200,7 +205,7 @@ export default class AppointmentController {
         });
       }
 
-      if (user.role === "admin") {
+      if (hasPermission(user.role, PERMISSIONS.APPOINTMENTS_UPDATE_ANY)) {
         const appointmentUpdate = await AppointmentModel.update(
           status,
           id as string,

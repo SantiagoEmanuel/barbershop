@@ -1,11 +1,13 @@
-import { verifyRole, verifyToken } from "@/middleware/auth.middleware";
+import { verifyToken } from "@/middleware/auth.middleware";
+import { PERMISSIONS } from "@/middleware/permissions";
+import { requirePermission } from "@/middleware/permissions.middleware";
 import { Router } from "express";
 import ExpenseController from "./controller/expense";
 
 const expenseRouter = Router();
 
 // Egresos: información financiera sensible, solo admin.
-expenseRouter.use(verifyToken, verifyRole("admin"));
+expenseRouter.use(verifyToken, requirePermission(PERMISSIONS.FINANCE_MANAGE));
 
 // Rubros
 expenseRouter.get("/categories", ExpenseController.getCategories);

@@ -1,10 +1,12 @@
+import { hasPermission, PERMISSIONS } from "@/middleware/permissions";
 import type { Request, Response } from "express";
 import ProductModel from "../model/product";
 
 export default class ProductController {
   static async getAll(req: Request, res: Response) {
     const includeInactive =
-      req.query.all === "true" && req.user?.role === "admin";
+      req.query.all === "true" &&
+      hasPermission(req.user?.role, PERMISSIONS.CATALOG_MANAGE);
     try {
       const data = await ProductModel.getAll({ includeInactive });
       return res.json({ message: "OK", data });
