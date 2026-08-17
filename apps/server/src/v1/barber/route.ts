@@ -1,4 +1,8 @@
-import { verifyRole, verifyToken } from "@/middleware/auth.middleware";
+import {
+  optionalToken,
+  verifyRole,
+  verifyToken,
+} from "@/middleware/auth.middleware";
 import { Router } from "express";
 import BarberController from "./controller/barber";
 
@@ -8,7 +12,7 @@ const barberRouter = Router();
 barberRouter.get("/me", verifyToken, BarberController.me);
 
 // Públicos — el cliente necesita ver barberos y sus horarios
-barberRouter.get("/", BarberController.getAll);
+barberRouter.get("/", optionalToken, BarberController.getAll);
 barberRouter.get("/:slug", BarberController.getBySlug);
 
 // Solo admin

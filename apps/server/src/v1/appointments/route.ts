@@ -1,10 +1,14 @@
-import { verifyRole, verifyToken } from "@/middleware/auth.middleware";
+import {
+  optionalToken,
+  verifyRole,
+  verifyToken,
+} from "@/middleware/auth.middleware";
 import { Router } from "express";
 import AppointmentController from "./controller/appointment";
 
 const appointmentRouter = Router();
 
-appointmentRouter.post("/", AppointmentController.create);
+appointmentRouter.post("/", optionalToken, AppointmentController.create);
 // Público: confirmación desde el link del email (cliente sin sesión)
 appointmentRouter.patch("/:id/confirm", AppointmentController.confirm);
 appointmentRouter.get(

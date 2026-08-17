@@ -1,11 +1,15 @@
-import { verifyRole, verifyToken } from "@/middleware/auth.middleware";
+import {
+  optionalToken,
+  verifyRole,
+  verifyToken,
+} from "@/middleware/auth.middleware";
 import { Router } from "express";
 import ProductController from "./controller/product";
 
 const productRouter = Router();
 
 // Públicos — el cliente ve el catálogo
-productRouter.get("/", ProductController.getAll);
+productRouter.get("/", optionalToken, ProductController.getAll);
 productRouter.get("/:id", ProductController.getById);
 
 // Solo admin

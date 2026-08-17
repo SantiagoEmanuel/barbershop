@@ -23,6 +23,10 @@ export default class AuthController {
         throw new AppError("Credenciales inválidas", 400);
       }
 
+      if (!user.isActive) {
+        throw new AppError("Credenciales inválidas", 400);
+      }
+
       const token = sign(
         {
           id: user.id,
@@ -181,6 +185,10 @@ export default class AuthController {
       }
 
       const user = await AuthModel.getById(payload.id);
+
+      if (!user.isActive) {
+        throw new AppError("Token inválido", 401);
+      }
 
       const newToken = sign(
         {

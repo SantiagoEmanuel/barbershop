@@ -4,7 +4,6 @@ import cors from "cors";
 import express, { json } from "express";
 import helmet from "helmet";
 import { HOST, LOCALHOST_IP, NODE_ENV } from "./constants/credentials.env";
-import { checkToken } from "./middleware/auth.middleware";
 import { errorHandler } from "./middleware/error.middleware";
 import { generalLimiter } from "./middleware/ratelimiter.middleware";
 
@@ -32,7 +31,6 @@ app.use(
 );
 app.use(cookieParser());
 app.use(json());
-app.use(checkToken);
 app.use(generalLimiter);
 
 // ── Health ────────────────────────────────────────────────────

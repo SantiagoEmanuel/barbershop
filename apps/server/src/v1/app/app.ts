@@ -1,7 +1,4 @@
-import {
-  authLimiter,
-  bookingLimiter,
-} from "@/middleware/ratelimiter.middleware";
+import { bookingLimiter } from "@/middleware/ratelimiter.middleware";
 import appointmentRouter from "@/v1/appointments/route";
 import authRouter from "@/v1/auth/route";
 import availabilityRouter from "@/v1/availability/route";
@@ -19,8 +16,6 @@ import { Router } from "express";
 const v1 = Router();
 
 // ── Limitadores -----------------------------------------------------
-v1.use("/auth/login", authLimiter);
-v1.use("/auth/register", authLimiter);
 v1.use("/appointments", bookingLimiter);
 
 // ── Rutas ─────────────────────────────────────────────────────
