@@ -7,7 +7,7 @@
  * `index.html` (es la página que se pre-renderiza e indexa). Acá marcamos el
  * resto de rutas, que requieren sesión, como `noindex`.
  */
-const SITE_URL = "https://pekobarber.com.ar";
+const SITE_URL = "https://www.pjbarbershop.com.ar";
 
 interface SeoProps {
   title: string;
@@ -19,15 +19,15 @@ interface SeoProps {
 }
 
 export function Seo({ title, description, noindex, canonicalPath }: SeoProps) {
-  const fullTitle = title.includes("Peko Barber")
+  const fullTitle = title.includes("PJBARBERSHOP")
     ? title
-    : `${title} · Peko Barber`;
+    : `${title} · PJBARBERSHOP`;
 
   return (
     <>
       <title>{fullTitle}</title>
       {description && <meta name="description" content={description} />}
-      {noindex && <meta name="robots" content="noindex, nofollow" />}
+      {noindex && <meta name="robots" content="noindex, nofollow, noarchive" />}
       {canonicalPath && (
         <link rel="canonical" href={`${SITE_URL}${canonicalPath}`} />
       )}

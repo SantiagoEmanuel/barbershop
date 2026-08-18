@@ -189,7 +189,9 @@ export default function Home() {
                   <div className="flex min-w-0 flex-1 items-center gap-2">
                     <span className={cn("size-10 rounded-full")}>
                       <img
-                        src="scissors_icon.png"
+                        src="/scissors_icon.png"
+                        alt="scissors icon"
+                        aria-hidden="true"
                         className="bg-marca h-auto w-full rounded-full p-1.5"
                       />
                     </span>
@@ -297,9 +299,9 @@ export default function Home() {
             ✂
           </span>
           <div className="relative z-10 flex flex-col gap-2">
-            <h3 className="font-display text-text-primary text-2xl font-bold sm:text-3xl">
+            <h2 className="font-display text-text-primary text-2xl font-bold sm:text-3xl">
               ¿Listo para un nuevo look? ✂️
-            </h3>
+            </h2>
             <div>
               <p className="text-text-muted font-body max-w-md text-sm sm:text-base">
                 Reserva tu turno en menos de un minuto.

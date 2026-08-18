@@ -7,5 +7,6 @@ Disallow: /perfil
 Disallow: /mis-turnos
 Disallow: /confirm
 Disallow: /payment-verification
+Disallow: /turno/confirmar/
 
-Sitemap: https://pekobarber.com.ar/sitemap.xml
+Sitemap: https://www.pjbarbershop.com.ar/sitemap.xml

@@ -14,7 +14,8 @@ const mailerSend = new MailerSend({
   apiKey: MAILERSEND_TOKEN,
 });
 
-const sentFrom = new Sender("info@pjbarbershop.com.ar", "BARBERSHOP");
+const sentFrom = new Sender("info@pjbarbershop.com.ar", "PJBARBERSHOP");
+const currentYear = new Date().getFullYear();
 
 type AppointmentStatus =
   "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
@@ -429,7 +430,7 @@ function confirmShiftHTML(data: Appointment, confirmUrl: string) {
                       color: #0e0e0e;
                     "
                   >
-                    © 2026 PEKO BARBER · Todos los derechos reservados
+                    © ${currentYear} PJBARBERSHOP · Todos los derechos reservados
                   </p>
                 </td>
               </tr>
@@ -721,7 +722,7 @@ function sendShiftToBarber(data: Appointment) {
                       color: #0e0e0e;
                     "
                   >
-                    © 2026 PEKO BARBER · Todos los derechos reservados
+                    © ${currentYear} PJBARBERSHOP · Todos los derechos reservados
                   </p>
                 </td>
               </tr>
@@ -917,7 +918,7 @@ function confirmEmailHTML(data: Partial<User>, confirmUrl: string) {
                       text-align: center;
                     "
                   >
-                    Si no creaste tu cuenta en <a href="https://pjbarbershop.com.ar" style="text-decoration: none; color: #4a4a4a">pjbarbershop</a> desestima este correo.
+                    Si no creaste tu cuenta en <a href="https://www.pjbarbershop.com.ar" style="text-decoration: none; color: #4a4a4a">PJBARBERSHOP</a>, desestimá este correo.
                   </p>
                 </td>
               </tr>
@@ -938,7 +939,7 @@ function confirmEmailHTML(data: Partial<User>, confirmUrl: string) {
                       color: #0e0e0e;
                     "
                   >
-                    © 2026 PJBARBERSHOP · Todos los derechos reservados
+                    © ${currentYear} PJBARBERSHOP · Todos los derechos reservados
                   </p>
                 </td>
               </tr>

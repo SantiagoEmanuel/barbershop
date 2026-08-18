@@ -22,9 +22,9 @@ export default defineConfig({
       },
       includeAssets: ["favicon.svg", "barber-icon-192.png", "barber-icon.png"],
       manifest: {
-        name: "Barbershop panel",
-        short_name: "BS Panel",
-        description: "Barbería PJBarbershop. Panel de administración general.",
+        name: "PJBARBERSHOP",
+        short_name: "PJ Barber",
+        description: "PJBARBERSHOP: reservas y gestión de barbería.",
         lang: "es-AR",
         start_url: "/admin",
         scope: "/",
