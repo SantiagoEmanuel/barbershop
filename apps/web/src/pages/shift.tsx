@@ -152,7 +152,7 @@ export default function Turnos() {
               key={a.id}
               appointment={a}
               onChangeStatus={changeStatus}
-              onClose={() => navigate(`/admin/cierre/${a.id}`)}
+              onClose={() => navigate(`/admin/ventas/${a.id}`)}
             />
           ))}
         </div>

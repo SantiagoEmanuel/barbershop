@@ -15,6 +15,9 @@ Registro acumulativo para problemas funcionales, regresiones, errores de operaci
 | ID      | Categoría | Título                                                              | Severidad | Prioridad | Servicio | Estado     | Detectado  | Responsable | Próximo paso                        |
 | ------- | --------- | ------------------------------------------------------------------- | --------- | --------- | -------- | ---------- | ---------- | ----------- | ----------------------------------- |
 | BUG-002 | FUNCIONAL | Las reservas sin email eran rechazadas aunque el email era opcional | Media     | P2        | Reservas | VERIFICADO | 2026-08-18 | Equipo web  | Mantener regresión para email vacío |
+| ID      | Categoría | Título                                                                           | Severidad | Prioridad | Servicio | Estado     | Detectado  | Responsable    | Próximo paso                                                   |
+| ------- | --------- | -------------------------------------------------------------------------------- | --------- | --------- | -------- | ---------- | ---------- | -------------- | -------------------------------------------------------------- |
+| BUG-003 | FUNCIONAL | `cash-online` estaba declarado en el esquema pero no en todos los flujos de pago | Media     | P2        | Pagos    | VERIFICADO | 2026-08-18 | Equipo backend | Mantener la lista de tipos sincronizada entre schema, API y UI |
 
 ## Detalle de cada entrada
 
@@ -41,6 +44,23 @@ El resumen anterior debe apuntar a un reporte detallado creado a partir de [`rep
 - **Evidencia:** [`apps/server/src/v1/appointments/controller/appointment.ts`](../../apps/server/src/v1/appointments/controller/appointment.ts) y [`apps/web/src/components/bookingModal.tsx`](../../apps/web/src/components/bookingModal.tsx).
 - **Pull request:** https://github.com/SantiagoEmanuel/barbershop/pull/65
 - **Commit de corrección:** `bb5abd9`
+| Fecha      | ID      | Cambio                                           | Autor          |
+| ---------- | ------- | ------------------------------------------------ | -------------- |
+| 2026-08-18 | BUG-003 | Alta, corrección y verificación de `cash-online` | Equipo backend |
+
+### BUG-003 — `cash-online` estaba declarado en el esquema pero no en todos los flujos de pago
+
+- **Tipo:** `BUG`
+- **Fecha de descubrimiento:** `2026-08-18`
+- **Servicio o módulo:** Pagos
+- **Entorno:** desarrollo
+- **Estado:** `VERIFICADO`
+- **Severidad / prioridad:** Media / P2
+- **Precondición:** usar un método de pago de tipo `cash-online` creado o persistido en la base.
+- **Causa:** el esquema y el listado general conocían el nuevo tipo, pero la creación de métodos, la consulta por ID, los tipos de TypeScript y la validación de órdenes seguían limitados a `cash` y `card`.
+- **Corrección:** se sincronizaron los tipos permitidos en schema, controlador, modelo, órdenes y frontend.
+- **Prueba de regresión:** type-check del servidor y frontend, suite del servidor y revisión de los flujos de listado, consulta y creación.
+- **Evidencia:** [`apps/server/src/v1/payment-methods/controller/paymentMethod.ts`](../../apps/server/src/v1/payment-methods/controller/paymentMethod.ts), [`apps/server/src/v1/payment-methods/model/paymentMethod.ts`](../../apps/server/src/v1/payment-methods/model/paymentMethod.ts) y [`apps/server/src/v1/orders/model/order.ts`](../../apps/server/src/v1/orders/model/order.ts).
 
 ## Criterios de triage
 

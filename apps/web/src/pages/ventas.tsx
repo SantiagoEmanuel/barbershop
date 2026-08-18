@@ -9,6 +9,7 @@ import {
 import { todayISO } from "@config/utils";
 import { Package, Scissors } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router";
 import { BackTo } from "../components/backTo";
 import { CartLineRow } from "../components/cartLineRow";
 import { formatARS } from "../components/ui/formatters";
@@ -42,6 +43,8 @@ export default function Ventas() {
     }[]
   >([]);
   const [selectedAppointment, setSelectedAppointment] = useState("");
+  const [selectedAppointmentData, setSelectedAppointmentData] =
+    useState<Appointment | null>(null);
   const [todayShifts, setTodayShifts] = useState<Appointment[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -49,8 +52,96 @@ export default function Ventas() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const { appointmentId } = useParams();
+
   useEffect(() => {
-    let barberId = "";
+    if (!appointmentId) {
+      setSelectedAppointment("");
+      setSelectedAppointmentData(null);
+      setTodayShifts([]);
+      setCart((previous) => previous.filter((line) => line.kind === "product"));
+      return;
+    }
+
+    let active = true;
+    setLoading(true);
+    setError("");
+    setSelectedAppointment("");
+    setSelectedAppointmentData(null);
+    setTodayShifts([]);
+    setCart((previous) => previous.filter((line) => line.kind === "product"));
+
+    api<ApiResponse<Appointment>>(`appointments/${appointmentId}`)
+      .then((response) => {
+        if (!active) return;
+
+        const appointment = response?.data;
+        if (!appointment) {
+          setError("No se encontró el turno seleccionado");
+          return;
+        }
+
+        if (!["confirmed", "pending"].includes(appointment.status)) {
+          setError("El turno seleccionado ya no puede cobrarse");
+          return;
+        }
+
+        setSelectedAppointment(appointment.id);
+        setSelectedAppointmentData(appointment);
+        setSelectedBarber(appointment.barber.id);
+        setTodayShifts([appointment]);
+        setCart((previous) => [
+          ...previous.filter((line) => line.kind === "product"),
+          {
+            kind: "service",
+            id: appointment.service.id,
+            name: appointment.service.name,
+            price: appointment.priceSnapshot,
+            quantity: 1,
+          },
+        ]);
+        setPicker("products");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [appointmentId]);
+
+  useEffect(() => {
+    if (appointmentId) return;
+
+    if (!selectedBarber) {
+      setTodayShifts([]);
+      return;
+    }
+
+    let active = true;
+    setLoading(true);
+    api<ApiResponse<Appointment[]>>(
+      `appointments?date=${todayISO()}&barberId=${selectedBarber}`,
+    )
+      .then((apRes) => {
+        if (!active) return;
+        setTodayShifts(
+          (apRes?.data ?? []).filter((a) =>
+            ["confirmed", "pending"].includes(a.status),
+          ),
+        );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedBarber, appointmentId]);
+
+  useEffect(() => {
     Promise.all([
       api<ApiResponse<Product[]>>("product"),
       api<ApiResponse<Barber[]>>("barber"),
@@ -70,24 +161,14 @@ export default function Ventas() {
         setTodayOrders(ordersRes?.data ?? []);
         setPaymentMethods(pmRes?.data ?? []);
         if (barberRes?.data?.[0]) {
-          setSelectedBarber(barberRes.data[0].id);
-          barberId = barberRes.data[0].id;
+          setSelectedBarber((current) => current || barberRes.data![0].id);
         }
-        if (pmRes?.data?.[0]) setSelectedPayment(pmRes.data[0].id);
       })
       .finally(() => {
-        Promise.all([
-          api<ApiResponse<Appointment[]>>(
-            `appointments?date=${todayISO()}&barberId=${barberId}`,
-          ),
-        ])
-          .then(([apRes]) => {
-            setTodayShifts(apRes?.data ?? []);
-          })
-          .finally(() => setLoading(false));
+        setLoading(false);
       });
     getServices();
-  }, [getServices]);
+  }, [getServices]); // Si van a cerrar las ventas en mostrador, no podemos limitar los turnos a un único barbero.
 
   function addProduct(p: Product) {
     setCart((prev) => {
@@ -126,15 +207,14 @@ export default function Ventas() {
   }
 
   function addService(s: Service) {
+    if (selectedAppointmentData) return;
+
     setCart((prev) => {
       const existing = prev.find((l) => l.kind === "service" && l.id === s.id);
       if (existing) {
         return prev.map((l) =>
           l.kind === "service" && l.id === s.id
-            ? {
-                ...l,
-                quantity: l.quantity + 1,
-              }
+            ? { ...l, quantity: l.quantity + 1 }
             : l,
         );
       }
@@ -196,19 +276,26 @@ export default function Ventas() {
 
   async function handleSell() {
     if (cart.length === 0 || !selectedBarber || !selectedPayment) return;
+
+    if (appointmentId && !selectedAppointmentData) {
+      setError("No se pudo vincular el turno seleccionado");
+      return;
+    }
+
+    if (selectedAppointment && !selectedAppointmentData) {
+      setError("El turno seleccionado no está disponible");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     setSuccess("");
 
     try {
-      const selectedShift = todayShifts.find(
-        (shift) => shift.id === selectedAppointment,
-      );
-
-      const appointmentLink = selectedShift
-        ? selectedShift.kind === "extraordinary"
-          ? { overbookedAppointmentId: selectedShift.id }
-          : { appointmentId: selectedShift.id }
+      const appointmentLink = selectedAppointmentData
+        ? selectedAppointmentData.kind === "extraordinary"
+          ? { overbookedAppointmentId: selectedAppointmentData.id }
+          : { appointmentId: selectedAppointmentData.id }
         : {};
 
       const res = await post<ApiResponse<Order>>("order/create", {
@@ -242,6 +329,10 @@ export default function Ventas() {
         `Venta registrada: ${formatARS(totals.grandTotal)} · ${totals.itemCount} item${totals.itemCount > 1 ? "s" : ""}`,
       );
       setCart([]);
+      setTodayShifts((prev) =>
+        prev.filter((a) => a.id !== selectedAppointmentData?.id),
+      );
+      setSelectedAppointmentData(null);
       setSelectedAppointment("");
     } catch (err: unknown) {
       setError(
@@ -297,9 +388,20 @@ export default function Ventas() {
             </label>
             <select
               value={selectedBarber}
-              onChange={(e) => setSelectedBarber(e.target.value)}
+              onChange={(e) => {
+                setSelectedBarber(e.target.value);
+                if (selectedAppointmentData) {
+                  setSelectedAppointment("");
+                  setSelectedAppointmentData(null);
+                  setCart((previous) =>
+                    previous.filter((line) => line.kind === "product"),
+                  );
+                }
+              }}
+              disabled={Boolean(appointmentId)}
               className="bg-surface border-border text-text-primary font-body w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
             >
+              <option value="">Selecciona un barbero</option>
               {barbers.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -321,12 +423,32 @@ export default function Ventas() {
               <select
                 value={selectedAppointment}
                 onChange={(e) => {
-                  updateQty(cart.filter((c) => c.kind === "service")[0], 0);
-                  setSelectedAppointment(e.target.value);
-                  todayShifts.map(
-                    (a) => a.id === e.target.value && addService(a.service),
+                  const appointment = todayShifts.find(
+                    (a) => a.id === e.target.value,
                   );
+
+                  setSelectedAppointment(e.target.value);
+                  setSelectedAppointmentData(appointment ?? null);
+
+                  if (appointment) {
+                    setCart((previous) => [
+                      ...previous.filter((line) => line.kind === "product"),
+                      {
+                        kind: "service",
+                        id: appointment.service.id,
+                        name: appointment.service.name,
+                        price: appointment.priceSnapshot,
+                        quantity: 1,
+                      },
+                    ]);
+                    setPicker("products");
+                  } else {
+                    setCart((previous) =>
+                      previous.filter((line) => line.kind === "product"),
+                    );
+                  }
                 }}
+                disabled={Boolean(appointmentId)}
                 className="bg-surface border-border text-text-primary font-body w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
               >
                 <option value="">Seleccionar turno (opcional)</option>
@@ -352,6 +474,7 @@ export default function Ventas() {
               onClick={() => setPicker("services")}
               icon={<Scissors size={14} />}
               label={`Servicios (${filteredServices.length})`}
+              disabled={selectedAppointment !== ""}
             />
           </div>
 
@@ -404,6 +527,7 @@ export default function Ventas() {
                 <li key={s.id}>
                   <button
                     onClick={() => addService(s)}
+                    disabled={Boolean(selectedAppointmentData)}
                     className="bg-surface border-border hover:border-marca w-full rounded-xl border p-3 text-left transition-colors"
                   >
                     <p className="text-text-primary font-body text-sm font-medium">
@@ -440,6 +564,9 @@ export default function Ventas() {
                     type={line.kind}
                     key={`${line.kind}-${line.id}`}
                     line={line}
+                    allowQuantityChange={
+                      line.kind === "product" || !selectedAppointmentData
+                    }
                     onUpdate={(qty) => updateQty(line, qty)}
                     onRemove={() => updateQty(line, 0)}
                   />
@@ -456,6 +583,7 @@ export default function Ventas() {
                   onChange={(e) => setSelectedPayment(e.target.value)}
                   className="bg-surface border-border text-text-primary font-body w-full rounded-xl border px-3 py-2 text-sm outline-none"
                 >
+                  <option value="">Selecciona un método de pago</option>
                   {paymentMethods.map((pm) => (
                     <option key={pm.id} value={pm.id}>
                       {pm.name}

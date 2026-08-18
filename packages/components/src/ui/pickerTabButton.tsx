@@ -6,11 +6,13 @@ export function PickerTabButton({
   onClick,
   icon,
   label,
+  disabled = false,
 }: {
   active: boolean;
   onClick: () => void;
   icon: ReactNode;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -21,6 +23,7 @@ export function PickerTabButton({
           ? "bg-marca text-background font-semibold"
           : "text-text-muted hover:text-text-primary",
       )}
+      disabled={disabled}
     >
       {icon}
       {label}

@@ -127,10 +127,11 @@ export const paymentMethods = table("payment_methods", {
   id: id(),
   name: text("name").notNull(),
   /**
-   * 'cash'   → efectivo, pago al final en el local
-   * 'card'   → débito/crédito en el local
+   * 'cash'        → efectivo, pago al final en el local
+   * 'card'        → débito/crédito en el local
+   * 'cash-online' → efectivo registrado como pago online
    */
-  type: text("type", { enum: ["cash", "card"] }).notNull(),
+  type: text("type", { enum: ["cash", "card", "cash-online"] }).notNull(),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: createdAt(),
 });

@@ -1,4 +1,4 @@
-import type { RouteObject } from "react-router";
+import { type RouteObject } from "react-router";
 import { ErrorView } from "../components/errorView";
 import { PublicLayout } from "../components/publicLayout";
 import { RootLayout } from "../components/rootLayout";
@@ -84,18 +84,6 @@ export const routes: RouteObject[] = [
                 ),
               },
               {
-                path: "cierre/:appointmentId",
-                lazy: lazyWithPermissions(
-                  [
-                    PERMISSIONS.APPOINTMENTS_READ_ANY,
-                    PERMISSIONS.SALES_CREATE,
-                    PERMISSIONS.CATALOG_READ,
-                    PERMISSIONS.PAYMENT_METHODS_READ,
-                  ],
-                  () => import("../pages/closeService"),
-                ),
-              },
-              {
                 path: "reservas",
                 lazy: lazyWithPermissions(
                   [PERMISSIONS.APPOINTMENTS_READ_ANY, PERMISSIONS.BARBERS_READ],
@@ -104,17 +92,36 @@ export const routes: RouteObject[] = [
               },
               {
                 path: "ventas",
-                lazy: lazyWithPermissions(
-                  [
-                    PERMISSIONS.ORDERS_READ,
-                    PERMISSIONS.SALES_CREATE,
-                    PERMISSIONS.APPOINTMENTS_READ_ANY,
-                    PERMISSIONS.CATALOG_READ,
-                    PERMISSIONS.BARBERS_READ,
-                    PERMISSIONS.PAYMENT_METHODS_READ,
-                  ],
-                  () => import("../pages/ventas"),
-                ),
+                children: [
+                  {
+                    index: true,
+                    lazy: lazyWithPermissions(
+                      [
+                        PERMISSIONS.ORDERS_READ,
+                        PERMISSIONS.SALES_CREATE,
+                        PERMISSIONS.APPOINTMENTS_READ_ANY,
+                        PERMISSIONS.CATALOG_READ,
+                        PERMISSIONS.BARBERS_READ,
+                        PERMISSIONS.PAYMENT_METHODS_READ,
+                      ],
+                      () => import("../pages/ventas"),
+                    ),
+                  },
+                  {
+                    path: ":appointmentId",
+                    lazy: lazyWithPermissions(
+                      [
+                        PERMISSIONS.ORDERS_READ,
+                        PERMISSIONS.SALES_CREATE,
+                        PERMISSIONS.APPOINTMENTS_READ_ANY,
+                        PERMISSIONS.CATALOG_READ,
+                        PERMISSIONS.BARBERS_READ,
+                        PERMISSIONS.PAYMENT_METHODS_READ,
+                      ],
+                      () => import("../pages/ventas"),
+                    ),
+                  },
+                ],
               },
               {
                 path: "inventario",

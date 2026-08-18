@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 export function AuthField({
   label,
   type,
@@ -13,12 +15,18 @@ export function AuthField({
   onChange: (v: string) => void;
   required?: boolean;
 }) {
+  const inputId = useId();
+
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-text-secondary/70 font-body text-xs font-semibold tracking-wide">
+      <label
+        htmlFor={inputId}
+        className="text-text-secondary/70 font-body text-xs font-semibold tracking-wide"
+      >
         {label}
       </label>
       <input
+        id={inputId}
         type={type}
         placeholder={placeholder}
         value={value}
