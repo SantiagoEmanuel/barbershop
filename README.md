@@ -2,7 +2,7 @@
 
 Aplicación web para gestión de turnos, gestiona horarios automáticamente y permite ver a los barberos los ingresos, turnos pendientes, cerrar las ventas y agregar al cierre del servicios productos que vende el local.
 
-🔗 **Proyecto en vivo:** https://pjbarbershop.com.ar
+🔗 **Proyecto en vivo:** <https://www.pjbarbershop.com.ar>
 
 ![caputra](./docs/screenshot.png)
 
@@ -45,12 +45,14 @@ barbershop/
 ## Cómo correrlo localmente
 
 ### Requisitos
+
 - Node.js 22+
 - pnpm 10+
 
 ### Instalación
+
 \`\`\`bash
-git clone https://github.com/SantiagoEmanuel/barbershop.git
+git clone <https://github.com/SantiagoEmanuel/barbershop.git>
 cd barbershop
 pnpm install
 pnpm dev

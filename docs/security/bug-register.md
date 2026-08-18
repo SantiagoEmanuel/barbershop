@@ -41,7 +41,7 @@ El resumen anterior debe apuntar a un reporte detallado creado a partir de [`rep
 - **Causa:** el frontend construía propiedades como `regular: "regular"` o `extraordinary: "extraordinary"` en lugar de enviar `appointmentId`/`overbookedAppointmentId`.
 - **Corrección:** se conserva el turno seleccionado y se construye el vínculo con el ID y la clave correspondiente al tipo de turno. Un cobro iniciado desde un turno no puede degradarse silenciosamente a una venta libre.
 - **Prueba de regresión:** type-check y lint del frontend, suite del servidor y revisión del payload para ambos tipos de turno.
-- **Pull request:** https://github.com/SantiagoEmanuel/barbershop/pull/64
+- **Pull request:** <https://github.com/SantiagoEmanuel/barbershop/pull/64>
 - **Commit de corrección:** `a472c26`
 
 ### BUG-002 — Las reservas sin email eran rechazadas aunque el email era opcional
@@ -55,7 +55,7 @@ El resumen anterior debe apuntar a un reporte detallado creado a partir de [`rep
 - **Causa:** el frontend enviaba una cadena vacía y un campo obsoleto (`paymentMethodId`), mientras el esquema estricto esperaba un email válido u omitido.
 - **Corrección:** se normaliza el email vacío a `null`, se permite `null` en el esquema y se elimina el campo no aceptado por el endpoint.
 - **Prueba de regresión:** `appointment.test.ts` confirma que la validación del email pasa y que el flujo continúa hasta validar el barbero.
-- **Pull request:** https://github.com/SantiagoEmanuel/barbershop/pull/65
+- **Pull request:** <https://github.com/SantiagoEmanuel/barbershop/pull/65>
 - **Commit de corrección:** `bb5abd9`
 
 ### BUG-003 — `cash-online` no estaba soportado en todos los flujos de pago
@@ -69,7 +69,7 @@ El resumen anterior debe apuntar a un reporte detallado creado a partir de [`rep
 - **Causa:** el esquema y el listado general conocían el nuevo tipo, pero la creación de métodos, la consulta por ID, los tipos de TypeScript y la validación de órdenes seguían limitados a `cash` y `card`.
 - **Corrección:** se sincronizaron los tipos permitidos en schema, controlador, modelo, órdenes y frontend.
 - **Prueba de regresión:** type-check del servidor y frontend, suite del servidor y revisión de los flujos de listado, consulta y creación.
-- **Pull request:** https://github.com/SantiagoEmanuel/barbershop/pull/66
+- **Pull request:** <https://github.com/SantiagoEmanuel/barbershop/pull/66>
 - **Commit de corrección:** `f921576`
 
 ## Criterios de triage
