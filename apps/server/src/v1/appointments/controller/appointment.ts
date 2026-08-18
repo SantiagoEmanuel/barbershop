@@ -18,7 +18,7 @@ const appointmentCreateSchema = z
     startTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/),
     clientName: z.string().trim().min(2).max(120).optional(),
     clientPhone: z.string().trim().min(6).max(30).optional(),
-    clientEmail: z.string().trim().email().max(254).optional(),
+    clientEmail: z.string().trim().email().max(254).optional().nullable(),
     notes: z.string().trim().max(500).optional(),
     appointmentType: z.enum(["appointment", "walk_in"]).default("appointment"),
   })
@@ -26,7 +26,10 @@ const appointmentCreateSchema = z
 
 export default class AppointmentController {
   static async create(req: Request, res: Response) {
-    const parsed = appointmentCreateSchema.safeParse(req.body);
+    const parsed = appointmentCreateSchema.safeParse({
+      ...req.body,
+      clientEmail: req.body.clientEmail === "" ? null : req.body.clientEmail,
+    });
     if (!parsed.success) {
       return res.status(400).json({
         message:

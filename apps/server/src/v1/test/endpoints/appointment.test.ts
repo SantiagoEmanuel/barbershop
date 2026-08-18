@@ -25,6 +25,21 @@ describe("POST /api/v1/appointments (crear turno)", () => {
     expect(res.status).toBeGreaterThanOrEqual(400);
   });
 
+  it("acepta un email vacío en la validación del turno", async () => {
+    const res = await request(app).post("/api/v1/appointments").send({
+      barberId: "00000000-0000-0000-0000-000000000000",
+      serviceId: "00000000-0000-0000-0000-000000000000",
+      date: "2026-08-15",
+      startTime: "10:00",
+      clientName: "Test User",
+      clientPhone: "+5493510000000",
+      clientEmail: "",
+    });
+
+    // La validación del email debe pasar; el 404 corresponde al barbero inexistente.
+    expect(res.status).toBe(404);
+  });
+
   it("rechaza que el frontend envíe status, precio o fin calculado", async () => {
     const res = await request(app).post("/api/v1/appointments").send({
       barberId: "barber-id",
