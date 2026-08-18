@@ -169,7 +169,7 @@ export default class OrderModel {
       if (
         !paymentMethod ||
         !paymentMethod.isActive ||
-        (paymentMethod.type !== "cash" && paymentMethod.type !== "card")
+        !["cash", "card", "cash-online"].includes(paymentMethod.type)
       ) {
         throw new AppError("Método de pago inexistente", 404);
       }
@@ -263,7 +263,7 @@ export default class OrderModel {
         .values({
           appointmentId: appointment?.id ?? null,
           overbookedAppointmentId: overbookedAppointment?.id ?? null,
-          paymentMethodId: data.paymentMethodId,
+          paymentMethodId: paymentMethod.id,
           amount: expectedAmount,
           status: "paid",
           paidAt: new Date(),
@@ -309,7 +309,7 @@ export default class OrderModel {
               sql`${appointments.status} IN ('pending', 'confirmed')`,
             ),
           )
-          .returning({ id: appointments.id });
+          .returning({ id: appointments.id, status: appointments.status });
         if (!completed)
           throw new AppError("El turno ya no puede cerrarse", 409);
       }

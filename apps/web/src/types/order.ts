@@ -1,6 +1,6 @@
 export type OrderStatus = "pending" | "paid" | "refunded" | "failed";
 
-export type PaymentMethodType = "cash" | "card";
+export type PaymentMethodType = "cash" | "card" | "cash-online";
 
 export interface PaymentMethod {
   id: string;

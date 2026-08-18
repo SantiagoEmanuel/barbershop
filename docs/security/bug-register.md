@@ -12,9 +12,9 @@ Registro acumulativo para problemas funcionales, regresiones, errores de operaci
 
 ## Registro
 
-| ID      | Categoría             | Título                                                    | Severidad | Prioridad | Servicio         | Estado     | Detectado  | Responsable | Próximo paso                                                 |
-| ------- | --------------------- | --------------------------------------------------------- | --------- | --------- | ---------------- | ---------- | ---------- | ----------- | ------------------------------------------------------------ |
-| BUG-001 | FUNCIONAL / OPERACIÓN | Las ventas desde un turno no vinculaban la orden al turno | Alta      | P1        | Ventas / Órdenes | VERIFICADO | 2026-08-18 | Equipo web  | Mantener pruebas de vínculo para turno regular y sobre turno |
+| ID      | Categoría | Título                                                                           | Severidad | Prioridad | Servicio | Estado     | Detectado  | Responsable    | Próximo paso                                                   |
+| ------- | --------- | -------------------------------------------------------------------------------- | --------- | --------- | -------- | ---------- | ---------- | -------------- | -------------------------------------------------------------- |
+| BUG-003 | FUNCIONAL | `cash-online` estaba declarado en el esquema pero no en todos los flujos de pago | Media     | P2        | Pagos    | VERIFICADO | 2026-08-18 | Equipo backend | Mantener la lista de tipos sincronizada entre schema, API y UI |
 
 ## Detalle de cada entrada
 
@@ -22,25 +22,23 @@ El resumen anterior debe apuntar a un reporte detallado creado a partir de [`rep
 
 ### Registro de cambios
 
-| Fecha      | ID      | Cambio                                                           | Autor      |
-| ---------- | ------- | ---------------------------------------------------------------- | ---------- |
-| 2026-08-18 | BUG-001 | Alta, corrección y verificación del vínculo de órdenes de ventas | Equipo web |
+| Fecha      | ID      | Cambio                                           | Autor          |
+| ---------- | ------- | ------------------------------------------------ | -------------- |
+| 2026-08-18 | BUG-003 | Alta, corrección y verificación de `cash-online` | Equipo backend |
 
-### BUG-001 — Las ventas desde un turno no vinculaban la orden al turno
+### BUG-003 — `cash-online` estaba declarado en el esquema pero no en todos los flujos de pago
 
 - **Tipo:** `BUG`
 - **Fecha de descubrimiento:** `2026-08-18`
-- **Servicio o módulo:** Ventas / Órdenes
+- **Servicio o módulo:** Pagos
 - **Entorno:** desarrollo
 - **Estado:** `VERIFICADO`
-- **Severidad / prioridad:** Alta / P1
-- **Precondición:** abrir `/admin/ventas/:appointmentId` o seleccionar un turno desde ventas.
-- **Causa:** el frontend construía propiedades como `regular: "regular"` o `extraordinary: "extraordinary"` en lugar de enviar `appointmentId`/`overbookedAppointmentId`. Además, el turno cargado por URL no se conservaba como contexto para el envío.
-- **Corrección:** se conserva el turno seleccionado y se construye el vínculo con el ID y la clave correspondiente al tipo de turno. Un cobro iniciado desde un turno no puede degradarse silenciosamente a una venta libre.
-- **Prueba de regresión:** type-check y lint del frontend, suite del servidor y revisión del payload para ambos tipos de turno.
-- **Evidencia:** [`apps/web/src/pages/ventas.tsx`](../../apps/web/src/pages/ventas.tsx) y [`apps/server/src/v1/orders/controller/order.ts`](../../apps/server/src/v1/orders/controller/order.ts).
-- **Pull request:** https://github.com/SantiagoEmanuel/barbershop/pull/64
-- **Commit de corrección:** `a472c26`
+- **Severidad / prioridad:** Media / P2
+- **Precondición:** usar un método de pago de tipo `cash-online` creado o persistido en la base.
+- **Causa:** el esquema y el listado general conocían el nuevo tipo, pero la creación de métodos, la consulta por ID, los tipos de TypeScript y la validación de órdenes seguían limitados a `cash` y `card`.
+- **Corrección:** se sincronizaron los tipos permitidos en schema, controlador, modelo, órdenes y frontend.
+- **Prueba de regresión:** type-check del servidor y frontend, suite del servidor y revisión de los flujos de listado, consulta y creación.
+- **Evidencia:** [`apps/server/src/v1/payment-methods/controller/paymentMethod.ts`](../../apps/server/src/v1/payment-methods/controller/paymentMethod.ts), [`apps/server/src/v1/payment-methods/model/paymentMethod.ts`](../../apps/server/src/v1/payment-methods/model/paymentMethod.ts) y [`apps/server/src/v1/orders/model/order.ts`](../../apps/server/src/v1/orders/model/order.ts).
 
 ## Criterios de triage
 
