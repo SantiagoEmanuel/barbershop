@@ -18,7 +18,7 @@ export interface Appointment {
   startTime: string;
   endTime: string;
   date: string;
-  notes: string | null;
+  notes: string | null | undefined;
   status: AppointmentStatus;
   appointmentType?: "appointment" | "walk_in";
 }

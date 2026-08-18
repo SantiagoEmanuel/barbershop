@@ -478,14 +478,13 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
     try {
       const res = await post("appointments", {
         barberId: store.barberId,
-        serviceId: store.serviceId,
         date: store.date,
+        serviceId: store.serviceId,
         startTime: store.startTime,
         clientName: store.clientName,
         clientPhone: store.clientPhone,
-        clientEmail: store.clientEmail,
+        clientEmail: store.clientEmail === "" ? null : store.clientEmail,
         notes: store.notes,
-        paymentMethodId: store.paymentMethodId,
         appointmentType: store.appointmentType,
       });
       if (!res) throw new Error("Error al reservar el turno");

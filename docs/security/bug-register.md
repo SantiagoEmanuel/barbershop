@@ -12,6 +12,9 @@ Registro acumulativo para problemas funcionales, regresiones, errores de operaci
 
 ## Registro
 
+| ID      | Categoría | Título                                                              | Severidad | Prioridad | Servicio | Estado     | Detectado  | Responsable | Próximo paso                        |
+| ------- | --------- | ------------------------------------------------------------------- | --------- | --------- | -------- | ---------- | ---------- | ----------- | ----------------------------------- |
+| BUG-002 | FUNCIONAL | Las reservas sin email eran rechazadas aunque el email era opcional | Media     | P2        | Reservas | VERIFICADO | 2026-08-18 | Equipo web  | Mantener regresión para email vacío |
 | ID      | Categoría | Título                                                                           | Severidad | Prioridad | Servicio | Estado     | Detectado  | Responsable    | Próximo paso                                                   |
 | ------- | --------- | -------------------------------------------------------------------------------- | --------- | --------- | -------- | ---------- | ---------- | -------------- | -------------------------------------------------------------- |
 | BUG-003 | FUNCIONAL | `cash-online` estaba declarado en el esquema pero no en todos los flujos de pago | Media     | P2        | Pagos    | VERIFICADO | 2026-08-18 | Equipo backend | Mantener la lista de tipos sincronizada entre schema, API y UI |
@@ -22,6 +25,25 @@ El resumen anterior debe apuntar a un reporte detallado creado a partir de [`rep
 
 ### Registro de cambios
 
+| Fecha      | ID      | Cambio                                                | Autor      |
+| ---------- | ------- | ----------------------------------------------------- | ---------- |
+| 2026-08-18 | BUG-002 | Alta, corrección y verificación de reservas sin email | Equipo web |
+
+### BUG-002 — Las reservas sin email eran rechazadas aunque el email era opcional
+
+- **Tipo:** `BUG`
+- **Fecha de descubrimiento:** `2026-08-18`
+- **Servicio o módulo:** Reservas
+- **Entorno:** desarrollo
+- **Estado:** `VERIFICADO`
+- **Severidad / prioridad:** Media / P2
+- **Precondición:** crear una reserva dejando vacío el email del cliente.
+- **Causa:** el frontend enviaba una cadena vacía y un campo obsoleto (`paymentMethodId`), mientras el esquema estricto esperaba un email válido u omitido.
+- **Corrección:** se normaliza el email vacío a `null`, se permite `null` en el esquema y se elimina el campo no aceptado por el endpoint.
+- **Prueba de regresión:** `appointment.test.ts` confirma que la validación del email pasa y que el flujo continúa hasta validar el barbero.
+- **Evidencia:** [`apps/server/src/v1/appointments/controller/appointment.ts`](../../apps/server/src/v1/appointments/controller/appointment.ts) y [`apps/web/src/components/bookingModal.tsx`](../../apps/web/src/components/bookingModal.tsx).
+- **Pull request:** https://github.com/SantiagoEmanuel/barbershop/pull/65
+- **Commit de corrección:** `bb5abd9`
 | Fecha      | ID      | Cambio                                           | Autor          |
 | ---------- | ------- | ------------------------------------------------ | -------------- |
 | 2026-08-18 | BUG-003 | Alta, corrección y verificación de `cash-online` | Equipo backend |
