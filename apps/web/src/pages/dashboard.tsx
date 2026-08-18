@@ -299,7 +299,7 @@ export default function Dashboard() {
             {upcoming.map((a) => (
               <button
                 key={a.id}
-                onClick={() => navigate(`/admin/cierre/${a.id}`)}
+                onClick={() => navigate(`/admin/ventas/${a.id}`)}
                 className="bg-surface border-border hover:border-border-strong flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition-all duration-150"
               >
                 <div className="bg-marca/8 border-border flex size-10 shrink-0 flex-col items-center justify-center rounded-xl border">
@@ -339,7 +339,12 @@ export default function Dashboard() {
               .map((a) => (
                 <button
                   key={a.id}
-                  onClick={() => navigate(`/admin/cierre/${a.id}`)}
+                  disabled={!["pending", "confirmed"].includes(a.status)}
+                  onClick={() => {
+                    if (["pending", "confirmed"].includes(a.status)) {
+                      navigate(`/admin/ventas/${a.id}`);
+                    }
+                  }}
                   className="bg-surface border-border hover:border-border-strong flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all duration-150"
                 >
                   <div className="bg-marca/8 border-border flex size-10 shrink-0 flex-col items-center justify-center rounded-xl border">
