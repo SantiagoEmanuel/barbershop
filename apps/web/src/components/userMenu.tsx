@@ -79,7 +79,7 @@ export function UserMenu({
           <div className="flex items-center gap-1.5">
             {isAdmin && (
               <span className="bg-marca/15 text-marca rounded px-1.5 py-0.5 text-[9px] font-bold tracking-widest uppercase">
-                Admin
+                {user.role}
               </span>
             )}
             <p className="text-text-muted font-body truncate text-xs">
