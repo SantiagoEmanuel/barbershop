@@ -39,6 +39,8 @@ El resumen anterior debe apuntar a un reporte detallado creado a partir de [`rep
 - **Corrección:** se conserva el turno seleccionado y se construye el vínculo con el ID y la clave correspondiente al tipo de turno. Un cobro iniciado desde un turno no puede degradarse silenciosamente a una venta libre.
 - **Prueba de regresión:** type-check y lint del frontend, suite del servidor y revisión del payload para ambos tipos de turno.
 - **Evidencia:** [`apps/web/src/pages/ventas.tsx`](../../apps/web/src/pages/ventas.tsx) y [`apps/server/src/v1/orders/controller/order.ts`](../../apps/server/src/v1/orders/controller/order.ts).
+- **Pull request:** https://github.com/SantiagoEmanuel/barbershop/pull/64
+- **Commit de corrección:** `a472c26`
 
 ## Criterios de triage
 
