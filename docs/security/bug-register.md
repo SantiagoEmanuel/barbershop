@@ -39,6 +39,8 @@ El resumen anterior debe apuntar a un reporte detallado creado a partir de [`rep
 - **Corrección:** se normaliza el email vacío a `null`, se permite `null` en el esquema y se elimina el campo no aceptado por el endpoint.
 - **Prueba de regresión:** `appointment.test.ts` confirma que la validación del email pasa y que el flujo continúa hasta validar el barbero.
 - **Evidencia:** [`apps/server/src/v1/appointments/controller/appointment.ts`](../../apps/server/src/v1/appointments/controller/appointment.ts) y [`apps/web/src/components/bookingModal.tsx`](../../apps/web/src/components/bookingModal.tsx).
+- **Pull request:** https://github.com/SantiagoEmanuel/barbershop/pull/65
+- **Commit de corrección:** `bb5abd9`
 
 ## Criterios de triage
 
