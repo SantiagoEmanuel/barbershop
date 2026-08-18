@@ -2,7 +2,7 @@ import { hasPermission, PERMISSIONS } from "@/middleware/permissions";
 import type { Request, Response } from "express";
 import PaymentMethodModel from "../model/paymentMethod";
 
-const VALID_TYPES = ["cash", "card"] as const;
+const VALID_TYPES = ["cash", "card", "cash-online"] as const;
 type PaymentMethodType = (typeof VALID_TYPES)[number];
 
 export default class PaymentMethodController {

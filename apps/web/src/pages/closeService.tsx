@@ -16,6 +16,7 @@ import type {
 const PAYMENT_ICONS: Record<PaymentMethod["type"], string> = {
   cash: "💵",
   card: "💳",
+  "cash-online": "🌐",
 };
 
 function PaymentIcon({ type }: { type: PaymentMethod["type"] }) {
