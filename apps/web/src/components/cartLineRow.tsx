@@ -7,11 +7,13 @@ export function CartLineRow({
   type,
   onUpdate,
   onRemove,
+  allowQuantityChange = true,
 }: {
   line: CartLine;
   type: "product" | "service";
   onUpdate: (qty: number) => void;
   onRemove: () => void;
+  allowQuantityChange?: boolean;
 }) {
   return (
     <li className="bg-surface-raised border-border flex items-center justify-between rounded-xl border px-3 py-2">
@@ -25,32 +27,34 @@ export function CartLineRow({
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="border-border flex items-center gap-1 rounded-lg border">
-          <button
-            onClick={() => onUpdate(line.quantity - 1)}
-            className="text-text-muted hover:text-text-primary px-2 py-1 text-sm"
-          >
-            −
-          </button>
-          <span className="text-text-primary font-body w-5 text-center text-sm">
-            {line.quantity}
-          </span>
-          <button
-            onClick={() =>
-              onUpdate(
-                type === "product"
-                  ? Math.min(
-                      line.quantity + 1,
-                      (line as Extract<CartLine, { kind: "product" }>).stock,
-                    )
-                  : line.quantity + 1,
-              )
-            }
-            className="text-text-muted hover:text-text-primary px-2 py-1 text-sm"
-          >
-            +
-          </button>
-        </div>
+        {allowQuantityChange && (
+          <div className="border-border flex items-center gap-1 rounded-lg border">
+            <button
+              onClick={() => onUpdate(line.quantity - 1)}
+              className="text-text-muted hover:text-text-primary px-2 py-1 text-sm"
+            >
+              −
+            </button>
+            <span className="text-text-primary font-body w-5 text-center text-sm">
+              {line.quantity}
+            </span>
+            <button
+              onClick={() =>
+                onUpdate(
+                  type === "product"
+                    ? Math.min(
+                        line.quantity + 1,
+                        (line as Extract<CartLine, { kind: "product" }>).stock,
+                      )
+                    : line.quantity + 1,
+                )
+              }
+              className="text-text-muted hover:text-text-primary px-2 py-1 text-sm"
+            >
+              +
+            </button>
+          </div>
+        )}
         <button onClick={onRemove} className="text-error p-1">
           <Trash2 size={14} />
         </button>

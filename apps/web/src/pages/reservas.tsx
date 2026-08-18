@@ -144,7 +144,7 @@ export default function Reservas() {
                   </span>
                   {["pending", "confirmed"].includes(a.status) && (
                     <button
-                      onClick={() => navigate(`/admin/cierre/${a.id}`)}
+                      onClick={() => navigate(`/admin/ventas/${a.id}`)}
                       className="btn-ghost rounded-lg px-3 py-1.5 text-xs"
                     >
                       Cerrar →
