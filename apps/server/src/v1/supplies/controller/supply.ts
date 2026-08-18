@@ -1,10 +1,12 @@
+import { hasPermission, PERMISSIONS } from "@/middleware/permissions";
 import type { Request, Response } from "express";
 import SupplyModel from "../model/supply";
 
 export default class SupplyController {
   static async getAll(req: Request, res: Response) {
     const includeInactive =
-      req.query.all === "true" && req.user?.role === "admin";
+      req.query.all === "true" &&
+      hasPermission(req.user?.role, PERMISSIONS.INVENTORY_MANAGE);
     try {
       const data = await SupplyModel.getAll({ includeInactive });
       return res.json({ message: "OK", data });
@@ -101,11 +103,16 @@ export default class SupplyController {
     };
 
     const patch: Record<string, unknown> = {};
+    if (stock !== undefined) {
+      return res.status(400).json({
+        message: "El stock solo se modifica mediante compras o consumos",
+        data: null,
+      });
+    }
     if (name !== undefined) patch.name = name;
     if (description !== undefined) patch.description = description;
     if (unit !== undefined) patch.unit = unit;
     if (cost !== undefined) patch.cost = cost;
-    if (stock !== undefined) patch.stock = stock;
     if (lowStockThreshold !== undefined)
       patch.lowStockThreshold = lowStockThreshold;
     if (isActive !== undefined) patch.isActive = isActive;

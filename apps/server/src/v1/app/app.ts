@@ -1,7 +1,4 @@
-import {
-  authLimiter,
-  bookingLimiter,
-} from "@/middleware/ratelimiter.middleware";
+import { bookingLimiter } from "@/middleware/ratelimiter.middleware";
 import appointmentRouter from "@/v1/appointments/route";
 import authRouter from "@/v1/auth/route";
 import availabilityRouter from "@/v1/availability/route";
@@ -15,13 +12,10 @@ import reportRouter from "@/v1/reports/route";
 import serviceRouter from "@/v1/services/route";
 import supplyRouter from "@/v1/supplies/route";
 import { Router } from "express";
-import MPRouter from "../mercadopago/route";
 
 const v1 = Router();
 
 // ── Limitadores -----------------------------------------------------
-v1.use("/auth/login", authLimiter);
-v1.use("/auth/register", authLimiter);
 v1.use("/appointments", bookingLimiter);
 
 // ── Rutas ─────────────────────────────────────────────────────
@@ -37,7 +31,6 @@ v1.use("/expenses", expenseRouter);
 v1.use("/reports", reportRouter);
 v1.use("/payment-methods", paymentMethodRouter);
 v1.use("/appointments", appointmentRouter);
-v1.use("/mercadopago", MPRouter);
 
 // ── 404 ───────────────────────────────────────────────────────
 v1.use((_req, res) => {

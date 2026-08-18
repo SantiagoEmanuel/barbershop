@@ -23,11 +23,30 @@ export function adminToken(): string {
   });
 }
 
+/** Token con todos los permisos operativos y de desarrollo. */
+export function devToken(): string {
+  return signToken({
+    id: "test-dev-id",
+    role: "dev",
+    email: "dev@test.com",
+  });
+}
+
 /** Token con rol client para tests de endpoints de usuario */
 export function clientToken(): string {
   return signToken({
     id: "test-client-id",
     role: "client",
     email: "client@test.com",
+  });
+}
+
+export function roleTargetToken(
+  role: "client" | "barber" | "admin" = "client",
+) {
+  return signToken({
+    id: "test-role-target-id",
+    role,
+    email: "role-target@test.com",
   });
 }

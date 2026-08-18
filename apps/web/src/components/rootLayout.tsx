@@ -1,8 +1,12 @@
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { Outlet } from "react-router";
+import { api } from "../lib/api";
 import { AuthModalProvider } from "../provider/authModalProvider";
+import { useAuthStore } from "../store/useAuthStore";
+import type { ApiResponse, User } from "../types";
 import { UpdatePrompt } from "./updatePrompt";
 
 /**
@@ -14,6 +18,24 @@ import { UpdatePrompt } from "./updatePrompt";
  * AdminLayout) según su contexto.
  */
 export function RootLayout() {
+  const setUser = useAuthStore((state) => state.setUser);
+
+  useEffect(() => {
+    if (!useAuthStore.getState().user) return;
+
+    let cancelled = false;
+
+    void api<ApiResponse<User>>("auth/me").then((response) => {
+      if (!cancelled && response?.data) {
+        void setUser(response.data);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setUser]);
+
   return (
     <AuthModalProvider>
       <Outlet />

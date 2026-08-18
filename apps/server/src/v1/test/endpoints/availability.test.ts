@@ -1,4 +1,5 @@
 import app from "@/config";
+import { businessDate } from "@config/utils";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
@@ -10,9 +11,7 @@ describe("GET /api/v1/availability", () => {
 
     const barberId = barbers.body.data[0].id;
     // Usar la fecha de mañana para evitar conflictos con slots pasados
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const date = tomorrow.toISOString().split("T")[0];
+    const date = businessDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
 
     const res = await request(app)
       .get("/api/v1/availability")

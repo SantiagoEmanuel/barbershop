@@ -4,6 +4,7 @@ import {
   Spinner,
   StatCard,
 } from "@config/components";
+import { formatBusinessDateTime } from "@config/utils";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { BackTo } from "../components/backTo";
@@ -151,7 +152,7 @@ export default function Ingresos() {
                     </div>
                     <p className="text-text-muted font-body text-xs">
                       {o.barber ?? "—"} · {o.paymentMethod ?? "—"} ·{" "}
-                      {new Date(o.paidAt).toLocaleDateString("es-AR")}
+                      {formatBusinessDateTime(o.paidAt)}
                     </p>
                   </div>
                   <span className="text-success font-body shrink-0 text-sm font-bold">

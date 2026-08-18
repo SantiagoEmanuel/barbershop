@@ -1,8 +1,9 @@
 import { UserAvatar } from "@config/components";
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
+import { hasPermission } from "../lib/permissions";
 import { useAuthStore } from "../store/useAuthStore";
-import type { User } from "../types";
+import { PERMISSIONS, type User } from "../types";
 
 /**
  * Variante desktop del UserMenu — versión más rica con items navegables,
@@ -29,7 +30,7 @@ export function UserMenuDesktop({
   }, [onClose]);
 
   const menuItems = [
-    ...(user.role === "admin"
+    ...(hasPermission(user, PERMISSIONS.USERS_READ)
       ? [{ href: "/admin", label: "Panel admin", icon: "⚙" }]
       : []),
     { href: "/perfil", label: "Mi perfil", icon: "◎" },
@@ -48,7 +49,11 @@ export function UserMenuDesktop({
             {user.name}
           </p>
           <p className="text-text-muted font-body text-xs">
-            {user.role === "admin" ? "✦ Administrador" : `@${user.username}`}
+            {hasPermission(user, PERMISSIONS.USERS_READ)
+              ? user.role === "dev"
+                ? "✦ Desarrollo"
+                : "✦ Administrador"
+              : `@${user.username}`}
           </p>
         </div>
       </div>

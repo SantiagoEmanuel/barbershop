@@ -40,8 +40,10 @@ export const users = table(
      * 'admin'  puede gestionar barberos, servicios y ver todas las órdenes.
      * 'barber' es un usuario vinculado a un perfil de barbero (corta pelo).
      * 'client' solo puede crear y ver sus propios turnos.
+     * 'dev' tiene todos los permisos operativos y de desarrollo; no se asigna
+     * desde el registro público.
      */
-    role: text("role", { enum: ["admin", "client", "barber"] })
+    role: text("role", { enum: ["admin", "client", "barber", "dev"] })
       .notNull()
       .default("client"),
     /** Útil para recordatorios por WhatsApp o SMS. */
@@ -127,9 +129,8 @@ export const paymentMethods = table("payment_methods", {
   /**
    * 'cash'   → efectivo, pago al final en el local
    * 'card'   → débito/crédito en el local
-   * 'online' → MercadoPago, Stripe, etc. (requiere flujo de webhook)
    */
-  type: text("type", { enum: ["cash", "card", "online"] }).notNull(),
+  type: text("type", { enum: ["cash", "card"] }).notNull(),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: createdAt(),
 });
@@ -361,32 +362,20 @@ export const orders = table(
     /** Monto efectivamente cobrado, en centavos. */
     amount: integer("amount").notNull(),
     /**
-     * pending  → esperando pago (especialmente pagos online)
+     * pending  → esperando pago
      * paid     → pago confirmado
      * refunded → reembolsado
-     * failed   → pago fallido (solo relevante para pagos online)
+     * failed   → pago fallido
      */
     status: text("status", {
       enum: ["pending", "paid", "refunded", "failed"],
     })
       .notNull()
       .default("pending"),
-    /**
-     * ID del pago en el proveedor externo (MercadoPago, Stripe).
-     * MercadoPago envía webhooks con este ID — necesitamos encontrar
-     * la orden en O(1), de ahí el índice.
-     */
-    externalPaymentId: text("external_payment_id"),
-    /** URL de pago para redirigir al cliente (MercadoPago checkout). */
-    externalPaymentUrl: text("external_payment_url"),
-    /** Estado raw devuelto por el proveedor ('approved', 'rejected', etc.) */
-    externalPaymentStatus: text("external_payment_status"),
     paidAt: integer("paid_at", { mode: "timestamp_ms" }),
     createdAt: createdAt(),
   },
   (t) => [
-    // Lookup de webhook: POST /webhook/mp → buscar por external_payment_id
-    index("idx_orders_external_payment_id").on(t.externalPaymentId),
     index("idx_orders_status").on(t.status),
     // Una orden puede corresponder a un turno regular, extraordinario o a una
     // venta de mostrador. Lo único inválido es vincularla a ambos tipos.

@@ -1,10 +1,12 @@
+import { hasPermission, PERMISSIONS } from "@/middleware/permissions";
 import type { Request, Response } from "express";
 import ServiceModel from "../model/service";
 
 export default class ServiceController {
   static async getAll(req: Request, res: Response) {
     const includeInactive =
-      req.query.all === "true" && req.user?.role === "admin";
+      req.query.all === "true" &&
+      hasPermission(req.user?.role, PERMISSIONS.CATALOG_MANAGE);
 
     try {
       const data = await ServiceModel.getAll({ includeInactive });

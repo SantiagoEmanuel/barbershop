@@ -1,9 +1,10 @@
 import { EmptyState, SectionHeader, Spinner } from "@config/components";
+import { todayISO } from "@config/utils";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { BackTo } from "../components/backTo";
 import { StatusBadge } from "../components/statusBadge";
-import { formatARS, todayISO } from "../components/ui/formatters";
+import { formatARS } from "../components/ui/formatters";
 import { api, put } from "../lib/api";
 import type {
   ApiResponse,

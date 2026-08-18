@@ -2,7 +2,9 @@ import type { RouteObject } from "react-router";
 import { ErrorView } from "../components/errorView";
 import { PublicLayout } from "../components/publicLayout";
 import { RootLayout } from "../components/rootLayout";
+import { withPermissions } from "../guard/permissionGuard";
 import Home from "../pages/home";
+import { PERMISSIONS, type Permission } from "../types";
 
 /**
  * Estructura de rutas:
@@ -15,15 +17,23 @@ import Home from "../pages/home";
  *           └── /admin/...  Dashboard, Turnos, etc.
  *
  * Home se importa de forma estática porque es la ruta que se pre-renderiza
- * para SEO. El resto (perfil, panel admin y la integración de pagos) se carga
- * de forma diferida: reduce el bundle inicial y evita importar el SDK de
- * MercadoPago durante el prerender en build.
+ * para SEO. El resto (perfil y panel admin) se carga de forma diferida para
+ * reducir el bundle inicial.
  */
 
 /** Helper: convierte un import con `default` en una ruta lazy de react-router. */
 const lazy =
   <T extends { default: React.ComponentType }>(load: () => Promise<T>) =>
   async () => ({ Component: (await load()).default });
+
+const lazyWithPermissions =
+  (
+    permissions: Permission[],
+    load: () => Promise<{ default: React.ComponentType }>,
+  ) =>
+  async () => ({
+    Component: withPermissions((await load()).default, permissions),
+  });
 
 export const routes: RouteObject[] = [
   {
@@ -41,10 +51,6 @@ export const routes: RouteObject[] = [
           { path: "mis-turnos", lazy: lazy(() => import("../pages/profile")) },
           { path: "confirm", lazy: lazy(() => import("../pages/confirm")) },
           {
-            path: "payment-verification",
-            lazy: lazy(() => import("../pages/paymentVerification")),
-          },
-          {
             path: "turno/confirmar/:appointmentId",
             lazy: lazy(() => import("../pages/confirmTurno")),
           },
@@ -59,44 +65,109 @@ export const routes: RouteObject[] = [
           {
             lazy: lazy(() => import("../components/adminLayout")),
             children: [
-              { index: true, lazy: lazy(() => import("../pages/dashboard")) },
-              { path: "turnos", lazy: lazy(() => import("../pages/shift")) },
+              {
+                index: true,
+                lazy: lazyWithPermissions(
+                  [
+                    PERMISSIONS.REPORTS_READ,
+                    PERMISSIONS.ORDERS_READ,
+                    PERMISSIONS.APPOINTMENTS_READ_ANY,
+                  ],
+                  () => import("../pages/dashboard"),
+                ),
+              },
+              {
+                path: "turnos",
+                lazy: lazyWithPermissions(
+                  [PERMISSIONS.APPOINTMENTS_READ_ANY, PERMISSIONS.BARBERS_READ],
+                  () => import("../pages/shift"),
+                ),
+              },
               {
                 path: "cierre/:appointmentId",
-                lazy: lazy(() => import("../pages/closeService")),
+                lazy: lazyWithPermissions(
+                  [
+                    PERMISSIONS.APPOINTMENTS_READ_ANY,
+                    PERMISSIONS.SALES_CREATE,
+                    PERMISSIONS.CATALOG_READ,
+                    PERMISSIONS.PAYMENT_METHODS_READ,
+                  ],
+                  () => import("../pages/closeService"),
+                ),
               },
               {
                 path: "reservas",
-                lazy: lazy(() => import("../pages/reservas")),
+                lazy: lazyWithPermissions(
+                  [PERMISSIONS.APPOINTMENTS_READ_ANY, PERMISSIONS.BARBERS_READ],
+                  () => import("../pages/reservas"),
+                ),
               },
-              { path: "ventas", lazy: lazy(() => import("../pages/ventas")) },
+              {
+                path: "ventas",
+                lazy: lazyWithPermissions(
+                  [
+                    PERMISSIONS.ORDERS_READ,
+                    PERMISSIONS.SALES_CREATE,
+                    PERMISSIONS.APPOINTMENTS_READ_ANY,
+                    PERMISSIONS.CATALOG_READ,
+                    PERMISSIONS.BARBERS_READ,
+                    PERMISSIONS.PAYMENT_METHODS_READ,
+                  ],
+                  () => import("../pages/ventas"),
+                ),
+              },
               {
                 path: "inventario",
-                lazy: lazy(() => import("../pages/inventario")),
+                lazy: lazyWithPermissions(
+                  [PERMISSIONS.INVENTORY_MANAGE, PERMISSIONS.CATALOG_MANAGE],
+                  () => import("../pages/inventario"),
+                ),
               },
               {
                 path: "ingresos",
-                lazy: lazy(() => import("../pages/ingresos")),
+                lazy: lazyWithPermissions(
+                  [PERMISSIONS.REPORTS_READ],
+                  () => import("../pages/ingresos"),
+                ),
               },
               {
                 path: "egresos",
-                lazy: lazy(() => import("../pages/egresos")),
+                lazy: lazyWithPermissions(
+                  [PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.REPORTS_READ],
+                  () => import("../pages/egresos"),
+                ),
               },
               {
                 path: "rendimientos",
-                lazy: lazy(() => import("../pages/rendimientos")),
+                lazy: lazyWithPermissions(
+                  [PERMISSIONS.REPORTS_READ],
+                  () => import("../pages/rendimientos"),
+                ),
               },
               {
                 path: "movimientos",
-                lazy: lazy(() => import("../pages/movimientos")),
+                lazy: lazyWithPermissions(
+                  [PERMISSIONS.ORDERS_READ],
+                  () => import("../pages/movimientos"),
+                ),
               },
               {
                 path: "servicios",
-                lazy: lazy(() => import("../pages/servicios")),
+                lazy: lazyWithPermissions(
+                  [PERMISSIONS.CATALOG_MANAGE],
+                  () => import("../pages/servicios"),
+                ),
               },
               {
                 path: "barberos",
-                lazy: lazy(() => import("../pages/barberos")),
+                lazy: lazyWithPermissions(
+                  [
+                    PERMISSIONS.BARBERS_MANAGE,
+                    PERMISSIONS.BARBER_SCHEDULES_MANAGE,
+                    PERMISSIONS.USERS_READ,
+                  ],
+                  () => import("../pages/barberos"),
+                ),
               },
             ],
           },

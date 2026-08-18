@@ -1,34 +1,27 @@
-import {
-  EmptyState,
-  ModalBase,
-  SectionHeader,
-  Spinner,
-} from "@config/components";
-import { initMercadoPago } from "@mercadopago/sdk-react";
-import { QRCodeSVG } from "qrcode.react";
+import { EmptyState, SectionHeader, Spinner } from "@config/components";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { BackTo } from "../components/backTo";
 import { StatusBadge } from "../components/statusBadge";
 import { formatARS } from "../components/ui/formatters";
-import { api, post, put } from "../lib/api";
+import { api, post } from "../lib/api";
 import type {
   ApiResponse,
   Appointment,
   CartItem,
   PaymentMethod,
-  PaymentMethodType,
   Product,
 } from "../types";
-const PAYMENT_ICONS: Record<PaymentMethodType, string> = {
+
+const PAYMENT_ICONS: Record<PaymentMethod["type"], string> = {
   cash: "💵",
   card: "💳",
-  online: "📱",
 };
-function PaymentIcon({ type }: { type: PaymentMethodType }) {
+
+function PaymentIcon({ type }: { type: PaymentMethod["type"] }) {
   return <span>{PAYMENT_ICONS[type]}</span>;
 }
-initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY as string);
+
 export default function CierreServicio() {
   const { appointmentId } = useParams<{
     appointmentId: string;
@@ -44,9 +37,10 @@ export default function CierreServicio() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [productSearch, setProductSearch] = useState("");
-  const [preference, setPreference] = useState("");
+
   useEffect(() => {
     if (!appointmentId) return;
+
     Promise.all([
       api<ApiResponse<Appointment>>(`appointments/${appointmentId}`),
       api<ApiResponse<Product[]>>("product"),
@@ -60,6 +54,7 @@ export default function CierreServicio() {
       })
       .finally(() => setLoading(false));
   }, [appointmentId]);
+
   function addToCart(product: Product) {
     setCart((prev) => {
       const exists = prev.find((i) => i.product.id === product.id);
@@ -82,9 +77,11 @@ export default function CierreServicio() {
       ];
     });
   }
+
   function removeFromCart(productId: string) {
     setCart((prev) => prev.filter((i) => i.product.id !== productId));
   }
+
   function updateQty(productId: string, qty: number) {
     if (qty <= 0) return removeFromCart(productId);
     setCart((prev) =>
@@ -98,39 +95,26 @@ export default function CierreServicio() {
       ),
     );
   }
+
   const serviceTotal = appointment?.priceSnapshot ?? 0;
   const productsTotal = cart.reduce(
     (acc, i) => acc + i.product.price * i.quantity,
     0,
   );
-  const grandCost = cart.map((i) => {
-    return {
-      id: i.product.id,
-      name: i.product.name,
-      quantity: i.quantity,
-      unit_price: i.product.price,
-      unit_cost: i.product.cost,
-      currency_id: "ARS",
-    };
-  });
+
   const grandTotal = serviceTotal + productsTotal;
+
   async function handleConfirm() {
     if (!appointment || !selectedPayment) return;
     setSubmitting(true);
     setError("");
+
     try {
       // El servicio + los productos del carrito se envían como items para que
       // el backend registre cada venta de producto (descontando stock) y la
       // orden quede asociada a sus productos. Así los reportes de ingresos
       // distinguen correctamente la facturación por servicios y por productos.
-      console.log({ cart, grandCost });
       const items = [
-        {
-          kind: "service" as const,
-          id: appointment.service.id,
-          quantity: 1,
-          priceSnapshot: serviceTotal,
-        },
         ...cart.map((i) => ({
           kind: "product" as const,
           id: i.product.id,
@@ -145,19 +129,15 @@ export default function CierreServicio() {
           id: string;
         }>
       >("order/create", {
-        appointmentId:
-          appointment.kind === "extraordinary" ? undefined : appointment.id,
-        overbookedAppointmentId:
-          appointment.kind === "extraordinary" ? appointment.id : undefined,
+        ...(appointment.kind === "extraordinary"
+          ? { overbookedAppointmentId: appointment.id }
+          : { appointmentId: appointment.id }),
         paymentMethodId: selectedPayment,
         amount: grandTotal,
         soldBy: appointment.barber.id,
         items,
       });
       if (!orderRes?.data) throw new Error("No se pudo crear la orden de pago");
-      await put(`appointments/${appointment.id}/status`, {
-        status: "completed",
-      });
       setSuccess(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error inesperado");
@@ -165,53 +145,7 @@ export default function CierreServicio() {
       setSubmitting(false);
     }
   }
-  async function handlePaymentMethod(method: string, id: string) {
-    if (method === "online" && appointment) {
-      const items = cart.map((c) => {
-        return {
-          id: c.product.id,
-          title: c.product.name,
-          quantity: c.quantity,
-          unit_price: c.product.price,
-          currency_id: "ARS",
-        };
-      });
-      items.push({
-        id: appointment.id,
-        title: appointment.service.name,
-        quantity: 1,
-        unit_price: appointment.priceSnapshot,
-        currency_id: "ARS",
-      });
-      Promise.all([
-        await post<
-          ApiResponse<{
-            id: string;
-            init_point: string;
-            sandbox_init_point: string;
-          }>
-        >("mercadopago/create-preference", {
-          items,
-          payerEmail: appointment.clientEmail,
-          payerName: appointment.clientName,
-          paymentMethodId: id,
-          appointmentId:
-            appointment.kind === "extraordinary" ? undefined : appointment.id,
-          overbookedAppointmentId:
-            appointment.kind === "extraordinary" ? appointment.id : undefined,
-          amount: grandTotal,
-        }),
-      ]).then(async ([response]) => {
-        if (!response) {
-          setError("No se pudo generar los datos de la venta");
-          return;
-        }
-        setPreference(response.data.sandbox_init_point);
-      });
-      return;
-    }
-    setSelectedPayment(id);
-  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -277,7 +211,6 @@ export default function CierreServicio() {
     <div className="flex max-w-2xl flex-col gap-6">
       <BackTo to="/admin/turnos" label="Turnos" />
       <SectionHeader eyebrow="Admin" title="Cerrar servicio" />
-      {JSON.stringify(grandCost)}
       <div className="card flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -454,45 +387,24 @@ export default function CierreServicio() {
           </div>
 
           <div>
-            {preference ? (
-              <>
-                <ModalBase
-                  open={preference !== ""}
-                  onClose={() => setPreference("")}
-                >
-                  <div className="min-h-[85dvh] p-4">
-                    <h1 className="mb-10 text-center text-xl">
-                      Escanea éste código para pagar
-                    </h1>
-                    <QRCodeSVG value={preference} className="h-full w-full" />
-                  </div>
-                </ModalBase>
-              </>
-            ) : (
-              <>
-                <p className="text-text-muted font-body mb-2 text-xs font-bold tracking-widest uppercase">
-                  Método de pago
-                </p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {paymentMethods.map((pm) => {
-                    const selected = selectedPayment === pm.id;
-                    return (
-                      <button
-                        key={pm.id}
-                        onClick={() => handlePaymentMethod(pm.type, pm.id)}
-                        className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left text-sm font-semibold capitalize transition-all duration-150 ${selected ? "bg-marca/10 border-border-strong text-marca" : "border-border text-text-secondary bg-black/20"}`}
-                        disabled={pm.name === "mercado pago"}
-                      >
-                        <PaymentIcon type={pm.type} />
-                        {pm.name === "mercado pago"
-                          ? "Pagar con QR - PRÓXIMAMENTE"
-                          : pm.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+            <p className="text-text-muted font-body mb-2 text-xs font-bold tracking-widest uppercase">
+              Método de pago
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {paymentMethods.map((pm) => {
+                const selected = selectedPayment === pm.id;
+                return (
+                  <button
+                    key={pm.id}
+                    onClick={() => setSelectedPayment(pm.id)}
+                    className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left text-sm font-semibold capitalize transition-all duration-150 ${selected ? "bg-marca/10 border-border-strong text-marca" : "border-border text-text-secondary bg-black/20"}`}
+                  >
+                    <PaymentIcon type={pm.type} />
+                    {pm.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {error && (
@@ -504,11 +416,7 @@ export default function CierreServicio() {
           <button
             onClick={handleConfirm}
             disabled={submitting || !selectedPayment}
-            className={
-              !preference
-                ? "btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[0.9rem] disabled:cursor-not-allowed disabled:opacity-50"
-                : "hidden"
-            }
+            className="btn-marca flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[0.9rem] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? (
               <Spinner size={18} />

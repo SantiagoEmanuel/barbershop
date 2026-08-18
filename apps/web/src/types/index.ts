@@ -12,6 +12,7 @@ export * from "./booking";
 export * from "./expense";
 export * from "./nav";
 export * from "./order";
+export * from "./permissions";
 export * from "./product";
 export * from "./purchase";
 export * from "./report";

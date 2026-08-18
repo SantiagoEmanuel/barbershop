@@ -1,9 +1,9 @@
 import { db } from "@/db/db";
 import { paymentMethods } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
-type PaymentMethodType = "cash" | "card" | "online";
+type PaymentMethodType = "cash" | "card";
 
 interface CreatePaymentMethodData {
   name: string;
@@ -19,14 +19,20 @@ interface UpdatePaymentMethodData {
 export default class PaymentMethodModel {
   static async getAll({ includeInactive = false } = {}) {
     return await db.query.paymentMethods.findMany({
-      where: includeInactive ? undefined : eq(paymentMethods.isActive, true),
+      where: and(
+        includeInactive ? undefined : eq(paymentMethods.isActive, true),
+        inArray(paymentMethods.type, ["cash", "card"]),
+      ),
       orderBy: (pm, { asc }) => [asc(pm.name)],
     });
   }
 
   static async getById(id: string) {
     const method = await db.query.paymentMethods.findFirst({
-      where: eq(paymentMethods.id, id),
+      where: and(
+        eq(paymentMethods.id, id),
+        inArray(paymentMethods.type, ["cash", "card"]),
+      ),
     });
     return method ?? null;
   }

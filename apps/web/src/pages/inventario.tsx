@@ -59,7 +59,7 @@ function ProductModal({
         description: desc || undefined,
         price: Number(price),
         cost: Number(cost),
-        stock: Number(stock),
+        ...(!initial ? { stock: Number(stock) } : {}),
       };
       const res = initial
         ? await put<ApiResponse<Product>>(`product/${initial.id}`, body)
@@ -205,7 +205,7 @@ function SupplyModal({
         name,
         unit,
         cost: Number(cost),
-        stock: Number(stock),
+        ...(!initial ? { stock: Number(stock) } : {}),
         lowStockThreshold: threshold ? Number(threshold) : undefined,
       };
       const res = initial

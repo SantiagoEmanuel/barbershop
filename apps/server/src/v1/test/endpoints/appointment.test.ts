@@ -24,6 +24,23 @@ describe("POST /api/v1/appointments (crear turno)", () => {
     // Puede ser 400 o 404 según validación del modelo
     expect(res.status).toBeGreaterThanOrEqual(400);
   });
+
+  it("rechaza que el frontend envíe status, precio o fin calculado", async () => {
+    const res = await request(app).post("/api/v1/appointments").send({
+      barberId: "barber-id",
+      serviceId: "service-id",
+      date: "2026-08-15",
+      startTime: "10:00",
+      clientName: "Test User",
+      clientPhone: "+5493510000000",
+      clientEmail: "test@test.com",
+      status: "confirmed",
+      priceSnapshot: 1,
+      endTime: "10:01",
+    });
+
+    expect(res.status).toBe(400);
+  });
 });
 
 describe("GET /api/v1/appointments (admin)", () => {

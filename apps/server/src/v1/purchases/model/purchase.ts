@@ -67,6 +67,9 @@ export default class PurchaseModel {
         404,
       );
     }
+    if (!item.isActive) {
+      throw new AppError("No se puede comprar un ítem inactivo", 400);
+    }
 
     const totalCost = data.quantity * data.unitCost;
     const purchasedAt = data.purchasedAt ?? new Date();

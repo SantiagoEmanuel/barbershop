@@ -1,3 +1,9 @@
+import {
+  businessDayEnd,
+  businessDayStart,
+  isValidBusinessDate,
+  todayISO,
+} from "@config/utils";
 import type { Request, Response } from "express";
 import ExpenseModel from "../model/expense";
 
@@ -5,8 +11,14 @@ import ExpenseModel from "../model/expense";
 function parseRange(req: Request) {
   const fromRaw = req.query.from as string | undefined;
   const toRaw = req.query.to as string | undefined;
-  const from = fromRaw ? new Date(fromRaw) : undefined;
-  const to = toRaw ? new Date(`${toRaw}T23:59:59.999Z`) : undefined;
+  if (
+    (fromRaw && !isValidBusinessDate(fromRaw)) ||
+    (toRaw && !isValidBusinessDate(toRaw))
+  ) {
+    return null;
+  }
+  const from = fromRaw ? businessDayStart(fromRaw) : undefined;
+  const to = toRaw ? businessDayEnd(toRaw) : undefined;
   return { from, to };
 }
 
@@ -49,7 +61,13 @@ export default class ExpenseController {
   // ── Gastos ───────────────────────────────────────────────────
 
   static async getAll(req: Request, res: Response) {
-    const { from, to } = parseRange(req);
+    const range = parseRange(req);
+    if (!range) {
+      return res
+        .status(400)
+        .json({ message: "Rango de fechas inválido", data: null });
+    }
+    const { from, to } = range;
     const categoryId = req.query.categoryId as string | undefined;
     try {
       const data = await ExpenseModel.getAll({ from, to, categoryId });
@@ -255,8 +273,7 @@ export default class ExpenseController {
 
   static async runRecurring(req: Request, res: Response) {
     const month =
-      (req.query.month as string | undefined) ??
-      new Date().toISOString().slice(0, 7);
+      (req.query.month as string | undefined) ?? todayISO().slice(0, 7);
     try {
       const data = await ExpenseModel.runRecurring(month);
       return res.json({

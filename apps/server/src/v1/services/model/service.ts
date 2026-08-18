@@ -35,6 +35,17 @@ export default class ServiceModel {
   }
 
   static async create(data: CreateServiceData) {
+    if (
+      !data.name.trim() ||
+      data.name.length > 120 ||
+      !Number.isSafeInteger(data.price) ||
+      data.price <= 0 ||
+      !Number.isSafeInteger(data.durationMinutes) ||
+      data.durationMinutes < 5 ||
+      data.durationMinutes > 480
+    ) {
+      throw new AppError("Datos de servicio inválidos", 400);
+    }
     const [created] = await db.insert(services).values(data).returning();
     if (!created) throw new AppError("No se pudo crear el servicio", 400);
     return created;
@@ -44,6 +55,19 @@ export default class ServiceModel {
     if (Object.keys(data).length === 0) {
       throw new AppError("No se enviaron campos para actualizar", 400);
     }
+    if (
+      (data.name !== undefined &&
+        (!data.name.trim() || data.name.length > 120)) ||
+      (data.price !== undefined &&
+        (!Number.isSafeInteger(data.price) || data.price <= 0)) ||
+      (data.durationMinutes !== undefined &&
+        (!Number.isSafeInteger(data.durationMinutes) ||
+          data.durationMinutes < 5 ||
+          data.durationMinutes > 480))
+    ) {
+      throw new AppError("Datos de servicio inválidos", 400);
+    }
+
     const [updated] = await db
       .update(services)
       .set(data)

@@ -1,10 +1,11 @@
 import { EmptyState, SectionHeader, Spinner } from "@config/components";
+import { todayISO } from "@config/utils";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { BackTo } from "../components/backTo";
 import BookingModal from "../components/bookingModal";
 import { StatusBadge } from "../components/statusBadge";
-import { formatARS, formatDate, todayISO } from "../components/ui/formatters";
+import { formatARS, formatDate } from "../components/ui/formatters";
 import { api } from "../lib/api";
 import { useBookingStore } from "../store/useBookingStore";
 import type { ApiResponse, Appointment, Barber } from "../types";

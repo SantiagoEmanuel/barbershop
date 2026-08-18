@@ -1,4 +1,6 @@
-import { verifyRole, verifyToken } from "@/middleware/auth.middleware";
+import { optionalToken, verifyToken } from "@/middleware/auth.middleware";
+import { PERMISSIONS } from "@/middleware/permissions";
+import { requirePermission } from "@/middleware/permissions.middleware";
 import { Router } from "express";
 import BarberController from "./controller/barber";
 
@@ -8,46 +10,46 @@ const barberRouter = Router();
 barberRouter.get("/me", verifyToken, BarberController.me);
 
 // Públicos — el cliente necesita ver barberos y sus horarios
-barberRouter.get("/", BarberController.getAll);
+barberRouter.get("/", optionalToken, BarberController.getAll);
 barberRouter.get("/:slug", BarberController.getBySlug);
 
 // Solo admin
 barberRouter.post(
   "/",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.BARBERS_MANAGE),
   BarberController.create,
 );
 // Reemplaza la grilla horaria completa de un barbero (semana entera).
 barberRouter.put(
   "/:id/schedules",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.BARBER_SCHEDULES_MANAGE),
   BarberController.replaceSchedules,
 );
 
 barberRouter.post(
   "/schedule",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.BARBER_SCHEDULES_MANAGE),
   BarberController.createSchedule,
 );
 barberRouter.put(
   "/schedule/:id",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.BARBER_SCHEDULES_MANAGE),
   BarberController.updateSchedule,
 );
 barberRouter.put(
   "/:id",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.BARBERS_MANAGE),
   BarberController.update,
 );
 barberRouter.delete(
   "/:id",
   verifyToken,
-  verifyRole("admin"),
+  requirePermission(PERMISSIONS.BARBERS_MANAGE),
   BarberController.remove,
 );
 

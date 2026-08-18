@@ -11,18 +11,20 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
     VitePWA({
+      // La actualización se ofrece al usuario para no interrumpir formularios
+      // o acciones del panel que estén en curso.
+      registerType: "prompt",
       workbox: {
+        clientsClaim: true,
         cleanupOutdatedCaches: true,
         sourcemap: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
       },
-      registerType: "prompt",
       includeAssets: ["favicon.svg", "barber-icon-192.png", "barber-icon.png"],
       manifest: {
-        name: "Peko Barber",
-        short_name: "Peko Barber",
-        description:
-          "Barbería en Quimilí. Administra tu barbería mediante la app.",
+        name: "Barbershop panel",
+        short_name: "BS Panel",
+        description: "Barbería PJBarbershop. Panel de administración general.",
         lang: "es-AR",
         start_url: "/admin",
         scope: "/",

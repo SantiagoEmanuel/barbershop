@@ -1,4 +1,5 @@
 import { Field, ModalBase, Spinner } from "@config/components";
+import { todayISO } from "@config/utils";
 import { useEffect, useState } from "react";
 import { api, post } from "../lib/api";
 import { cn } from "../lib/cn";
@@ -11,12 +12,7 @@ import {
   type Service,
   type Slot,
 } from "../types";
-import {
-  formatARS,
-  formatDate,
-  todayISO,
-  todayISOArgentina,
-} from "./ui/formatters";
+import { formatARS, formatDate } from "./ui/formatters";
 
 // ── Helpers de tiempo ─────────────────────────────────────────
 function toMin(time: string): number {
@@ -255,9 +251,18 @@ function StepService({ onNext }: { onNext: () => void }) {
 
 // ── Step 3: fecha + slot ──────────────────────────────────────
 function StepDateTime({ onNext }: { onNext: () => void }) {
-  const { barberId, serviceDuration, date, startTime, setDate, setSlot } =
-    useBookingStore();
+  const {
+    barberId,
+    serviceDuration,
+    date,
+    startTime,
+    setDate,
+    setSlot,
+    setAppointmentType,
+  } = useBookingStore();
   const user = useAuthStore((u) => u.user);
+  const canCreateOverbook =
+    user?.role === "admin" || user?.role === "barber" || user?.role === "dev";
   const [validSlots, setValidSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -309,55 +314,59 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
             <div className="flex justify-center py-6">
               <Spinner size={20} />
             </div>
-          ) : validSlots.length === 0 ? (
-            <div className="border-border text-text-muted font-body rounded-xl border bg-black/20 px-4 py-5 text-center text-sm">
-              Lo sentimos, trabajamos por turno de llegada el {formatDate(date)}
-              . Estamos cerrados los domingos
-            </div>
           ) : (
             <>
-              <div className="grid grid-cols-3 gap-2">
-                {validSlots.map((s) => {
-                  if (
-                    timeToMinutes(s.startTime) <
-                      new Date().getHours() * 60 + new Date().getMinutes() &&
-                    date === todayISOArgentina()
-                  ) {
-                    return;
-                  }
-                  const selected = startTime === s.startTime;
-                  return (
-                    <button
-                      key={s.startTime}
-                      onClick={() => {
-                        setSlot(s.startTime);
-                        onNext();
-                      }}
-                      className={cn(
-                        "font-body rounded-xl border py-2.5 text-sm font-semibold transition-all duration-150",
-                        selected
-                          ? "bg-marca/15 border-border-strong text-marca"
-                          : "border-border text-text-secondary bg-black/20",
-                      )}
-                    >
-                      {s.startTime}
-                    </button>
-                  );
-                })}
-              </div>
-              {user?.role === "admin" ? (
+              {validSlots.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {validSlots.map((s) => {
+                    if (
+                      timeToMinutes(s.startTime) <
+                        timeToMinutes(getTimeNow()) &&
+                      date === todayISO()
+                    ) {
+                      return;
+                    }
+                    const selected = startTime === s.startTime;
+                    return (
+                      <button
+                        key={s.startTime}
+                        onClick={() => {
+                          setSlot(s.startTime);
+                          setAppointmentType("appointment");
+                          onNext();
+                        }}
+                        className={cn(
+                          "font-body rounded-xl border py-2.5 text-sm font-semibold transition-all duration-150",
+                          selected
+                            ? "bg-marca/15 border-border-strong text-marca"
+                            : "border-border text-text-secondary bg-black/20",
+                        )}
+                      >
+                        {s.startTime}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border-border text-text-muted font-body rounded-xl border bg-black/20 px-4 py-5 text-center text-sm">
+                  No quedan horarios disponibles para {formatDate(date)}.
+                </div>
+              )}
+              {canCreateOverbook && (
                 <div className="mt-4 flex w-full items-center">
                   <button
                     className="text-text-secondary btn-marca mx-auto text-center"
                     onClick={() => {
                       setSlot(getTimeNow());
+                      setAppointmentType("walk_in");
                       onNext();
                     }}
                   >
-                    Establecer turno improvisado
+                    Establecer un sobre turno
                   </button>
                 </div>
-              ) : (
+              )}
+              {!canCreateOverbook && validSlots.length > 0 && (
                 <p className="text-text-muted font-body mt-2 text-center text-xs">
                   Mostrando turnos donde cabe tu servicio.
                 </p>
@@ -373,15 +382,18 @@ function StepDateTime({ onNext }: { onNext: () => void }) {
 // ── Step 4: datos cliente ─────────────────────────────────────
 function StepClient({ onNext }: { onNext: () => void }) {
   const user = useAuthStore((u) => u.user);
-  const { setClient } = useBookingStore();
-  const [email, setEmail] = useState(user?.email ?? "");
-  const [name, setName] = useState(user?.name ?? "");
-  const [phone, setPhone] = useState(user?.phone ?? "");
+  const { appointmentType, setClient } = useBookingStore();
+  const isOverbook = appointmentType === "walk_in";
+  const [email, setEmail] = useState(isOverbook ? "" : (user?.email ?? ""));
+  const [name, setName] = useState(isOverbook ? "" : (user?.name ?? ""));
+  const [phone, setPhone] = useState(isOverbook ? "" : (user?.phone ?? ""));
   const [note, setNote] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !phone.trim() || !email.trim()) return;
+    if (!name.trim() || !phone.trim() || (!isOverbook && !email.trim())) {
+      return;
+    }
     setClient(name.trim(), phone.trim(), note.trim(), email.trim());
     onNext();
   }
@@ -393,22 +405,26 @@ function StepClient({ onNext }: { onNext: () => void }) {
           Paso 4 de 4
         </p>
         <h3 className="font-display text-text-primary text-xl font-bold">
-          Tus datos
+          {isOverbook ? "Datos del cliente" : "Tus datos"}
         </h3>
         <p className="text-text-muted font-body mt-1 text-xs">
-          Solo para avisarte si hay algún cambio. Nada más.
+          {isOverbook
+            ? "Necesitamos estos datos para registrar el sobre turno."
+            : "Solo para avisarte si hay algún cambio. Nada más."}
         </p>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <Field
-          label="Email *"
-          type="email"
-          placeholder="tu-correo@gmail.com"
-          autoFocus
-          value={email}
-          onChange={setEmail}
-          required
-        />
+        {!isOverbook && (
+          <Field
+            label="Email *"
+            type="email"
+            placeholder="tu-correo@gmail.com"
+            autoFocus
+            value={email}
+            onChange={setEmail}
+            required
+          />
+        )}
         <Field
           label="Nombre completo *"
           type="text"
@@ -449,65 +465,7 @@ function StepClient({ onNext }: { onNext: () => void }) {
   );
 }
 
-// ── Step 5: método de pago ─────────────────────────────────────────
-// function StepPaymentMethod({ onNext }: { onNext: () => void }) {
-//   const { setPaymentMethod, paymentMethod } = useBookingStore();
-//   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-
-//   useEffect(() => {
-//     Promise.all([api<ApiResponse<PaymentMethod[]>>("payment-methods")]).then(
-//       ([pmRes]) => {
-//         setPaymentMethods(pmRes?.data ?? []);
-//       },
-//     );
-//   }, []);
-
-//   const handleSubmit = () => {
-//     if (paymentMethod === "online") {
-//       return;
-//     }
-//     onNext();
-//   };
-
-//   return (
-//     <div className="flex flex-col gap-4">
-//       <div>
-//         <p className="text-marca font-body mb-1 text-xs tracking-[0.15em] uppercase">
-//           Paso 5 de 5
-//         </p>
-//         <h3 className="font-display text-text-primary text-xl font-bold">
-//           Método de pago
-//         </h3>
-//         <p className="text-text-muted font-body mt-1 text-xs">
-//           Selecciona cuándo y cómo quieres pagar
-//         </p>
-//       </div>
-//       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-//         <select
-//           name="paymentMethod"
-//           onChange={(e) => {
-//             const [name, id] = e.target.value.split("-");
-//             setPaymentMethod(name, id);
-//           }}
-//         >
-//           {paymentMethods.map((pm) => (
-//             <option value={`${pm.type}-${pm.id}`} key={pm.id}>
-//               {pm.name}
-//             </option>
-//           ))}
-//         </select>
-//         <button
-//           type="submit"
-//           className="btn-marca mt-1 w-full rounded-xl py-3.5"
-//         >
-//           Seleccionar método de pago
-//         </button>
-//       </form>
-//     </div>
-//   );
-// }
-
-// ── Step 6: confirmar ─────────────────────────────────────────
+// ── Confirmar ─────────────────────────────────────────
 function StepConfirm({ onClose }: { onClose: () => void }) {
   const store = useBookingStore();
   const [loading, setLoading] = useState(false);
@@ -528,6 +486,7 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
         clientEmail: store.clientEmail,
         notes: store.notes,
         paymentMethodId: store.paymentMethodId,
+        appointmentType: store.appointmentType,
       });
       if (!res) throw new Error("Error al reservar el turno");
       setSuccess(true);
@@ -575,7 +534,7 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
     { label: "Barbero", value: store.barberName },
     { label: "Servicio", value: store.serviceName },
     { label: "Precio", value: formatARS(store.servicePrice) },
-    { label: "Forma de pago", value: store.paymentMethod },
+    { label: "Forma de pago", value: "efectivo/transferencia" },
     {
       label: "Fecha",
       value: formatDate(store.date),
@@ -589,7 +548,7 @@ function StepConfirm({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex flex-col gap-4">
       <h3 className="font-display text-text-primary text-xl font-bold">
-        Confirmá tu turno
+        Confirma tu turno
       </h3>
       <div className="border-border divide-border overflow-hidden rounded-xl border">
         {rows.map((r, i) => (

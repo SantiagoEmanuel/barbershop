@@ -4,7 +4,8 @@ import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router";
 import { cn } from "../lib/cn";
-import { NAV_ITEMS } from "./navItems";
+import { useAuthStore } from "../store/useAuthStore";
+import { getVisibleNavItems } from "./navItems";
 
 /**
  * Dropdown de navegación del panel admin (desktop).
@@ -17,13 +18,15 @@ import { NAV_ITEMS } from "./navItems";
  */
 export function AdminNavDropdown() {
   const location = useLocation();
+  const user = useAuthStore((state) => state.user);
+  const navItems = getVisibleNavItems(user);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Encontrar el item activo para mostrar su label como trigger.
   // /admin → "Resumen" (end: true). /admin/turnos → "Turnos del día". Etc.
-  const current = findActiveItem(location.pathname);
+  const current = findActiveItem(location.pathname, navItems);
 
   useGSAP(
     () => {
@@ -95,7 +98,7 @@ export function AdminNavDropdown() {
             </p>
           </div>
           <ul className="py-1">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <li key={item.href}>
                 <NavLink
                   to={item.href}
@@ -125,15 +128,18 @@ export function AdminNavDropdown() {
  * Reproduce la lógica de matching de NavLink para encontrar el item activo
  * a partir del pathname actual. Necesario para mostrar el label en el botón.
  */
-function findActiveItem(pathname: string) {
+function findActiveItem(
+  pathname: string,
+  navItems: ReturnType<typeof getVisibleNavItems>,
+) {
   // Primero match exacto (para items con `end: true` como /admin).
-  const exact = NAV_ITEMS.find((item) => item.href === pathname);
+  const exact = navItems.find((item) => item.href === pathname);
   if (exact) return exact;
 
   // Después match por prefijo (más específico gana).
-  const matches = NAV_ITEMS.filter(
+  const matches = navItems.filter(
     (item) => !item.end && pathname.startsWith(item.href + "/"),
   );
-  if (matches.length === 0) return NAV_ITEMS[0]; // fallback: Resumen
+  if (matches.length === 0) return navItems[0]; // fallback: primera sección permitida
   return matches.reduce((a, b) => (a.href.length > b.href.length ? a : b));
 }

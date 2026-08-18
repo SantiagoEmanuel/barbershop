@@ -17,7 +17,6 @@ interface UpdateSupplyData {
   description?: string;
   unit?: string;
   cost?: number;
-  stock?: number;
   lowStockThreshold?: number;
   isActive?: boolean;
 }
@@ -38,8 +37,16 @@ export default class SupplyModel {
   }
 
   static async create(data: CreateSupplyData) {
-    if (data.stock < 0)
-      throw new AppError("El stock no puede ser negativo", 400);
+    if (
+      !data.name.trim() ||
+      data.name.length > 120 ||
+      !Number.isSafeInteger(data.stock) ||
+      data.stock < 0 ||
+      (data.cost !== undefined &&
+        (!Number.isSafeInteger(data.cost) || data.cost < 0))
+    ) {
+      throw new AppError("Datos de insumo inválidos", 400);
+    }
     const [created] = await db.insert(supplies).values(data).returning();
     if (!created) throw new AppError("No se pudo crear el insumo", 500);
     return created;
@@ -48,9 +55,6 @@ export default class SupplyModel {
   static async update(id: string, data: UpdateSupplyData) {
     if (Object.keys(data).length === 0) {
       throw new AppError("No se enviaron campos para actualizar", 400);
-    }
-    if (data.stock !== undefined && data.stock < 0) {
-      throw new AppError("El stock no puede ser negativo", 400);
     }
     const [updated] = await db
       .update(supplies)

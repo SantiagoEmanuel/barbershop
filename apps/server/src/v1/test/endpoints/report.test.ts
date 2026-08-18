@@ -1,9 +1,10 @@
 import app from "@/config";
+import { todayISO } from "@config/utils";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { adminToken } from "../helpers";
 
-const today = new Date().toISOString().split("T")[0];
+const today = todayISO();
 const dateRange = { from: today, to: today };
 
 describe("GET /api/v1/reports/* (admin)", () => {

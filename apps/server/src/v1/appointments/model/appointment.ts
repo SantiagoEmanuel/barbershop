@@ -1,14 +1,11 @@
 import { db } from "@/db/db";
+import { publicUserColumns } from "@/db/turso/publicUserColumns";
 import { appointments, overbookedAppointments } from "@/db/turso/schema";
 import AppError from "@/utils/AppError";
 import { and, count, eq, gt, inArray, lt } from "drizzle-orm";
 
 export type AppointmentStatus =
-  | "pending"
-  | "confirmed"
-  | "completed"
-  | "cancelled"
-  | "no_show";
+  "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
 
 export interface Appointment {
   barberId: string;
@@ -23,10 +20,11 @@ export interface Appointment {
   date: string;
   notes: string | null;
   status: AppointmentStatus;
+  appointmentType?: "appointment" | "walk_in";
 }
 
 interface AppointmentProps {
-  create: Appointment;
+  create: Omit<Appointment, "status" | "appointmentType">;
   createByAdmin: {
     serviceId: string;
     startTime: string;
@@ -47,10 +45,10 @@ export default class AppointmentModel {
         service: true,
         barber: {
           with: {
-            users: true,
+            users: { columns: publicUserColumns },
           },
         },
-        client: true,
+        client: { columns: publicUserColumns },
       },
     });
 
@@ -86,7 +84,7 @@ export default class AppointmentModel {
           with: {
             service: true,
             barber: true,
-            client: true,
+            client: { columns: publicUserColumns },
           },
         }),
         db.query.overbookedAppointments.findMany({
@@ -123,7 +121,7 @@ export default class AppointmentModel {
   static async create(data: AppointmentProps["create"]) {
     const [newAppointment] = await db
       .insert(appointments)
-      .values(data)
+      .values({ ...data, status: "pending" })
       .returning();
 
     if (!newAppointment) {
@@ -162,16 +160,23 @@ export default class AppointmentModel {
     }
     return newAppointment;
   }
-  static async update(
-    status:
-      | "pending"
-      | "confirmed"
-      | "completed"
-      | "cancelled"
-      | "no_show"
-      | undefined,
-    id: string,
-  ) {
+  static async update(status: AppointmentStatus, id: string) {
+    const current = await this.getById(id);
+    const allowed: Record<AppointmentStatus, AppointmentStatus[]> = {
+      pending: ["pending", "confirmed", "cancelled"],
+      confirmed: ["confirmed", "completed", "cancelled", "no_show"],
+      completed: ["completed"],
+      cancelled: ["cancelled"],
+      no_show: ["no_show"],
+    };
+
+    if (!allowed[current.status as AppointmentStatus].includes(status)) {
+      throw new AppError(
+        `No se puede cambiar un turno de ${current.status} a ${status}`,
+        409,
+      );
+    }
+
     const [regular] = await db
       .update(appointments)
       .set({

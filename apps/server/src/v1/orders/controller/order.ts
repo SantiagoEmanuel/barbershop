@@ -1,24 +1,17 @@
-import ProductModel from "@/v1/products/model/product";
+import { isValidBusinessDate, todayISO } from "@config/utils";
 import type { Request, Response } from "express";
-import OrderModel from "../model/order";
+import { z } from "zod";
+import OrderModel, { type CounterSaleItem } from "../model/order";
 
 const VALID_STATUSES = ["pending", "paid", "refunded", "failed"] as const;
 type OrderStatus = (typeof VALID_STATUSES)[number];
 
-interface CounterSaleItem {
-  kind: "product" | "service";
-  id: string;
-  quantity: number;
-  priceSnapshot: number;
-  costSnapshot: number;
-}
-
 export default class OrderController {
   static async getOrders(req: Request, res: Response) {
     const rawDate = req.query.date as string | undefined;
-    const date = rawDate ? new Date(rawDate) : new Date();
+    const date = rawDate ?? todayISO();
 
-    if (isNaN(date.getTime())) {
+    if (!isValidBusinessDate(date)) {
       return res.status(400).json({
         message: "Formato de fecha inválido. Usar: YYYY-MM-DD",
         data: null,
@@ -27,7 +20,6 @@ export default class OrderController {
 
     try {
       const data = await OrderModel.getByDate(date);
-      console.log({ data });
       return res.json({ message: "OK", data });
     } catch (err: any) {
       return res
@@ -65,34 +57,27 @@ export default class OrderController {
   }
 
   static async create(req: Request, res: Response) {
-    const { appointmentId, overbookedAppointmentId, paymentMethodId, amount } =
-      req.body as {
-        appointmentId?: string;
-        overbookedAppointmentId?: string;
-        paymentMethodId?: string;
-        amount?: number;
-      };
+    const parsed = z
+      .object({
+        appointmentId: z.string().trim().min(1).optional(),
+        overbookedAppointmentId: z.string().trim().min(1).optional(),
+        paymentMethodId: z.string().trim().min(1),
+      })
+      .strict()
+      .safeParse(req.body);
 
-    if (!paymentMethodId || amount == null) {
+    if (!parsed.success) {
       return res.status(400).json({
-        message: "Campos requeridos: paymentMethodId, amount",
-        data: null,
-      });
-    }
-
-    if (typeof amount !== "number" || amount <= 0) {
-      return res.status(400).json({
-        message: "El monto debe ser un número positivo en centavos",
+        message:
+          "Campos requeridos: paymentMethodId y un turno; el monto lo calcula el backend",
         data: null,
       });
     }
 
     try {
       const data = await OrderModel.create({
-        appointmentId,
-        overbookedAppointmentId,
-        paymentMethodId,
-        amount,
+        ...parsed.data,
+        actor: req.user,
       });
       return res
         .status(201)
@@ -114,14 +99,12 @@ export default class OrderController {
    */
   static async createByBarber(req: Request, res: Response) {
     const {
-      amount,
       soldBy,
       items,
       paymentMethodId,
       appointmentId,
       overbookedAppointmentId,
     } = req.body as {
-      amount?: number;
       soldBy?: string;
       items?: CounterSaleItem[];
       paymentMethodId?: string;
@@ -130,25 +113,22 @@ export default class OrderController {
     };
 
     // 1. Validación de presencia (ojo con los `!` que se te habían escapado)
+    const canChooseSeller =
+      req.user?.role === "admin" || req.user?.role === "dev";
     if (
-      amount == null ||
-      !soldBy ||
+      (canChooseSeller && !soldBy) ||
       !paymentMethodId ||
-      !Array.isArray(items) ||
-      items.length === 0
+      !Array.isArray(items)
     ) {
       return res.status(400).json({
-        message: "Campos requeridos: amount, soldBy, paymentMethodId, items[]",
+        message:
+          "Campos requeridos: paymentMethodId, items[] y vendedor para administración",
         data: null,
       });
     }
 
-    // 2. Validación de tipos
-    if (typeof amount !== "number" || amount <= 0) {
-      return res.status(400).json({
-        message: "El monto debe ser un número positivo en centavos",
-        data: null,
-      });
+    if (items.length > 100) {
+      return res.status(400).json({ message: "Demasiados items", data: null });
     }
 
     // 3. Validación básica de cada item
@@ -158,12 +138,12 @@ export default class OrderController {
         (it.kind !== "product" && it.kind !== "service") ||
         !it.id ||
         typeof it.quantity !== "number" ||
+        !Number.isInteger(it.quantity) ||
         it.quantity <= 0 ||
-        typeof it.priceSnapshot !== "number" ||
-        it.priceSnapshot <= 0
+        it.quantity > 1000
       ) {
         return res.status(400).json({
-          message: "Items inválidos: revisar kind, id, quantity, priceSnapshot",
+          message: "Items inválidos: revisar kind, id y quantity",
           data: null,
         });
       }
@@ -174,31 +154,14 @@ export default class OrderController {
       //    cobra en el acto, así que queda registrada como pagada: de lo
       //    contrario no se reflejaría en los reportes de ingresos (que solo
       //    consideran órdenes con status "paid").
-      const order = await OrderModel.create({
+      const order = await OrderModel.createPaidCounterSale({
         appointmentId,
         overbookedAppointmentId,
         paymentMethodId,
-        amount,
-        status: "paid",
-        paidAt: new Date(),
+        soldBy,
+        items,
+        sellerUserId: req.user?.role === "barber" ? req.user.id : undefined,
       });
-
-      // 5. Registrar venta de cada producto del carrito.
-      //    Filtramos servicios porque no van a la tabla product_sales.
-      //    Promise.all corre en paralelo y propaga el primer error.
-      const productItems = items.filter((it) => it.kind === "product");
-
-      await Promise.all(
-        productItems.map((item) =>
-          ProductModel.createSale(item.id, {
-            orderId: order.id,
-            soldBy,
-            quantity: item.quantity,
-            priceSnapshot: item.priceSnapshot, // precio por unidad, NO el total
-            costSnapshot: item.costSnapshot ?? 0,
-          }),
-        ),
-      );
 
       // 6. Devolver la orden con sus relaciones (paymentMethod / appointment)
       //    para que el front pueda agregarla al listado sin re-fetchear.
@@ -217,18 +180,9 @@ export default class OrderController {
 
   static async update(req: Request, res: Response) {
     const { id } = req.params;
-    const {
-      paymentMethodId,
-      status,
-      externalPaymentId,
-      externalPaymentUrl,
-      externalPaymentStatus,
-    } = req.body as {
+    const { paymentMethodId, status } = req.body as {
       paymentMethodId?: string;
       status?: OrderStatus;
-      externalPaymentId?: string;
-      externalPaymentUrl?: string;
-      externalPaymentStatus?: string;
     };
 
     if (status && !VALID_STATUSES.includes(status)) {
@@ -241,12 +195,6 @@ export default class OrderController {
     const patch: Record<string, unknown> = {};
     if (paymentMethodId !== undefined) patch.paymentMethodId = paymentMethodId;
     if (status !== undefined) patch.status = status;
-    if (externalPaymentId !== undefined)
-      patch.externalPaymentId = externalPaymentId;
-    if (externalPaymentUrl !== undefined)
-      patch.externalPaymentUrl = externalPaymentUrl;
-    if (externalPaymentStatus !== undefined)
-      patch.externalPaymentStatus = externalPaymentStatus;
 
     if (Object.keys(patch).length === 0) {
       return res.status(400).json({

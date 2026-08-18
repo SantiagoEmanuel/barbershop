@@ -4,6 +4,7 @@ import {
   Spinner,
   StatCard,
 } from "@config/components";
+import { addBusinessDays, businessDate, todayISO } from "@config/utils";
 import { useEffect, useState } from "react";
 import { BackTo } from "../components/backTo";
 import { formatARS } from "../components/ui/formatters";
@@ -19,32 +20,29 @@ interface Bucket {
 }
 
 function getDatesForPeriod(period: Period): Bucket[] {
-  const today = new Date();
+  const today = todayISO();
   const result: Bucket[] = [];
 
   if (period === "week") {
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const iso = d.toISOString().split("T")[0]!;
+      const iso = addBusinessDays(today, -i);
       result.push({
         from: iso,
         to: iso,
-        label: d.toLocaleDateString("es-AR", {
+        label: new Intl.DateTimeFormat("es-AR", {
+          timeZone: "America/Argentina/Buenos_Aires",
           weekday: "short",
           day: "numeric",
-        }),
+        }).format(new Date(`${iso}T12:00:00Z`)),
       });
     }
   } else {
     for (let i = 3; i >= 0; i--) {
-      const from = new Date(today);
-      from.setDate(today.getDate() - (i + 1) * 7 + 1);
-      const to = new Date(today);
-      to.setDate(today.getDate() - i * 7);
+      const from = addBusinessDays(today, -(i + 1) * 7 + 1);
+      const to = addBusinessDays(today, -i * 7);
       result.push({
-        from: from.toISOString().split("T")[0]!,
-        to: to.toISOString().split("T")[0]!,
+        from,
+        to,
         label: `S${4 - i}`,
       });
     }
@@ -69,7 +67,11 @@ export default function Movimientos() {
   const buckets = getDatesForPeriod(period);
   const chartData = buckets.map((bucket) => {
     const inRange = paidOrders.filter((o) => {
-      const d = o.appointment?.date ?? o.createdAt?.split("T")[0];
+      const d = o.paidAt
+        ? businessDate(new Date(o.paidAt))
+        : o.createdAt
+          ? businessDate(new Date(o.createdAt))
+          : undefined;
       if (!d) return false;
       return d >= bucket.from && d <= bucket.to;
     });

@@ -5,13 +5,12 @@ import {
   Spinner,
   StatCard,
 } from "@config/components";
+import { dayOfWeekInBusinessTimeZone } from "@config/utils";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { StatusBadge } from "../components/statusBadge";
 import { formatARS, formatDate } from "../components/ui/formatters";
 import { api } from "../lib/api";
-import { checkHourIsValid } from "../lib/checkValidSlotHour";
-import { filterValidSlots } from "../lib/filterValidSlots";
 import { useBookingStore } from "../store/useBookingStore";
 import type {
   ApiResponse,
@@ -19,7 +18,7 @@ import type {
   Barber,
   Order,
   ReportSummary,
-  Slot,
+  Schedule,
 } from "../types";
 // const QUICK_LINKS = [
 //   {
@@ -111,13 +110,13 @@ function BalanceCard({
   );
 }
 export default function Dashboard() {
-  const { serviceDuration, startTime, date } = useBookingStore();
+  const { date } = useBookingStore();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [todayOrders, setTodayOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [validSlots, setValidSlots] = useState<Slot[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(true);
+  const [todaySchedule, setTodaySchedule] = useState<Schedule | null>(null);
+  const [loadingSchedule, setLoadingSchedule] = useState(true);
   const [linkedBarberId, setLinkedBarberId] = useState<string | null>(null);
   const [summary, setSummary] = useState<ReportSummary | null>(null);
   useEffect(() => {
@@ -136,24 +135,21 @@ export default function Dashboard() {
     // El id del barbero NO es el id del usuario: lo resolvemos por el vínculo.
     api<ApiResponse<Barber | null>>("barber/me")
       .then((r) => {
-        const barberId = r?.data?.id ?? null;
-        setLinkedBarberId(barberId);
-        if (!barberId) {
-          setLoadingSlots(false);
-          return;
-        }
-        return api<ApiResponse<{ slots: Slot[] }>>(
-          `availability?barberId=${barberId}&date=${date}`,
-        )
-          .then((res) => {
-            const slots = res?.data?.slots ?? [];
-            setValidSlots(
-              checkHourIsValid(filterValidSlots(slots, serviceDuration), date),
-            );
-          })
-          .finally(() => setLoadingSlots(false));
+        const barber = r?.data ?? null;
+        setLinkedBarberId(barber?.id ?? null);
+        setTodaySchedule(
+          barber?.schedules?.find(
+            (schedule) => schedule.dayOfWeek === dayOfWeekInBusinessTimeZone(),
+          ) ??
+            barber?.schedules?.[0] ??
+            null,
+        );
       })
-      .catch(() => setLoadingSlots(false));
+      .catch(() => {
+        setLinkedBarberId(null);
+        setTodaySchedule(null);
+      })
+      .finally(() => setLoadingSchedule(false));
   }, [date]);
 
   const stats = {
@@ -226,40 +222,36 @@ export default function Dashboard() {
         {linkedBarberId && (
           <div>
             <p className="text-text-muted font-body mb-2 block text-xs font-semibold tracking-wide uppercase">
-              Tu horario disponible
+              Tu horario de hoy
             </p>
 
             <div className="flex w-full">
-              {loadingSlots ? (
+              {loadingSchedule ? (
                 <div
                   className="flex w-full items-center justify-center py-6"
                   key={1}
                 >
                   <Spinner size={20} />
                 </div>
-              ) : validSlots.length === 0 ? (
+              ) : !todaySchedule ? (
                 <p className="border-border text-text-muted font-body w-full rounded-xl border bg-black/20 px-4 py-5 text-center text-sm">
-                  ¡No quedan más horarios disponibles!
+                  Hoy no hay un horario de trabajo configurado.
                 </p>
+              ) : todaySchedule.appointmentMode === "walk_in" ? (
+                <div className="border-border bg-marca/8 w-full rounded-xl border px-4 py-5 text-center">
+                  <p className="text-marca font-body text-sm font-semibold">
+                    Hoy se trabaja por llegada
+                  </p>
+                  <p className="text-text-muted font-body mt-1 text-xs">
+                    {todaySchedule.startTime} – {todaySchedule.endTime}
+                  </p>
+                </div>
               ) : (
-                <div className="grid w-full grid-cols-3 gap-2">
-                  {validSlots.map((s) => {
-                    const selected = startTime === s.startTime;
-
-                    return (
-                      <span
-                        key={s.startTime}
-                        className={cn(
-                          "font-body rounded-xl border py-2.5 text-center text-sm font-semibold",
-                          selected
-                            ? "bg-marca/15 border-border-strong text-marca"
-                            : "border-border text-text-secondary bg-black/20",
-                        )}
-                      >
-                        {s.startTime}
-                      </span>
-                    );
-                  })}
+                <div className="border-border text-text-secondary font-body flex w-full items-center justify-between rounded-xl border bg-black/20 px-4 py-3 text-sm">
+                  <span>Horario de trabajo</span>
+                  <span className="font-semibold">
+                    {todaySchedule.startTime} – {todaySchedule.endTime}
+                  </span>
                 </div>
               )}
             </div>

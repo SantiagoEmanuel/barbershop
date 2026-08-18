@@ -41,17 +41,3 @@ export function formatDate(iso: string) {
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
 }
-
-export function todayISO() {
-  return new Date().toISOString().split("T")[0]!;
-}
-
-export function todayISOArgentina() {
-  const [dia, mes, ano] = new Date()
-    .toLocaleDateString("es-AR", {
-      timeZone: "America/Argentina/Buenos_Aires",
-    })
-    .split("/");
-
-  return `${ano}-${Number(mes) < 10 ? 0 + mes : mes}-${Number(dia) < 10 ? 0 + dia : dia}`;
-}

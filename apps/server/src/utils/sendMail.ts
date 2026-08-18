@@ -3,7 +3,9 @@ import {
   MAILERSEND_TOKEN,
   PUBLIC_WEB_URL,
 } from "@/constants/credentials.env";
+import type { AppRole } from "@/middleware/permissions";
 import { User } from "@/v1/auth/model/auth";
+import { formatBusinessCalendarDate } from "@config/utils";
 import { sign } from "jsonwebtoken";
 import { EmailParams, MailerSend, Recipient, Sender } from "mailersend";
 import { formatARS, translateStatus } from "./formatters";
@@ -15,11 +17,7 @@ const mailerSend = new MailerSend({
 const sentFrom = new Sender("info@pjbarbershop.com.ar", "BARBERSHOP");
 
 type AppointmentStatus =
-  | "pending"
-  | "confirmed"
-  | "completed"
-  | "cancelled"
-  | "no_show";
+  "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
 
 interface Appointment {
   kind: "regular" | "extraordinary";
@@ -46,13 +44,7 @@ interface Appointment {
       id: string;
       name: string;
       email: string;
-      username: string;
-      password: string;
-      role: "admin" | "client" | "barber";
-      phone: string;
-      isActive: boolean;
-      verify: boolean;
-      createdAt: Date;
+      role: AppRole;
     } | null;
   } | null;
 }
@@ -92,7 +84,7 @@ export async function confirmShift(data: Appointment) {
     await mailerSend.email.send(secondEmailParams);
     return true;
   } catch (err: any) {
-    console.log(err);
+    console.error("No se pudo enviar la confirmación del turno", err);
     return false;
   }
 }
@@ -120,13 +112,10 @@ export async function confirmEmail(data: Partial<User>) {
     .setText(confirmEmailText(data, confirmUrl));
 
   try {
-    await mailerSend.email
-      .send(emailParams)
-      .then((s) => console.log({ s }))
-      .catch((e) => console.log({ e }));
+    await mailerSend.email.send(emailParams);
     return true;
   } catch (err: any) {
-    console.log({ err });
+    console.error("No se pudo enviar la confirmación de correo", err);
     return false;
   }
 }
@@ -135,12 +124,7 @@ function confirmShiftHTML(data: Appointment, confirmUrl: string) {
   if (!data.clientEmail || !data.barber || !data.barber.users || !data.service)
     return "";
 
-  const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = formatBusinessCalendarDate(data.date);
 
   return `
   <!DOCTYPE html>
@@ -462,12 +446,7 @@ function sendShiftToBarber(data: Appointment) {
   if (!data.clientEmail || !data.barber || !data.barber.users || !data.service)
     return "";
 
-  const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = formatBusinessCalendarDate(data.date);
 
   return `
   <!DOCTYPE html>
@@ -759,12 +738,7 @@ function sendShiftToBarberTExt(data: Appointment) {
   if (!data.clientEmail || !data.barber || !data.barber.users || !data.service)
     return "";
 
-  const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = formatBusinessCalendarDate(data.date);
 
   return `
     PJBARBERSHOP
@@ -786,12 +760,7 @@ function confirmShiftTEXT(data: Appointment, confirmUrl: string) {
   if (!data.clientEmail || !data.barber || !data.barber.users || !data.service)
     return "";
 
-  const formattedDate = new Date(data.date).toLocaleDateString("es-AR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = formatBusinessCalendarDate(data.date);
 
   return `
     PJBARBERSHOP

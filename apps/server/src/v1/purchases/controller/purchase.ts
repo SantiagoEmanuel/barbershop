@@ -1,3 +1,8 @@
+import {
+  businessDayEnd,
+  businessDayStart,
+  isValidBusinessDate,
+} from "@config/utils";
 import type { Request, Response } from "express";
 import PurchaseModel from "../model/purchase";
 
@@ -7,10 +12,19 @@ export default class PurchaseController {
     const toRaw = req.query.to as string | undefined;
     const itemType = req.query.itemType as "product" | "supply" | undefined;
 
+    if (
+      (fromRaw && !isValidBusinessDate(fromRaw)) ||
+      (toRaw && !isValidBusinessDate(toRaw))
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Rango de fechas inválido", data: null });
+    }
+
     try {
       const data = await PurchaseModel.getAll({
-        from: fromRaw ? new Date(fromRaw) : undefined,
-        to: toRaw ? new Date(`${toRaw}T23:59:59.999Z`) : undefined,
+        from: fromRaw ? businessDayStart(fromRaw) : undefined,
+        to: toRaw ? businessDayEnd(toRaw) : undefined,
         itemType,
       });
       return res.json({ message: "OK", data });
@@ -53,17 +67,46 @@ export default class PurchaseController {
         data: null,
       });
     }
-    if (typeof quantity !== "number" || quantity <= 0) {
+    if (
+      typeof quantity !== "number" ||
+      !Number.isSafeInteger(quantity) ||
+      quantity <= 0 ||
+      quantity > 1_000_000
+    ) {
       return res.status(400).json({
         message: "La cantidad debe ser un entero positivo",
         data: null,
       });
     }
-    if (typeof unitCost !== "number" || unitCost < 0) {
+    if (
+      typeof unitCost !== "number" ||
+      !Number.isSafeInteger(unitCost) ||
+      unitCost < 0
+    ) {
       return res.status(400).json({
         message: "El costo unitario no puede ser negativo",
         data: null,
       });
+    }
+
+    if (
+      (itemType === "product" && (!productId || supplyId)) ||
+      (itemType === "supply" && (!supplyId || productId))
+    ) {
+      return res.status(400).json({
+        message: "Debe enviarse exactamente el ítem correspondiente a itemType",
+        data: null,
+      });
+    }
+
+    if (purchasedAt) {
+      const parsedDate = new Date(purchasedAt);
+      if (Number.isNaN(parsedDate.getTime()) || parsedDate > new Date()) {
+        return res.status(400).json({
+          message: "La fecha de compra es inválida o futura",
+          data: null,
+        });
+      }
     }
 
     try {

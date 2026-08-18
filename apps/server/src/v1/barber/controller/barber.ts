@@ -1,3 +1,4 @@
+import { hasPermission, PERMISSIONS } from "@/middleware/permissions";
 import type { Request, Response } from "express";
 import AuthModel from "../../auth/model/auth";
 import BarberModel from "../model/barber";
@@ -22,7 +23,8 @@ export default class BarberController {
 
   static async getAll(req: Request, res: Response) {
     const includeInactive =
-      req.query.all === "true" && req.user?.role === "admin";
+      req.query.all === "true" &&
+      hasPermission(req.user?.role, PERMISSIONS.BARBERS_MANAGE);
     try {
       const data = await BarberModel.getAll({ includeInactive });
       return res.json({ message: "OK", data });
@@ -237,7 +239,9 @@ export default class BarberController {
 
     if (
       !barberId ||
-      !dayOfWeek ||
+      typeof dayOfWeek !== "number" ||
+      dayOfWeek < 0 ||
+      dayOfWeek > 6 ||
       !endTime ||
       !startTime ||
       !endBreak ||
@@ -299,9 +303,11 @@ export default class BarberController {
 
     if (
       !barberId ||
-      !dayOfWeek ||
+      typeof dayOfWeek !== "number" ||
+      dayOfWeek < 0 ||
+      dayOfWeek > 6 ||
       !endTime ||
-      !isActive ||
+      typeof isActive !== "boolean" ||
       !startTime ||
       !endBreak ||
       !startBreak ||

@@ -7,5 +7,6 @@ export default defineConfig({
     globals: true,
     testTimeout: 15_000,
     hookTimeout: 15_000,
+    globalSetup: "./src/db/test/globalSetup.ts",
   },
 });
