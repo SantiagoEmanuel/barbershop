@@ -12,9 +12,9 @@ Registro acumulativo para problemas funcionales, regresiones, errores de operaci
 
 ## Registro
 
-| ID      | Categoría                         | Título                       | Severidad | Prioridad | Servicio | Estado  | Detectado  | Responsable | Próximo paso            |
-| ------- | --------------------------------- | ---------------------------- | --------- | --------- | -------- | ------- | ---------- | ----------- | ----------------------- |
-| BUG-___ | FUNCIONAL / SEGURIDAD / OPERACIÓN | Completar desde la plantilla | —         | —         | —        | ABIERTO | AAAA-MM-DD | —           | Reproducir y clasificar |
+| ID      | Categoría             | Título                                                    | Severidad | Prioridad | Servicio         | Estado     | Detectado  | Responsable | Próximo paso                                                 |
+| ------- | --------------------- | --------------------------------------------------------- | --------- | --------- | ---------------- | ---------- | ---------- | ----------- | ------------------------------------------------------------ |
+| BUG-001 | FUNCIONAL / OPERACIÓN | Las ventas desde un turno no vinculaban la orden al turno | Alta      | P1        | Ventas / Órdenes | VERIFICADO | 2026-08-18 | Equipo web  | Mantener pruebas de vínculo para turno regular y sobre turno |
 
 ## Detalle de cada entrada
 
@@ -22,9 +22,23 @@ El resumen anterior debe apuntar a un reporte detallado creado a partir de [`rep
 
 ### Registro de cambios
 
-| Fecha      | ID      | Cambio                                 | Autor |
-| ---------- | ------- | -------------------------------------- | ----- |
-| AAAA-MM-DD | BUG-___ | Alta inicial / actualización de estado | —     |
+| Fecha      | ID      | Cambio                                                           | Autor      |
+| ---------- | ------- | ---------------------------------------------------------------- | ---------- |
+| 2026-08-18 | BUG-001 | Alta, corrección y verificación del vínculo de órdenes de ventas | Equipo web |
+
+### BUG-001 — Las ventas desde un turno no vinculaban la orden al turno
+
+- **Tipo:** `BUG`
+- **Fecha de descubrimiento:** `2026-08-18`
+- **Servicio o módulo:** Ventas / Órdenes
+- **Entorno:** desarrollo
+- **Estado:** `VERIFICADO`
+- **Severidad / prioridad:** Alta / P1
+- **Precondición:** abrir `/admin/ventas/:appointmentId` o seleccionar un turno desde ventas.
+- **Causa:** el frontend construía propiedades como `regular: "regular"` o `extraordinary: "extraordinary"` en lugar de enviar `appointmentId`/`overbookedAppointmentId`. Además, el turno cargado por URL no se conservaba como contexto para el envío.
+- **Corrección:** se conserva el turno seleccionado y se construye el vínculo con el ID y la clave correspondiente al tipo de turno. Un cobro iniciado desde un turno no puede degradarse silenciosamente a una venta libre.
+- **Prueba de regresión:** type-check y lint del frontend, suite del servidor y revisión del payload para ambos tipos de turno.
+- **Evidencia:** [`apps/web/src/pages/ventas.tsx`](../../apps/web/src/pages/ventas.tsx) y [`apps/server/src/v1/orders/controller/order.ts`](../../apps/server/src/v1/orders/controller/order.ts).
 
 ## Criterios de triage
 
