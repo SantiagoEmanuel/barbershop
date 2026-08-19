@@ -1,5 +1,11 @@
 # server
 
+## 2.0.0
+
+### Major Changes
+
+- 19f8eef: Sistema apto operativamente para producción con mínimos requisitos cumplidos
+
 ## 1.0.0
 
 ### Major Changes
